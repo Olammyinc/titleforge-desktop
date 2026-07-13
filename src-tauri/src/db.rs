@@ -56,6 +56,22 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
         CREATE TABLE IF NOT EXISTS user_settings (
             key TEXT PRIMARY KEY,
             value TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS user_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS project_titles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            keyword TEXT,
+            score INTEGER,
+            notes TEXT,
+            FOREIGN KEY (project_id) REFERENCES user_projects(id) ON DELETE CASCADE
         );"
     )?;
 
@@ -97,6 +113,27 @@ pub fn import_seed(conn: &Connection, seed_path: &std::path::Path) -> Result<()>
                     conn.execute(
                         "INSERT OR IGNORE INTO word_pools (pool_name, word) VALUES (?1, ?2)",
                         rusqlite::params![pool_name, w.as_str().unwrap_or("")],
+                    ).ok();
+                }
+            }
+        }
+    }
+
+    // Import curated titles
+    if let Some(curated) = data["curated_titles"].as_object() {
+        for (cat, titles) in curated {
+            if let Some(arr) = titles.as_array() {
+                for t in arr {
+                    conn.execute(
+                        "INSERT OR IGNORE INTO curated_titles (title, category, genre, tone, appeal_score, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                        rusqlite::params![
+                            t["title"].as_str().unwrap_or(""),
+                            cat,
+                            t["genre"].as_str().unwrap_or("any"),
+                            t["tone"].as_str().unwrap_or("normal"),
+                            t["appeal_score"].as_i64().unwrap_or(50),
+                            t["notes"].as_str().unwrap_or(""),
+                        ],
                     ).ok();
                 }
             }

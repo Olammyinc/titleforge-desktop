@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TitleForge — The Right Title, in Seconds. For Anything You Create.</title>
-  <meta name="description" content="TitleForge generates up to 100 titles for books, articles, blogs, YouTube videos, songs, speeches, and more — each scored for appeal with a full breakdown. Free to try. No credit card required." />
+  <title>TitleForge Desktop — Generate titles that get clicked</title>
+  <meta name="description" content="TitleForge Desktop — Offline title generator for books, articles, YouTube videos, songs, podcasts, and more. Powered by a curated database of 480+ templates." />
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="stylesheet" href="styles.css" />
-  <!-- Fontshare: Clash Display (headings) + Satoshi (body) -->
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -21,198 +19,34 @@
       TitleForge
     </a>
     <div class="nav-links">
-      <a href="#tool" class="nav-mobile-keep">Online Tool</a>
-      <a href="#desktop">Desktop App</a>
-      <a href="#pricing">Pricing</a>
-      <a href="dashboard.html" id="navDashboard" style="display:none;">Dashboard</a>
-      <div id="navGuestBtns">
-        <button id="navSignIn" class="btn btn-small btn-ghost-dark">Sign In</button>
-        <button id="navSignUp" class="btn btn-small btn-primary">Get Started</button>
-      </div>
-      <div id="navUser" class="nav-user-wrap" style="display:none;">
-        <div class="nav-avatar" id="navAvatar">U</div>
-        <div class="nav-user-dropdown" id="navUserDropdown">
-          <div class="nav-user-dd-header">
-            <span id="navDropdownName">User</span>
-            <span class="nav-user-dd-email" id="navDropdownEmail"></span>
-          </div>
-          <a href="dashboard.html" class="nav-user-dd-item">Dashboard</a>
-          <a href="dashboard.html#settings" class="nav-user-dd-item" id="navProBadge">Subscription</a>
-          <button class="nav-user-dd-item danger" id="navLogout">Sign Out</button>
-        </div>
-      </div>
+      <a href="#tool" class="nav-mobile-keep">Generator</a>
+      <a href="dashboard.html" id="navDashboard">Dashboard</a>
+      <span class="nav-pro-badge" id="navProBadge">PRO</span>
     </div>
   </div>
 </nav>
 
-<!-- ============ LANDING HERO ============ -->
-<section class="hero" id="top">
+<!-- ============ HERO (compact) ============ -->
+<section class="hero hero-compact" id="top">
   <div class="hero-inner">
-    <p class="hero-kicker">Titles that</p>
-    <h1 class="hero-title">GET CLICKED</h1>
-    <p class="hero-sub">The right title, in seconds. For anything you create — books, videos, podcasts, songs, speeches. Each title scored for appeal so you know which one works before you publish.</p>
+    <h1 class="hero-title">The right title, in seconds.</h1>
+    <p class="hero-sub">Generate up to 100 titles for books, articles, YouTube videos, songs, podcasts, and more — each scored for appeal. All 16 categories unlocked.</p>
     <div class="hero-cta-row">
-      <a href="#tool" class="btn btn-primary btn-large">Generate Your First 10 Titles →</a>
-      <a href="#desktop" class="btn btn-secondary btn-large">Download Desktop ↓</a>
-    </div>
-    <p class="hero-nocc">No credit card required. 3 free generations, no signup.</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><strong>247,000+</strong> titles generated</div>
-      <div class="hero-stat"><strong>16</strong> categories</div>
-      <div class="hero-stat"><strong>9</strong> tone styles</div>
-      <div class="hero-stat"><strong>100</strong> titles per batch</div>
-      <div class="hero-stat"><strong>12</strong> languages</div>
+      <a href="#tool" class="btn btn-primary btn-large">Generate Titles →</a>
     </div>
   </div>
 </section>
 
-<!-- ============ BENEFITS ============ -->
-<section class="section-light">
-<div class="benefits">
-  <div class="benefit reveal reveal-delay-1">
-    <div class="benefit-icon">🎯</div>
-    <h3>What works on YouTube flops in a bookstore.</h3>
-    <p>16 categories, each tuned to its medium. TitleForge adapts your idea across books, videos, podcasts, songs, speeches — wherever your audience lives.</p>
-  </div>
-  <div class="benefit reveal reveal-delay-2">
-    <div class="benefit-icon">🔥</div>
-    <h3>You shouldn't have to guess which title works.</h3>
-    <p>Every title gets a 0–100 appeal score and a full breakdown: curiosity gap, emotional trigger, power words, length analysis, specificity. Know why it works before you publish.</p>
-  </div>
-  <div class="benefit reveal reveal-delay-3">
-    <div class="benefit-icon">🌐</div>
-    <h3>Your idea, in 12 languages. With subtitles.</h3>
-    <p>Translate titles into 12 languages. Generate subtitles. Toggle between 9 communication styles. One keyword, endless variations.</p>
-  </div>
-  <div class="benefit reveal reveal-delay-4">
-    <div class="benefit-icon">💻</div>
-    <h3>No Wi-Fi? Still works.</h3>
-    <p>The desktop app runs entirely offline on your machine. One purchase, no subscription. Bring your own AI key for cloud-powered titles on desktop too.</p>
-  </div>
-</div>
-</section>
-
-<!-- ============ WHY TITLEFORGE ============ -->
-<section class="why-section section-dark" id="why">
-  <div class="why-container">
-    <h2 class="section-heading-center">Write once. Publish everywhere.</h2>
-    <p class="why-intro">Other tools lock you into one medium. TitleForge adapts your idea across all of them — with breakdowns, scores, and a library you own.</p>
-
-    <div class="why-grid">
-      <div class="why-card reveal reveal-delay-1">
-        <div class="why-icon">🎯</div>
-        <h3>Cross-Medium</h3>
-        <p>One keyword, every medium. Your blog idea becomes a YouTube title, a podcast episode, and a newsletter — each adapted to what works on that platform.</p>
-      </div>
-      <div class="why-card reveal reveal-delay-2">
-        <div class="why-icon">🔬</div>
-        <h3>Title Breakdown</h3>
-        <p>Every title shows you why it works: curiosity gap, emotional trigger, power words, length, and specificity. You learn as you generate.</p>
-      </div>
-      <div class="why-card reveal reveal-delay-3">
-        <div class="why-icon">📚</div>
-        <h3>Your Library</h3>
-        <p>Every title is saved. Star favorites, organize projects, search history, export to CSV. Nothing disappears when you close the tab.</p>
-      </div>
-    </div>
-
-    <div class="why-vs">
-      <h3 class="why-vs-heading">How we compare</h3>
-      <div class="compare-strip">
-        <div class="compare-card">
-          <p class="compare-name">vidIQ</p>
-          <div class="compare-features">
-            <div class="compare-feat"><span class="compare-check cross">—</span> YouTube only</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> Single-medium</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No breakdowns</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> Curiosity gap only</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No history</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No favorites</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No CSV export</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> No signup needed</div>
-          </div>
-        </div>
-        <div class="compare-card">
-          <p class="compare-name">SEMrush</p>
-          <div class="compare-features">
-            <div class="compare-feat"><span class="compare-check cross">—</span> Blog/article only</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> Single-medium</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No breakdowns</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> SEO score only</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No history</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No favorites</div>
-            <div class="compare-feat"><span class="compare-check cross">—</span> No CSV export</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> No signup needed</div>
-          </div>
-        </div>
-        <div class="compare-card compare-card-hero">
-          <p class="compare-name">TitleForge</p>
-          <div class="compare-features">
-            <div class="compare-feat"><span class="compare-check check">✓</span> 16 mediums</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> Cross-medium adaptation</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> Full breakdown analysis</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> 0–100 + breakdown</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> Saved history</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> Favorites &amp; projects</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> CSV export</div>
-            <div class="compare-feat"><span class="compare-check check">✓</span> Try without signup</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ DESKTOP APP SECTION ============ -->
-<section class="why-section section-light" id="desktop">
-  <div class="why-container">
-    <h2 class="section-heading-center">TitleForge Desktop <span class="coming-badge">EARLY ACCESS</span></h2>
-    <p class="why-intro">A desktop app for Windows, Mac, and Linux. One payment. No subscription. No internet required. Join the waitlist for early access and launch pricing.</p>
-
-    <div class="why-grid">
-      <div class="why-card reveal reveal-delay-1">
-        <div class="why-icon">💻</div>
-        <h3>No internet. No problem.</h3>
-        <p>Runs entirely on your machine — thousands of title templates, patterns, and word pools. Generate titles anywhere, offline.</p>
-      </div>
-      <div class="why-card reveal reveal-delay-2">
-        <div class="why-icon">🔑</div>
-        <h3>$49. Once. That's it.</h3>
-        <p>Pay once, own it forever. No subscriptions, no recurring charges. Lifetime database updates included.</p>
-      </div>
-      <div class="why-card reveal reveal-delay-3">
-        <div class="why-icon">🧠</div>
-        <h3>Bring your own AI. Or don't.</h3>
-        <p>The built-in engine handles most titles. Want cloud AI? Plug in your own ChatGPT, Claude, DeepSeek, or Gemini key. We never touch it.</p>
-      </div>
-    </div>
-
-    <div style="text-align:center;margin-top:40px;">
-      <button id="desktopWaitlistBtn" class="btn btn-primary btn-large" style="display:inline-block;">Join the Waitlist →</button>
-    </div>
-  </div>
-</section>
-
-<!-- ============ THE TOOL (visible to all — guest mode) ============ -->
+<!-- ============ THE TOOL ============ -->
 <section class="tool-section section-light" id="tool">
   <div class="tool-container">
-    <!-- User bar (only when logged in) -->
-    <div class="user-bar" id="userBar" style="display:none;">
-      <span id="userEmail"></span>
-      <button id="logoutBtn" class="btn-logout">Sign Out</button>
-    </div>
-
-    <!-- Guest banner -->
-    <div class="guest-banner" id="guestBanner">
-      <span>👤 Guest mode — you get <strong id="guestRemaining">3</strong> free generations. <a href="#" id="guestSignUpLink">Create an account</a> for 5/day + dashboard.</span>
-    </div>
 
     <h2 class="section-heading">Generate Titles</h2>
-    <p class="section-sub">Free tier: 5 generations per day, up to 10 titles each, 5 categories. <a href="#pricing" class="inline-link">Upgrade to Pro</a> for 100 titles per generation, all 16 categories, appeal scores, subtitles &amp; translation.</p>
+    <p class="section-sub">All features unlocked — all 16 categories, up to 100 titles per batch, appeal scores, subtitles &amp; translation.</p>
 
     <!-- Usage counter -->
-    <div class="usage-bar" id="usageBar">
-      <span id="usageText">Guest mode — 3 free generations, no account needed.</span>
+    <div class="usage-bar" id="usageBar" style="display:none;">
+      <span id="usageText"></span>
     </div>
 
     <!-- Input -->
@@ -263,15 +97,15 @@
         <button class="style-btn" data-style="shout">Shout</button>
         <button class="style-btn" data-style="whisper">Whisper</button>
         <button class="style-btn" data-style="blessing">Blessing</button>
-        <button class="style-btn pro-locked" data-style="provocative">Provocative <span class="pro-badge">PRO</span></button>
-        <button class="style-btn pro-locked" data-style="minimalist">Minimalist <span class="pro-badge">PRO</span></button>
-        <button class="style-btn pro-locked" data-style="storytelling">Storytelling <span class="pro-badge">PRO</span></button>
-        <button class="style-btn pro-locked" data-style="question">Question <span class="pro-badge">PRO</span></button>
-        <button class="style-btn pro-locked" data-style="playful">Playful <span class="pro-badge">PRO</span></button>
+        <button class="style-btn" data-style="provocative">Provocative</button>
+        <button class="style-btn" data-style="minimalist">Minimalist</button>
+        <button class="style-btn" data-style="storytelling">Storytelling</button>
+        <button class="style-btn" data-style="question">Question</button>
+        <button class="style-btn" data-style="playful">Playful</button>
       </div>
     </div>
 
-    <!-- Gender selector (shown only when children's names category is selected) -->
+    <!-- Gender selector -->
     <div class="form-group" id="genderGroup" style="display:none;">
       <label for="nameGender">Name gender</label>
       <div class="style-row" id="genderRow">
@@ -282,13 +116,13 @@
       </div>
     </div>
 
-    <!-- Fine-tune expander (optional, 7 questions) -->
+    <!-- Fine-tune expander -->
     <div class="form-group">
       <button type="button" class="finetune-toggle" id="finetuneToggle" aria-expanded="false">
         <span class="finetune-arrow">▸</span> Fine-tune your titles (optional)
       </button>
       <div class="finetune-panel" id="finetunePanel" style="display:none;">
-        <p class="finetune-intro">These 7 optional questions help the AI generate sharper titles. Skip any — default values work fine.</p>
+        <p class="finetune-intro">These 7 optional questions help generate sharper titles. Skip any — default values work fine.</p>
 
         <div class="finetune-question">
           <label for="ftAudience">1. Who is the primary audience?</label>
@@ -357,10 +191,10 @@
     <div class="form-group">
       <label for="quantity">How many titles? <span id="qtyDisplay" class="qty-display">10</span></label>
       <input type="range" id="quantity" min="1" max="100" value="10" class="slider" />
-      <div class="slider-labels"><span>1</span><span class="pro-marker">25</span><span class="pro-marker">50</span><span class="pro-marker">100</span></div>
+      <div class="slider-labels"><span>1</span><span>25</span><span>50</span><span>100</span></div>
     </div>
 
-    <!-- Pro toggles -->
+    <!-- Pro toggles (all enabled in desktop) -->
     <div class="form-group pro-toggles">
       <label class="toggle-row">
         <input type="checkbox" id="crossMediumToggle" />
@@ -368,12 +202,12 @@
       </label>
       <p class="toggle-hint">Generate the same concept across all selected categories and see how it adapts to each medium.</p>
       <label class="toggle-row">
-        <input type="checkbox" id="subtitlesToggle" disabled />
-        <span>Generate subtitles <span class="pro-badge">PRO</span></span>
+        <input type="checkbox" id="subtitlesToggle" />
+        <span>Generate subtitles</span>
       </label>
       <label class="toggle-row">
-        <input type="checkbox" id="translateToggle" disabled />
-        <span>Translate titles <span class="pro-badge">PRO</span></span>
+        <input type="checkbox" id="translateToggle" />
+        <span>Translate titles</span>
       </label>
       <div id="translateLangs" class="translate-langs" style="display:none;">
         <select id="translateLang">
@@ -410,230 +244,13 @@
   </div>
 </section>
 
-<!-- ============ TESTIMONIALS ============ -->
-<section class="section-dark" id="testimonials" style="text-align:center;padding:80px 20px;">
-  <h2 class="section-heading-center" style="color:var(--text-inverse);">What creators are saying</h2>
-  <div class="testimonials-grid" style="max-width:1000px;margin:0 auto;">
-    <div class="testimonial-card reveal reveal-delay-1">
-      <p class="testimonial-text">"I was stuck on my book title for three weeks. TitleForge gave me 50 options in 30 seconds. The appeal scores are absurdly useful — I picked the one with the highest curiosity gap and my pre-orders jumped."</p>
-      <p class="testimonial-author">Sarah K.<span class="testimonial-role">Debut Author</span></p>
-    </div>
-    <div class="testimonial-card reveal reveal-delay-2">
-      <p class="testimonial-text">"I use it for every YouTube video now. The cross-medium feature is wild — I can see how my video title would work as a blog post or podcast episode. Saves me hours of second-guessing."</p>
-      <p class="testimonial-author">Marcus T.<span class="testimonial-role">YouTuber, 120k subs</span></p>
-    </div>
-    <div class="testimonial-card reveal reveal-delay-3">
-      <p class="testimonial-text">"I work from coffee shops with spotty Wi-Fi, and I need a title generator that just works offline. The desktop app is exactly that. One-time payment, no subscription — done."</p>
-      <p class="testimonial-author">Priya R.<span class="testimonial-role">Freelance Blogger</span></p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ PRICING ============ -->
-<section class="pricing-section section-dark" id="pricing">
-  <h2 class="section-heading-center">Pricing</h2>
-
-  <!-- Billing toggle -->
-  <div class="billing-toggle">
-    <span class="billing-label" id="billingLabelMonthly">Monthly</span>
-    <label class="toggle-switch">
-      <input type="checkbox" id="billingToggle" />
-      <span class="toggle-slider"></span>
-    </label>
-    <span class="billing-label" id="billingLabelYearly">Yearly <span class="billing-discount">Save 17%</span></span>
-  </div>
-
-  <h3 class="subsection-heading">Web App — AI-Powered</h3>
-  <div class="pricing-cards">
-    <div class="pricing-card reveal reveal-delay-1">
-      <h3>Free</h3>
-      <p class="price">$0<span class="price-period">/forever</span></p>
-      <ul class="feature-list">
-        <li>5 generations per day</li>
-        <li>Up to 10 titles per generation</li>
-        <li>5 categories (books, articles, blogs, movies, songs)</li>
-        <li>4 communication styles</li>
-        <li>Any genre</li>
-        <li>Saved history (with account)</li>
-      </ul>
-      <a href="#tool" class="btn btn-outline btn-full">Try Free</a>
-    </div>
-    <div class="pricing-card pricing-card-featured reveal reveal-delay-2">
-      <div class="featured-badge">Most Popular</div>
-      <h3>Pro</h3>
-      <p class="price"><span id="webProPrice">$15.83</span><span class="price-period"><span id="webProPeriod">/mo</span> <span id="billingNote" style="font-size:12px;color:var(--text-secondary);display:block;margin-top:2px;">billed annually</span></span></p>
-      <ul class="feature-list">
-        <li>Unlimited daily generations</li>
-        <li>Up to 100 titles per generation</li>
-        <li>All 16 categories</li>
-        <li>All 9 communication styles</li>
-        <li>Appeal score (0–100) + breakdown</li>
-        <li>Subtitles & translation (12 languages)</li>
-        <li>Full dashboard + CSV export</li>
-        <li><strong>Free Desktop Basic license included</strong></li>
-      </ul>
-      <a href="#" id="upgradeBtn" class="btn btn-primary btn-full" data-monthly="$19" data-yearly="$190">Subscribe — <span id="webProCta">$15.83/mo</span></a>
-      <p class="cancel-note">Billed annually. Cancel anytime. 30-day money-back guarantee. <span style="display:block;font-size:11px;margin-top:4px;">Launch pricing: $19/mo monthly or $190/yr (save 17%).</span></p>
-    </div>
-  </div>
-
-  <h3 class="subsection-heading" style="margin-top:40px;">Desktop App — Offline, One-Time Payment</h3>
-  <div class="pricing-cards">
-    <div class="pricing-card reveal reveal-delay-3">
-      <h3>Basic</h3>
-      <p class="price">$29<span class="price-period">/one-time</span></p>
-      <ul class="feature-list">
-        <li>Full offline title generator</li>
-        <li>All 16 categories</li>
-        <li>Up to 25 titles per generation</li>
-        <li>Database-powered (no AI needed)</li>
-        <li>Template engine + pattern mixer</li>
-        <li>Full dashboard (history, favorites, projects)</li>
-        <li>Lifetime database updates</li>
-      </ul>
-      <button class="btn btn-outline btn-full waitlist-btn">Get Notified →</button>
-      <p class="cancel-note" style="font-size:11px;color:var(--text-light);margin-top:8px;">Free with any Web Pro subscription. Join the waitlist for launch pricing.</p>
-    </div>
-    <div class="pricing-card pricing-card-featured reveal reveal-delay-4">
-      <div class="featured-badge">Best Value</div>
-      <h3>Pro</h3>
-      <p class="price">$49<span class="price-period">/one-time</span></p>
-      <ul class="feature-list">
-        <li>Everything in Basic</li>
-        <li>Up to 100 titles per generation</li>
-        <li>Markov chain generator (more variety)</li>
-        <li>Bring your own AI key (ChatGPT, Claude, DeepSeek, Gemini)</li>
-        <li>Cross-medium adaptation</li>
-        <li>Subtitles & translation (via your AI key)</li>
-        <li>Priority database updates</li>
-        <li>Windows, Mac, and Linux</li>
-      </ul>
-      <button class="btn btn-primary btn-full waitlist-btn">Join Early Access →</button>
-      <p class="cancel-note">One payment. Own it forever. Launch pricing available for waitlist members.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ FAQ ============ -->
-<section class="faq-section section-light">
-  <h2 class="section-heading-center">Questions</h2>
-  <div class="faq-item reveal">
-    <h4>Can't I just use ChatGPT for this?</h4>
-    <p>You can. ChatGPT gives you 5–10 generic titles with no context. TitleForge filters by your specific medium — a book title and a blog title need different things — scores each title's appeal so you're not guessing, and generates 100 at once instead of 10. It's the difference between a generalist and a specialist.</p>
-  </div>
-  <div class="faq-item reveal">
-    <h4>Is $19/month worth it for titles?</h4>
-    <p>If you publish once a month, one better title can be the difference between someone clicking through or scrolling past. At $19/month, that's about 63 cents a day. Cancel with one click if it doesn't earn its keep — no contracts, no lock-in.</p>
-  </div>
-  <div class="faq-item reveal">
-    <h4>How does the appeal score work?</h4>
-    <p>Each title is rated on a 0–100 scale by AI, based on patterns from successful titles in that category and genre. It's an AI-estimated appeal score — a heuristic, not a live poll. It helps you quickly spot which titles have the most pull.</p>
-  </div>
-  <div class="faq-item reveal">
-    <h4>What does the title breakdown analysis show?</h4>
-    <p>Below each title, you'll find its breakdown analysis showing: <strong>Curiosity gap</strong> (how much it makes you want to know more), <strong>Emotional trigger</strong> (the emotion it evokes), <strong>Power words</strong> (impactful words detected), <strong>Length analysis</strong> (whether it's optimal for the medium), and <strong>Specificity</strong> (how concrete or abstract it is). Hover or click the <strong>?</strong> icon next to each metric for a quick explanation. <em>Full breakdown values are available on Pro only — free users can see which metrics exist to know what they're missing.</em></p>
-  </div>
-  <div class="faq-item reveal">
-    <h4>What's the difference between the web app and the desktop app?</h4>
-    <p>The web app generates titles using AI in your browser — it's great for quick sessions and works on any device. The desktop app is a downloadable program that works entirely offline using a curated title database. No internet needed, no monthly fees. Web Pro subscribers get the desktop Basic license for free.</p>
-  </div>
-  <div class="faq-item reveal">
-    <h4>What happens to my data and privacy?</h4>
-    <p>Your titles, history, and favorites are stored securely in your account. We don't sell your data, we don't train AI on your titles, and you can export or delete everything anytime. TitleForge is a tool you use — not a data harvesting operation.</p>
-  </div>
-  <div class="faq-item reveal">
-    <h4>Do I need an account?</h4>
-    <p>No — you can try TitleForge as a guest with 3 free generations, no signup. To get 5 generations per day, save your history, and access the dashboard, create a free account. To unlock all features, upgrade to Pro.</p>
-  </div>
-</section>
-
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
-  <p>TitleForge — Generate titles that get clicked.</p>
-  <p class="footer-sub">Every market rate is a true market reference. Results depend on the work you put in.</p>
+  <p>TitleForge Desktop — Generate titles that get clicked.</p>
+  <p class="footer-sub">Offline title generator for Windows, macOS, and Linux.</p>
 </footer>
 
-<!-- ============ STICKY MOBILE CTA ============ -->
-<div class="sticky-cta" id="stickyCta">
-  <span class="sticky-cta-text" id="stickyCtaText">Generate titles that get clicked</span>
-  <button class="btn btn-primary btn-small" id="stickyCtaBtn">Try Free →</button>
-</div>
-
-<!-- ============ AUTH MODAL ============ -->
-<div class="modal-overlay" id="authModal">
-  <div class="modal auth-modal">
-    <button class="modal-x" id="authModalClose">&times;</button>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabSignUp">Sign Up</button>
-      <button class="auth-tab" id="tabSignIn">Sign In</button>
-    </div>
-
-    <!-- Sign Up Form -->
-    <div id="signUpForm" class="auth-form">
-      <h3>Create Your Free Account</h3>
-      <p class="auth-sub">Get 5 generations per day, saved history, and a dashboard.</p>
-      <div class="form-group">
-        <label for="signupEmail">Email</label>
-        <input type="email" id="signupEmail" placeholder="you@example.com" />
-      </div>
-      <div class="form-group">
-        <label for="signupPassword">Password (8+ characters)</label>
-        <input type="password" id="signupPassword" placeholder="Create a password" />
-      </div>
-      <button id="signUpBtn" class="btn btn-primary btn-large">Create Account</button>
-      <p class="auth-fineprint">By signing up, you agree to receive occasional product emails. Unsubscribe anytime.</p>
-    </div>
-
-    <!-- Sign In Form -->
-    <div id="loginForm" class="auth-form" style="display:none;">
-      <h3>Welcome Back</h3>
-      <p class="auth-sub">Sign in to access your dashboard and saved titles.</p>
-      <div class="form-group">
-        <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" placeholder="you@example.com" />
-      </div>
-      <div class="form-group">
-        <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" placeholder="Your password" />
-      </div>
-      <button id="loginBtn" class="btn btn-primary btn-large">Sign In</button>
-    </div>
-
-    <div id="authError" class="error-msg" style="display:none;"></div>
-    <div id="authLoading" class="loading" style="display:none;">
-      <div class="spinner"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ WAITLIST MODAL ============ -->
-<div class="modal-overlay" id="waitlistModal">
-  <div class="modal waitlist-modal">
-    <button class="modal-x" id="waitlistModalClose">&times;</button>
-    <h3>Get Early Access</h3>
-    <p class="auth-sub">Be the first to know when TitleForge Desktop launches. Plus, waitlist members get launch pricing.</p>
-    <div class="form-group">
-      <label for="waitlistEmail">Email</label>
-      <input type="email" id="waitlistEmail" placeholder="you@example.com" />
-    </div>
-    <button id="waitlistSubmitBtn" class="btn btn-primary btn-large">Join Waitlist →</button>
-    <p id="waitlistMsg" style="display:none;margin-top:12px;font-size:13px;color:var(--success);text-align:center;"></p>
-  </div>
-</div>
-
-<!-- ============ EXIT-INTENT MODAL ============ -->
-<div class="modal-overlay" id="exitModal">
-  <div class="modal exit-modal">
-    <button class="modal-x" id="exitModalClose">&times;</button>
-    <h3>Before you go...</h3>
-    <p>Get <strong>3 free titles</strong> right now — no signup, no credit card.</p>
-    <a href="#tool" class="btn btn-primary btn-large">Generate Free Titles →</a>
-    <p class="modal-close" id="exitModalNoThanks">No thanks, I'm good</p>
-  </div>
-</div>
-
 <script src="app.js"></script>
-<!-- Scroll-reveal observer -->
 <script>
 (function() {
   var observer = new IntersectionObserver(function(entries) {
@@ -646,17 +263,6 @@
   }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
 
   document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-
-  // Card mouse-tracking glow effect
-  document.querySelectorAll('.why-card').forEach(function(card) {
-    card.addEventListener('mousemove', function(e) {
-      var rect = card.getBoundingClientRect();
-      var x = ((e.clientX - rect.left) / rect.width) * 100;
-      var y = ((e.clientY - rect.top) / rect.height) * 100;
-      card.style.setProperty('--mouse-x', x + '%');
-      card.style.setProperty('--mouse-y', y + '%');
-    });
-  });
 })();
 </script>
 </body>

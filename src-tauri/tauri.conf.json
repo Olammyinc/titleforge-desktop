@@ -10,7 +10,6 @@
     "beforeBuildCommand": ""
   },
   "app": {
-    "title": "TitleForge Desktop",
     "windows": [
       {
         "title": "TitleForge Desktop",
@@ -28,6 +27,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": ["../seed-data.json"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

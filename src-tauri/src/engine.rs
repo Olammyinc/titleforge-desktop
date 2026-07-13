@@ -9,7 +9,7 @@ pub fn generate(
     conn: &Connection,
     keyword: &str,
     categories: &[String],
-    style: &str,
+    _style: &str,
     genre: &str,
     quantity: u32,
 ) -> Result<Vec<TitleResult>, String> {
@@ -68,6 +68,7 @@ pub fn generate(
 struct Slot {
     name: String,
     pool: Option<String>,
+    #[allow(dead_code)]
     pos: Option<String>,
 }
 

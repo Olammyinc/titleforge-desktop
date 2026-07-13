@@ -133,6 +133,17 @@ body {
   transition: color 0.2s;
 }
 .nav-links a:hover { color: var(--forge); }
+.nav-pro-badge {
+  display: inline-block;
+  background: var(--forge);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
 .nav-user {
   display: flex;
   align-items: center;
@@ -326,6 +337,22 @@ body {
   font-weight: 500;
   max-width: 600px;
   margin: 0 auto 24px 0;
+}
+
+/* Compact hero for desktop app */
+.hero-compact {
+  min-height: auto;
+  padding: 80px 0 60px;
+}
+.hero-compact .hero-title {
+  font-size: clamp(40px, 8vw, 72px);
+  margin-bottom: 20px;
+  width: auto;
+  margin-right: 0;
+  max-width: none;
+}
+.hero-compact .hero-cta-row {
+  margin-bottom: 0;
 }
 
 /* ============ BUTTONS ============ */
