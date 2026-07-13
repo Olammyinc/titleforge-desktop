@@ -196,8 +196,11 @@ function showLicenseOverlay() {
   if (buyLink) {
     buyLink.addEventListener('click', function (e) {
       e.preventDefault();
-      // Open the web app's dashboard in the browser
-      window.open('https://titleforge-tool.netlify.app/dashboard');
+      if (window.__TAURI__ && window.__TAURI__.shell) {
+        window.__TAURI__.shell.open('https://titleforge-tool.netlify.app/dashboard');
+      } else {
+        window.open('https://titleforge-tool.netlify.app/dashboard');
+      }
     });
   }
 }

@@ -55,6 +55,34 @@ pub fn generate(
                 }
             }
         }
+
+        // Fill remaining slots from curated titles if needed
+        if (results.len() as u32) < quantity {
+        let current_count = results.len() as u32;
+        let needed = (quantity - current_count).min(10);
+        let mut stmt = conn
+            .prepare("SELECT title, appeal_score FROM curated_titles WHERE category = ?1 ORDER BY RANDOM() LIMIT ?2")
+            .map_err(|e| e.to_string())?;
+
+        let curated: Vec<(String, i64)> = stmt
+            .query_map(rusqlite::params![cat, needed], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1).unwrap_or(50)))
+            })
+            .map_err(|e| e.to_string())?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        for (title, score) in curated {
+            if !results.iter().any(|r| r.title == title) {
+                results.push(TitleResult {
+                    title,
+                    score: score as u32,
+                    categories: vec![cat.clone()],
+                    breakdown: None,
+                });
+            }
+        }
+    }
     }
 
     // Deduplicate
@@ -144,42 +172,36 @@ fn pick_random<'a>(items: &[&'a str], rng: &mut impl Rng) -> String {
 }
 
 fn calculate_score(title: &str, keyword: &str, _category: &str) -> u32 {
-    let mut score = 50u32;
+    let lower = title.to_lowercase();
+    let kw = keyword.to_lowercase();
+    let mut score = 45u32;
+    let word_count = title.split_whitespace().count();
 
-    // Bonus for including keyword
-    if title.to_lowercase().contains(&keyword.to_lowercase()) {
-        score += 15;
-    }
+    // Keyword match (0-15)
+    if lower.contains(&kw) { score += 15; }
+    else if kw.split_whitespace().any(|w| lower.contains(w)) { score += 8; }
 
-    // Bonus for numbers
-    if title.chars().any(|c| c.is_ascii_digit()) {
-        score += 10;
-    }
+    // Numbers (0-10)
+    if title.chars().any(|c| c.is_ascii_digit()) { score += 10; }
 
-    // Bonus for curiosity (question marks, colons)
-    if title.contains('?') || title.contains(':') {
-        score += 10;
-    }
+    // Curiosity (0-10)
+    if title.contains('?') || title.contains(':') || title.contains("...") { score += 10; }
 
-    // Bonus for emotional words
-    let emotional = [
-        "secret", "hidden", "truth", "never", "wrong", "best", "worst",
-        "ultimate", "essential", "proven", "easy", "fast", "simple",
-    ];
-    for word in &emotional {
-        if title.to_lowercase().contains(word) {
-            score += 5;
-            break;
-        }
-    }
+    // Emotional words (0-10)
+    let emotional = ["secret","hidden","truth","never","wrong","best","worst",
+        "ultimate","essential","proven","easy","fast","simple","every","anyone",
+        "nobody","everyone","always","forever","impossible","possible"];
+    if emotional.iter().any(|w| lower.contains(w)) { score += 10; }
 
-    // Penalty for very short or very long titles
-    let len = title.len();
-    if len < 15 {
-        score = score.saturating_sub(10);
-    } else if len > 100 {
-        score = score.saturating_sub(10);
-    }
+    // Power words (0-5)
+    let power = ["why","how","what","when","stop","start","transform","unlock",
+        "master","hack","build","create","destroy","save","kill","love","hate"];
+    if power.iter().any(|w| lower.contains(w)) { score += 5; }
+
+    // Word count bonus/penalty (0-10)
+    if word_count >= 4 && word_count <= 14 { score += 10; }
+    else if word_count >= 2 && word_count <= 18 { score += 5; }
+    else { score = score.saturating_sub(8); }
 
     score.min(100)
 }
