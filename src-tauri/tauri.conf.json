@@ -56,7 +56,7 @@
     "updater": {
       "active": true,
       "dialog": true,
-      "pubkey": "",
+      "pubkey": "nMmbyRXVNON1KJT3yWIb0m/2xrfNFRPeZGrsRUEMk2I=",
       "endpoints": [
         "https://titleforge-tool.netlify.app/updates.json"
       ]

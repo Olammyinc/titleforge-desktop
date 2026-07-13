@@ -319,6 +319,74 @@ fn update_title_notes(
 
 // ── Settings ──
 
+/// Derive a simple XOR key from the machine hostname.
+/// This is NOT strong encryption — it's a basic obfuscation to avoid
+/// plaintext API keys sitting in SQLite. The hostname acts as a
+/// device-local "key" so someone copying the DB file to another machine
+/// won't get readable keys.
+///
+/// KNOWN LIMITATION: This is obfuscation, not encryption. A determined
+/// attacker with filesystem access can extract the key. This should be
+/// migrated to OS-level credential storage (keychain on macOS,
+/// DPAPI/Windows Credential Manager on Windows, libsecret on Linux)
+/// when Tauri has a stable keystore plugin.
+fn xor_obfuscate(input: &str) -> String {
+    let hostkey = hostname::get()
+        .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
+        .to_string_lossy()
+        .into_owned();
+    let key_bytes = hostkey.as_bytes();
+    let input_bytes = input.as_bytes();
+    let mut output = Vec::with_capacity(input_bytes.len());
+    for (i, b) in input_bytes.iter().enumerate() {
+        output.push(b ^ key_bytes[i % key_bytes.len()]);
+    }
+    // Store as hex-encoded, prefixed with "obf:" marker
+    format!("obf:{}", hex_encode(&output))
+}
+
+fn xor_deobfuscate(stored: &str) -> String {
+    if !stored.starts_with("obf:") {
+        return stored.to_string(); // not obfuscated — return as-is
+    }
+    let hex_part = &stored[4..]; // strip "obf:" prefix
+    let decoded = match hex_decode(hex_part) {
+        Some(v) => v,
+        None => return stored.to_string(), // corrupt data, return raw
+    };
+    let hostkey = hostname::get()
+        .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
+        .to_string_lossy()
+        .into_owned();
+    let key_bytes = hostkey.as_bytes();
+    let mut output = Vec::with_capacity(decoded.len());
+    for (i, b) in decoded.iter().enumerate() {
+        output.push(b ^ key_bytes[i % key_bytes.len()]);
+    }
+    String::from_utf8_lossy(&output).into_owned()
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+fn hex_decode(hex: &str) -> Option<Vec<u8>> {
+    if hex.len() % 2 != 0 {
+        return None;
+    }
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).ok())
+        .collect()
+}
+
+static SENSITIVE_KEY_PATTERNS: &[&str] = &["api_key", "apikey", "secret", "token", "password"];
+
+fn is_sensitive_key(key: &str) -> bool {
+    let lower = key.to_lowercase();
+    SENSITIVE_KEY_PATTERNS.iter().any(|pat| lower.contains(pat))
+}
+
 #[tauri::command]
 fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashMap<String, String>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
@@ -332,6 +400,15 @@ fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashM
         })
         .map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
+        .map(|(k, v)| {
+            // Deobfuscate sensitive values on read
+            let value = if is_sensitive_key(&k) {
+                xor_deobfuscate(&v)
+            } else {
+                v
+            };
+            (k, value)
+        })
         .collect();
 
     Ok(map)
@@ -340,9 +417,17 @@ fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashM
 #[tauri::command]
 fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
+
+    // Obfuscate sensitive values (API keys, tokens, etc.) before storing
+    let stored_value = if is_sensitive_key(&key) {
+        xor_obfuscate(&value)
+    } else {
+        value
+    };
+
     db.execute(
         "INSERT OR REPLACE INTO user_settings (key, value) VALUES (?1, ?2)",
-        rusqlite::params![key, value],
+        rusqlite::params![key, stored_value],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -352,21 +437,16 @@ fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Res
 
 #[tauri::command]
 fn validate_license(key: String, email: String, state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
-    // Check if already cached as valid
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let cached: String = db
-        .query_row(
-            "SELECT value FROM user_settings WHERE key = 'license_status'",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or_default();
 
-    if cached == "valid" {
-        return Ok(serde_json::json!({ "valid": true, "tier": "basic", "cached": true }));
-    }
+    // ═══════════════════════════════════════════════
+    // FIX: ALWAYS try the server first — never trust
+    //      a local cache without server confirmation.
+    //      Cache is only a fallback when offline AND
+    //      the last validation was < 24 hours ago.
+    // ═══════════════════════════════════════════════
 
-    // Call the web app's validation endpoint
+    // Step 1: ALWAYS attempt server validation first
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
@@ -378,37 +458,85 @@ fn validate_license(key: String, email: String, state: tauri::State<AppState>) -
         urlencoding(&email)
     );
 
-    let resp = client.get(&url).send().map_err(|e| {
-        // If offline, check if we have a cached valid license
-        let cached_tier: String = db
-            .query_row("SELECT value FROM user_settings WHERE key = 'license_tier'", [], |row| row.get(0))
-            .unwrap_or_default();
-        if !cached_tier.is_empty() {
-            return String::new(); // silent, handled below
-        }
-        format!("Could not validate license online: {}", e)
-    });
+    let server_result = client.get(&url).send();
 
-    if let Ok(response) = resp {
+    // Step 2: If server responds, trust it unconditionally
+    if let Ok(response) = server_result {
         if let Ok(data) = response.json::<serde_json::Value>() {
-            if data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false) {
+            let is_valid = data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false);
+
+            if is_valid {
+                // Server says valid — cache the result with a timestamp
+                let now = chrono::Utc::now().to_rfc3339();
                 let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic");
-                db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')", []).ok();
-                db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)", rusqlite::params![tier]).ok();
+                db.execute(
+                    "INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')",
+                    [],
+                ).ok();
+                db.execute(
+                    "INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)",
+                    rusqlite::params![tier],
+                ).ok();
+                db.execute(
+                    "INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_validated_at', ?1)",
+                    rusqlite::params![now],
+                ).ok();
                 return Ok(serde_json::json!({ "valid": true, "tier": tier }));
+            } else {
+                // Server explicitly says invalid — clear any cached data and deny
+                db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
+                return Ok(serde_json::json!({ "valid": false }));
             }
         }
     }
 
-    // Check cached license as fallback
-    let cached_tier: String = db
-        .query_row("SELECT value FROM user_settings WHERE key = 'license_tier'", [], |row| row.get(0))
+    // Step 3: Server is unreachable — use cache ONLY if it's fresh (< 24 hours)
+    let cached_status: String = db
+        .query_row(
+            "SELECT value FROM user_settings WHERE key = 'license_status'",
+            [],
+            |row| row.get(0),
+        )
         .unwrap_or_default();
-    if !cached_tier.is_empty() {
-        return Ok(serde_json::json!({ "valid": true, "tier": cached_tier, "cached": true }));
+
+    if cached_status == "valid" {
+        let validated_at: String = db
+            .query_row(
+                "SELECT value FROM user_settings WHERE key = 'license_validated_at'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or_default();
+
+        if !validated_at.is_empty() {
+            // Check if the last server validation was within 24 hours
+            if let Ok(parsed_time) = chrono::DateTime::parse_from_rfc3339(&validated_at) {
+                let age = chrono::Utc::now().signed_duration_since(parsed_time);
+                if age.num_hours() < 24 {
+                    let cached_tier: String = db
+                        .query_row(
+                            "SELECT value FROM user_settings WHERE key = 'license_tier'",
+                            [],
+                            |row| row.get(0),
+                        )
+                        .unwrap_or_default();
+                    if !cached_tier.is_empty() {
+                        return Ok(serde_json::json!({
+                            "valid": true,
+                            "tier": cached_tier,
+                            "cached": true,
+                            "offline": true
+                        }));
+                    }
+                }
+            }
+        }
+        // Cache is too old or missing timestamp — clear it and deny
+        db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
     }
 
-    Ok(serde_json::json!({ "valid": false }))
+    // Step 4: No valid cache, server unreachable — deny
+    Ok(serde_json::json!({ "valid": false, "error": "Could not reach license server" }))
 }
 
 #[tauri::command]
