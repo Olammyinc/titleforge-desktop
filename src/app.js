@@ -62,6 +62,9 @@ var isGuest = false;
 var selectedStyle = 'normal';
 var selectedGender = 'any';
 var dailyUsage = 0;
+var activeEngine = 'database';
+var aiProvider = '';
+var aiApiKey = '';
 
 // Dashboard state
 var dashHistory = [];
@@ -206,6 +209,7 @@ function initApp() {
   setupFineTune();
   setupTranslateToggle();
   setupSlider();
+  setupEngineToggle();
   setupGenerateButton();
   setupDashboardTabs();
   setupDashboardSearch();
@@ -214,6 +218,15 @@ function initApp() {
   populateDashFilters();
   updateUsageDisplay();
   loadDashboardData();
+
+  // Load AI settings
+  invoke('get_settings').then(function (settings) {
+    aiProvider = settings.ai_provider || '';
+    aiApiKey = settings.ai_api_key || '';
+    if (aiProvider && aiApiKey) {
+      document.getElementById('engineStatus').textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' key ready';
+    }
+  }).catch(function () {});
 });
 
 // ---- CATEGORIES ----
@@ -362,6 +375,31 @@ function updateUsageDisplay() {
 // GENERATE TITLES (via Tauri invoke)
 // ============================================
 
+function setupEngineToggle() {
+  var dbBtn = document.getElementById('engineDbBtn');
+  var aiBtn = document.getElementById('engineAiBtn');
+  var status = document.getElementById('engineStatus');
+  if (!dbBtn || !aiBtn) return;
+
+  dbBtn.addEventListener('click', function () {
+    activeEngine = 'database';
+    dbBtn.classList.add('active');
+    aiBtn.classList.remove('active');
+    if (status) status.textContent = 'Local database — always available';
+  });
+
+  aiBtn.addEventListener('click', function () {
+    if (!aiProvider || !aiApiKey) {
+      if (status) status.textContent = 'No API key saved. Go to Dashboard → Settings → AI Key.';
+      return;
+    }
+    activeEngine = 'ai';
+    aiBtn.classList.add('active');
+    dbBtn.classList.remove('active');
+    if (status) status.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' — using your key';
+  });
+}
+
 function handleGenerate() {
   var keyword = document.getElementById('keyword').value.trim();
   if (!keyword) { showError('Please enter a keyword or existing title.'); return; }
@@ -378,17 +416,32 @@ function handleGenerate() {
   document.getElementById('error').style.display = 'none';
   document.getElementById('generateBtn').disabled = true;
 
-  invoke('generate_titles', {
-    keyword: keyword,
-    categories: checkedCategories,
-    style: selectedStyle,
-    genre: genre,
-    quantity: quantity,
-  }).then(function (titles) {
+  var genPromise;
+
+  if (activeEngine === 'ai' && aiProvider && aiApiKey) {
+    genPromise = invoke('generate_with_ai', {
+      keyword: keyword,
+      categories: checkedCategories,
+      style: selectedStyle,
+      genre: genre,
+      quantity: quantity,
+      provider: aiProvider,
+      api_key: aiApiKey,
+    });
+  } else {
+    genPromise = invoke('generate_titles', {
+      keyword: keyword,
+      categories: checkedCategories,
+      style: selectedStyle,
+      genre: genre,
+      quantity: quantity,
+    });
+  }
+
+  genPromise.then(function (titles) {
     displayResults(titles, keyword);
     dailyUsage++;
 
-    // Record generation in local SQLite
     invoke('record_generation', {
       keyword: keyword,
       categories: checkedCategories,

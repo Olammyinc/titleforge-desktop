@@ -967,6 +967,44 @@ select:focus { outline: none; border-color: var(--forge); }
   padding: 18px;
   border: 1px solid var(--paper-border);
 }
+
+/* Engine toggle */
+.engine-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(232, 120, 43, 0.03);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.engine-toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 4px;
+}
+.engine-btn {
+  padding: 5px 14px;
+  border: 1.5px solid var(--paper-border);
+  border-radius: 14px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  transition: all 0.15s;
+}
+.engine-btn:hover { border-color: var(--forge); }
+.engine-btn.active { background: var(--forge); color: #fff; border-color: var(--forge); }
+.engine-status {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
 .toggle-row {
   display: flex;
   align-items: center;

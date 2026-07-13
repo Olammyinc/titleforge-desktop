@@ -425,6 +425,150 @@ fn urlencoding(s: &str) -> String {
     }).collect()
 }
 
+// ── AI-Powered Generation (user brings their own key) ──
+
+const AI_PROVIDERS: &[(&str, &str, &str, bool)] = &[
+    ("openai", "https://api.openai.com/v1/chat/completions", "gpt-4o-mini", false),
+    ("deepseek", "https://api.deepseek.com/v1/chat/completions", "deepseek-v4-flash", false),
+    ("anthropic", "https://api.anthropic.com/v1/messages", "claude-sonnet-4-5", true),
+];
+
+#[tauri::command]
+fn generate_with_ai(
+    keyword: String,
+    categories: Vec<String>,
+    style: String,
+    genre: String,
+    quantity: u32,
+    provider: String,
+    api_key: String,
+) -> Result<Vec<TitleResult>, String> {
+    let provider_info = AI_PROVIDERS.iter().find(|p| p.0 == provider)
+        .ok_or_else(|| format!("Unsupported provider: {}", provider))?;
+
+    let url = provider_info.1;
+    let model = provider_info.2;
+    let is_anthropic = provider_info.3;
+
+    let cat_list = categories.join(", ");
+    let genre_text = if genre == "any" { String::new() } else { format!(" in the {} genre", genre) };
+    let style_desc = match style.as_str() {
+        "shout" => "bold, attention-grabbing, high-impact",
+        "whisper" => "subtle, understated, quietly intriguing",
+        "blessing" => "wholesome, uplifting, positive",
+        "provocative" => "controversial, bold stance, sparks debate",
+        "minimalist" => "ultra-clean, 2-4 words max",
+        "storytelling" => "narrative framing, anecdotal story hook",
+        "question" => "framed as a question",
+        "playful" => "clever, witty, sharp but light",
+        _ => "clear, direct, professional",
+    };
+
+    let prompt = format!(
+        "Generate {} powerful, click-worthy titles about \"{}\" for: {}{}.\n\nCommunication style: {}\n\n\
+        QUALITY RULES:\n- Emotional pull: make the reader feel something\n\
+        - Specificity: use concrete details, numbers, vivid specifics\n\
+        - Curiosity gap: the reader should need to click to satisfy an open question\n\
+        - No filler: every title must be genuinely strong\n\
+        - Variety: mix structures\n\
+        - No cliches: avoid AI cliches\n\n\
+        Return a JSON object with a \"titles\" key containing an array of objects with title, score (0-100), and breakdown.\n\n\
+        EVERY title must have a complete breakdown with all 5 fields.\n\n\
+        Remember: every title must be about \"{}\".",
+        quantity, keyword, cat_list, genre_text, style_desc, keyword
+    );
+
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let response_text: String;
+
+    if is_anthropic {
+        let body = serde_json::json!({
+            "model": model,
+            "max_tokens": 4096,
+            "temperature": 0.85,
+            "system": "You are TitleForge, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON.",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        });
+
+        let resp = client.post(url)
+            .header("x-api-key", &api_key)
+            .header("anthropic-version", "2023-06-01")
+            .json(&body)
+            .send()
+            .map_err(|e| format!("API request failed: {}", e))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let err_text = resp.text().unwrap_or_default();
+            return Err(format!("API error ({}): {}", status, err_text));
+        }
+
+        let data: serde_json::Value = resp.json().map_err(|e| format!("Failed to parse response: {}", e))?;
+        response_text = data["content"][0]["text"].as_str().unwrap_or("").to_string();
+    } else {
+        let body = serde_json::json!({
+            "model": model,
+            "messages": [
+                {"role": "system", "content": "You are TitleForge, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.85,
+            "max_tokens": 4096,
+            "response_format": {"type": "json_object"}
+        });
+
+        let resp = client.post(url)
+            .header("Authorization", format!("Bearer {}", api_key))
+            .json(&body)
+            .send()
+            .map_err(|e| format!("API request failed: {}", e))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let err_text = resp.text().unwrap_or_default();
+            return Err(format!("API error ({}): {}", status, err_text));
+        }
+
+        let data: serde_json::Value = resp.json().map_err(|e| format!("Failed to parse response: {}", e))?;
+        response_text = data["choices"][0]["message"]["content"].as_str().unwrap_or("").to_string();
+    }
+
+    // Clean and parse JSON
+    let cleaned = response_text
+        .replace("```json", "")
+        .replace("```", "")
+        .trim()
+        .to_string();
+
+    let parsed: serde_json::Value = serde_json::from_str(&cleaned)
+        .map_err(|_| "AI returned malformed JSON. Try again.".to_string())?;
+
+    let titles_array = parsed["titles"].as_array()
+        .or_else(|| parsed.as_array())
+        .ok_or("AI response missing titles array".to_string())?;
+
+    let results: Vec<TitleResult> = titles_array.iter()
+        .filter_map(|item| {
+            let title = item["title"].as_str()?.trim().to_string();
+            if title.is_empty() { return None; }
+            let score = item["score"].as_u64().unwrap_or(50).min(100) as u32;
+            Some(TitleResult { title, score, categories: categories.clone() })
+        })
+        .collect();
+
+    if results.is_empty() {
+        return Err("AI generated no valid titles. Try a different keyword.".to_string());
+    }
+
+    Ok(results.into_iter().take(quantity as usize).collect())
+}
+
 // ── Seed Check ──
 
 #[tauri::command]
@@ -481,6 +625,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             generate_titles,
+            generate_with_ai,
             get_categories,
             get_usage_stats,
             record_generation,
