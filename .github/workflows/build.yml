@@ -5,77 +5,54 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: --bundles deb,appimage
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: --bundles nsis
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-            args: --bundles dmg
-
-    runs-on: ${{ matrix.platform }}
+  build-linux:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libglib2.0-dev libssl-dev patchelf
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npx @tauri-apps/cli@latest build --bundles deb,appimage
+      - uses: actions/upload-artifact@v4
         with:
-          targets: ${{ matrix.target }}
+          name: titleforge-linux
+          path: src-tauri/target/release/bundle/**/*
+          if-no-files-found: false
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npx @tauri-apps/cli@latest build --bundles nsis
+      - uses: actions/upload-artifact@v4
         with:
-          workspaces: src-tauri
+          name: titleforge-windows
+          path: src-tauri/target/release/bundle/**/*
+          if-no-files-found: false
 
-      - name: Install Linux deps
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libdbus-1-dev \
-            libglib2.0-dev \
-            libssl-dev \
-            patchelf
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npx @tauri-apps/cli@latest build --bundles dmg
+      - uses: actions/upload-artifact@v4
         with:
-          node-version: 20
-
-      - name: Get package version
-        id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
-      - name: Install npm deps
-        run: npm install
-
-      - name: Build
-        uses: tauri-apps/tauri-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v${{ steps.version.outputs.version }}
-          releaseName: TitleForge v${{ steps.version.outputs.version }}
-          releaseBody: Download the installer for your platform below.
-          releaseDraft: true
-          args: --target ${{ matrix.target }} ${{ matrix.args }}
-
-      - name: Upload installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: titleforge-${{ matrix.target }}
-          path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*
-            src-tauri/target/release/bundle/**/*
+          name: titleforge-macos
+          path: src-tauri/target/release/bundle/**/*
           if-no-files-found: false
