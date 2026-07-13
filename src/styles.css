@@ -1572,6 +1572,86 @@ select:focus { outline: none; border-color: var(--forge); }
   margin-top: 8px;
 }
 
+/* ============ LICENSE ACTIVATION OVERLAY ============ */
+.license-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--ink);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.license-modal {
+  background: var(--paper-card);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  max-width: 460px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(11, 10, 10, 0.3);
+}
+.license-logo {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+}
+.license-modal h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+.license-modal p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+.license-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.license-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--paper-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: var(--font-body);
+  text-align: center;
+  background: #fff;
+  color: var(--text-primary);
+}
+.license-input:focus {
+  outline: none;
+  border-color: var(--forge);
+}
+.license-input::placeholder {
+  color: #b0a8a0;
+}
+.license-error {
+  font-size: 13px;
+  color: #dc2626;
+  margin-bottom: 12px;
+}
+.license-footer {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+.license-footer a {
+  color: var(--forge);
+  font-weight: 600;
+  cursor: pointer;
+}
+.license-footer a:hover {
+  text-decoration: underline;
+}
+
 /* ============ AUTH MODAL ============ */
 .modal-overlay {
   position: fixed;

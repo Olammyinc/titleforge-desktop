@@ -129,6 +129,77 @@ function downloadFile(content, filename, mimeType) {
 
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', function () {
+  // Check license first — blocks the UI if not activated
+  checkLicense().then(function (activated) {
+    if (activated) {
+      initApp();
+    } else {
+      showLicenseOverlay();
+    }
+  });
+});
+
+function checkLicense() {
+  return invoke('get_settings').then(function (settings) {
+    var status = settings.license_status || '';
+    return status === 'valid';
+  }).catch(function () { return false; });
+}
+
+function showLicenseOverlay() {
+  var overlay = document.getElementById('licenseOverlay');
+  if (overlay) overlay.style.display = 'flex';
+  var activateBtn = document.getElementById('licenseActivateBtn');
+  var keyInput = document.getElementById('licenseKeyInput');
+  var emailInput = document.getElementById('licenseEmailInput');
+  var errEl = document.getElementById('licenseError');
+
+  if (activateBtn) {
+    activateBtn.addEventListener('click', function () {
+      var key = keyInput.value.trim();
+      var email = emailInput.value.trim();
+      if (!key || !email) {
+        errEl.textContent = 'Please enter both your license key and email.';
+        errEl.style.display = 'block';
+        return;
+      }
+      errEl.style.display = 'none';
+      activateBtn.textContent = 'Activating...';
+      activateBtn.disabled = true;
+
+      invoke('validate_license', { key: key, email: email }).then(function (result) {
+        if (result.valid) {
+          overlay.style.display = 'none';
+          initApp();
+        } else {
+          errEl.textContent = 'Invalid license key or email. Check your dashboard or try again.';
+          errEl.style.display = 'block';
+          activateBtn.textContent = 'Activate';
+          activateBtn.disabled = false;
+        }
+      }).catch(function (err) {
+        errEl.textContent = 'Could not validate license: ' + err;
+        errEl.style.display = 'block';
+        activateBtn.textContent = 'Activate';
+        activateBtn.disabled = false;
+      });
+    });
+
+    keyInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') activateBtn.click(); });
+    emailInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') activateBtn.click(); });
+  }
+
+  var buyLink = document.getElementById('licenseBuyLink');
+  if (buyLink) {
+    buyLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      // Open the web app's dashboard in the browser
+      window.open('https://titleforge-tool.netlify.app/dashboard');
+    });
+  }
+}
+
+function initApp() {
   renderCategories();
   setupStyleButtons();
   setupGenderButtons();

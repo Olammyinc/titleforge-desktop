@@ -348,6 +348,83 @@ fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Res
     Ok(())
 }
 
+// ── License Validation ──
+
+#[tauri::command]
+fn validate_license(key: String, email: String, state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    // Check if already cached as valid
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let cached: String = db
+        .query_row(
+            "SELECT value FROM user_settings WHERE key = 'license_status'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or_default();
+
+    if cached == "valid" {
+        return Ok(serde_json::json!({ "valid": true, "tier": "basic", "cached": true }));
+    }
+
+    // Call the web app's validation endpoint
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let url = format!(
+        "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}",
+        urlencoding(&key),
+        urlencoding(&email)
+    );
+
+    let resp = client.get(&url).send().map_err(|e| {
+        // If offline, check if we have a cached valid license
+        let cached_tier: String = db
+            .query_row("SELECT value FROM user_settings WHERE key = 'license_tier'", [], |row| row.get(0))
+            .unwrap_or_default();
+        if !cached_tier.is_empty() {
+            return String::new(); // silent, handled below
+        }
+        format!("Could not validate license online: {}", e)
+    });
+
+    if let Ok(response) = resp {
+        if let Ok(data) = response.json::<serde_json::Value>() {
+            if data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false) {
+                let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic");
+                db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')", []).ok();
+                db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)", rusqlite::params![tier]).ok();
+                return Ok(serde_json::json!({ "valid": true, "tier": tier }));
+            }
+        }
+    }
+
+    // Check cached license as fallback
+    let cached_tier: String = db
+        .query_row("SELECT value FROM user_settings WHERE key = 'license_tier'", [], |row| row.get(0))
+        .unwrap_or_default();
+    if !cached_tier.is_empty() {
+        return Ok(serde_json::json!({ "valid": true, "tier": cached_tier, "cached": true }));
+    }
+
+    Ok(serde_json::json!({ "valid": false }))
+}
+
+#[tauri::command]
+fn deactivate_license(state: tauri::State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn urlencoding(s: &str) -> String {
+    s.chars().map(|c| match c {
+        'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
+        _ => format!("%{:02X}", c as u8),
+    }).collect()
+}
+
 // ── Seed Check ──
 
 #[tauri::command]
@@ -418,6 +495,8 @@ pub fn run() {
             get_settings,
             set_setting,
             get_app_info,
+            validate_license,
+            deactivate_license,
         ])
         .run(tauri::generate_context!())
         .expect("Error running TitleForge Desktop");

@@ -250,6 +250,22 @@
   <p class="footer-sub">Offline title generator for Windows, macOS, and Linux.</p>
 </footer>
 
+<!-- ============ LICENSE ACTIVATION OVERLAY ============ -->
+<div class="license-overlay" id="licenseOverlay">
+  <div class="license-modal">
+    <img src="logo.svg" alt="TitleForge" class="license-logo" />
+    <h2>Activate TitleForge Desktop</h2>
+    <p>Enter your license key to activate the app. You can find your key on the <strong>Dashboard → Settings</strong> page.</p>
+    <div class="license-input-group">
+      <input type="text" id="licenseKeyInput" placeholder="e.g. TF-BASIC-A1B2-C3D4-E5F6" class="license-input" />
+      <input type="email" id="licenseEmailInput" placeholder="Your email address" class="license-input" />
+    </div>
+    <p id="licenseError" class="license-error" style="display:none;"></p>
+    <button id="licenseActivateBtn" class="btn btn-primary btn-large btn-full">Activate</button>
+    <p class="license-footer">Don't have a license? <a href="#" id="licenseBuyLink">Get one here</a></p>
+  </div>
+</div>
+
 <script src="app.js"></script>
 <script>
 (function() {
