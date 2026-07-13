@@ -2216,21 +2216,37 @@ select:focus { outline: none; border-color: var(--forge); }
   margin-bottom: 6px;
 }
 .dash-nav {
-  background: rgba(255,255,255,0.98) !important;
-  border-bottom: 1px solid var(--paper-border) !important;
+  background: rgba(11, 10, 10, 0.95) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--ink-border) !important;
 }
-.dash-nav .nav-logo { color: var(--text-primary); }
-.dash-nav .nav-links a { color: var(--text-secondary); }
+.dash-nav .nav-logo { color: var(--text-inverse); }
+.dash-nav .nav-links a { color: rgba(240, 237, 232, 0.7); }
 .dash-nav .nav-links a:hover { color: var(--forge); }
 .dash-nav .btn-ghost-dark {
-  color: var(--text-primary);
-  border-color: var(--paper-border);
+  color: var(--text-inverse);
+  border-color: var(--ink-border);
 }
 .dash-nav .btn-ghost-dark:hover {
-  background: rgba(232, 120, 43, 0.05);
-  border-color: var(--forge);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.2);
 }
-.dash-nav #navUserEmail { color: var(--text-primary); }
+.dash-nav #navUserEmail { color: var(--text-inverse); }
+.dash-nav .nav-pro-badge {
+  display: inline-block;
+  background: var(--forge);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+}
+.dash-nav .nav-avatar {
+  background: var(--forge);
+  color: #fff;
+}
 .nav-active {
   color: var(--forge) !important;
   font-weight: 600 !important;
