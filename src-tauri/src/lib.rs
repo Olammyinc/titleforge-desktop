@@ -559,6 +559,7 @@ const AI_PROVIDERS: &[(&str, &str, &str, bool)] = &[
     ("openai", "https://api.openai.com/v1/chat/completions", "gpt-4o-mini", false),
     ("deepseek", "https://api.deepseek.com/v1/chat/completions", "deepseek-v4-flash", false),
     ("anthropic", "https://api.anthropic.com/v1/messages", "claude-sonnet-4-5", true),
+    ("gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "gemini-2.0-flash", false),
 ];
 
 #[tauri::command]
