@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/nicegui/main/src-tauri/tauri.conf.json",
-  "productName": "TitleForge Desktop",
+  "productName": "TitleForge",
   "version": "1.0.0",
   "identifier": "com.titleforge.desktop",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "TitleForge Desktop",
+        "title": "TitleForge",
         "width": 1100,
         "height": 750,
         "resizable": true,
@@ -27,26 +27,39 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": ["../seed-data.json"],
     "icon": [
+      "icons/icon.ico",
+      "icons/icon.icns",
       "icons/32x32.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/128x128@2x.png"
     ],
     "windows": {
-      "wix": null,
-      "nsis": null
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "languages": ["English"],
+        "startMenuFolder": "TitleForge"
+      }
     },
     "macOS": {
-      "frameworks": [],
-      "minimumSystemVersion": ""
+      "minimumSystemVersion": "11.0"
     },
     "linux": {
       "deb": {
         "depends": []
       }
+    },
+    "resources": ["../seed-data.json"]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "dialog": true,
+      "pubkey": "",
+      "endpoints": [
+        "https://titleforge-tool.netlify.app/updates.json"
+      ]
     }
   }
 }
