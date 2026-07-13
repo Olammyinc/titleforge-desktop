@@ -2,8 +2,6 @@ name: Build
 on:
   push:
     branches: [master, main]
-  pull_request:
-    branches: [master, main]
   workflow_dispatch:
 
 jobs:
@@ -14,13 +12,13 @@ jobs:
         include:
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            bundler: deb
+            args: --bundles deb,appimage
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
-            bundler: nsis
+            args: --bundles nsis
           - platform: macos-latest
             target: x86_64-apple-darwin
-            bundler: dmg
+            args: --bundles dmg
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -55,15 +53,29 @@ jobs:
         with:
           node-version: 20
 
+      - name: Get package version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Install npm deps
+        run: npm install
+
       - name: Build
-        run: npx @tauri-apps/cli@latest build --target ${{ matrix.target }} --bundles ${{ matrix.bundler }}
+        uses: tauri-apps/tauri-action@v2
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ""
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v${{ steps.version.outputs.version }}
+          releaseName: TitleForge v${{ steps.version.outputs.version }}
+          releaseBody: Download the installer for your platform below.
+          releaseDraft: true
+          args: --target ${{ matrix.target }} ${{ matrix.args }}
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
           name: titleforge-${{ matrix.target }}
-          path: src-tauri/target/${{ matrix.target }}/release/bundle/**/*
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*
+            src-tauri/target/release/bundle/**/*
           if-no-files-found: false
