@@ -1,0 +1,16 @@
+{
+  "name": "titleforge-desktop",
+  "version": "1.0.0",
+  "description": "TitleForge Desktop — Offline title generator for Windows, Mac, and Linux",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
