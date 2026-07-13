@@ -15,6 +15,8 @@ pub struct TitleResult {
     pub title: String,
     pub score: u32,
     pub categories: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub breakdown: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -437,105 +439,62 @@ fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Res
 
 #[tauri::command]
 fn validate_license(key: String, email: String, state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-
-    // ═══════════════════════════════════════════════
-    // FIX: ALWAYS try the server first — never trust
-    //      a local cache without server confirmation.
-    //      Cache is only a fallback when offline AND
-    //      the last validation was < 24 hours ago.
-    // ═══════════════════════════════════════════════
-
-    // Step 1: ALWAYS attempt server validation first
-    let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-
     let url = format!(
         "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}",
         urlencoding(&key),
         urlencoding(&email)
     );
 
-    let server_result = client.get(&url).send();
+    // Run HTTP call on a background thread to avoid blocking the UI
+    let result = std::thread::spawn(move || -> Option<(bool, String)> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build().ok()?;
+        let resp = client.get(&url).send().ok()?;
+        let data: serde_json::Value = resp.json().ok()?;
+        let valid = data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false);
+        let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic").to_string();
+        Some((valid, tier))
+    }).join().map_err(|_| "Thread panicked".to_string())?;
 
-    // Step 2: If server responds, trust it unconditionally
-    if let Ok(response) = server_result {
-        if let Ok(data) = response.json::<serde_json::Value>() {
-            let is_valid = data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false);
+    let db = state.db.lock().map_err(|e| e.to_string())?;
 
-            if is_valid {
-                // Server says valid — cache the result with a timestamp
-                let now = chrono::Utc::now().to_rfc3339();
-                let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic");
-                db.execute(
-                    "INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')",
-                    [],
-                ).ok();
-                db.execute(
-                    "INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)",
-                    rusqlite::params![tier],
-                ).ok();
-                db.execute(
-                    "INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_validated_at', ?1)",
-                    rusqlite::params![now],
-                ).ok();
-                return Ok(serde_json::json!({ "valid": true, "tier": tier }));
-            } else {
-                // Server explicitly says invalid — clear any cached data and deny
-                db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
-                return Ok(serde_json::json!({ "valid": false }));
-            }
+    if let Some((is_valid, tier)) = result {
+        if is_valid {
+            let now = chrono::Utc::now().to_rfc3339();
+            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')", []).ok();
+            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)", rusqlite::params![&tier]).ok();
+            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_validated_at', ?1)", rusqlite::params![&now]).ok();
+            return Ok(serde_json::json!({ "valid": true, "tier": tier }));
+        } else {
+            db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
+            return Ok(serde_json::json!({ "valid": false }));
         }
     }
 
-    // Step 3: Server is unreachable — use cache ONLY if it's fresh (< 24 hours)
+    // Server unreachable — use cache if < 24 hours old
     let cached_status: String = db
-        .query_row(
-            "SELECT value FROM user_settings WHERE key = 'license_status'",
-            [],
-            |row| row.get(0),
-        )
+        .query_row("SELECT value FROM user_settings WHERE key = 'license_status'", [], |row| row.get(0))
         .unwrap_or_default();
 
     if cached_status == "valid" {
         let validated_at: String = db
-            .query_row(
-                "SELECT value FROM user_settings WHERE key = 'license_validated_at'",
-                [],
-                |row| row.get(0),
-            )
+            .query_row("SELECT value FROM user_settings WHERE key = 'license_validated_at'", [], |row| row.get(0))
             .unwrap_or_default();
 
         if !validated_at.is_empty() {
-            // Check if the last server validation was within 24 hours
             if let Ok(parsed_time) = chrono::DateTime::parse_from_rfc3339(&validated_at) {
-                let age = chrono::Utc::now().signed_duration_since(parsed_time);
-                if age.num_hours() < 24 {
+                if chrono::Utc::now().signed_duration_since(parsed_time).num_hours() < 24 {
                     let cached_tier: String = db
-                        .query_row(
-                            "SELECT value FROM user_settings WHERE key = 'license_tier'",
-                            [],
-                            |row| row.get(0),
-                        )
+                        .query_row("SELECT value FROM user_settings WHERE key = 'license_tier'", [], |row| row.get(0))
                         .unwrap_or_default();
-                    if !cached_tier.is_empty() {
-                        return Ok(serde_json::json!({
-                            "valid": true,
-                            "tier": cached_tier,
-                            "cached": true,
-                            "offline": true
-                        }));
-                    }
+                    return Ok(serde_json::json!({ "valid": true, "tier": cached_tier, "cached": true }));
                 }
             }
         }
-        // Cache is too old or missing timestamp — clear it and deny
         db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
     }
 
-    // Step 4: No valid cache, server unreachable — deny
     Ok(serde_json::json!({ "valid": false, "error": "Could not reach license server" }))
 }
 
@@ -571,6 +530,12 @@ fn generate_with_ai(
     quantity: u32,
     provider: String,
     api_key: String,
+    cross_medium: bool,
+    include_subtitles: bool,
+    include_translation: bool,
+    translate_lang: Option<String>,
+    gender: Option<String>,
+    finetune: Option<serde_json::Value>,
 ) -> Result<Vec<TitleResult>, String> {
     let provider_info = AI_PROVIDERS.iter().find(|p| p.0 == provider)
         .ok_or_else(|| format!("Unsupported provider: {}", provider))?;
@@ -593,6 +558,37 @@ fn generate_with_ai(
         _ => "clear, direct, professional",
     };
 
+    let mut extra = String::new();
+    if cross_medium { extra.push_str("\n- Adapt each title to its specific medium — a YouTube title should not read like a book title"); }
+    if include_subtitles { extra.push_str("\n- Include a subtitle for each title"); }
+    if include_translation {
+        let lang = translate_lang.as_deref().unwrap_or("Spanish");
+        extra.push_str(&format!("\n- Include a translation into {}", lang));
+    }
+    if let Some(g) = gender {
+        if g != "any" { extra.push_str(&format!("\n- Use {} names or perspectives", g)); }
+    }
+    if let Some(ref ft) = finetune {
+        if let Some(aud) = ft.get("audience").and_then(|v| v.as_str()) {
+            extra.push_str(&format!("\n- Target audience: {}", aud));
+        }
+        if let Some(em) = ft.get("emotion").and_then(|v| v.as_str()) {
+            extra.push_str(&format!("\n- Primary emotion: {}", em));
+        }
+        if let Some(len) = ft.get("length").and_then(|v| v.as_str()) {
+            extra.push_str(&format!("\n- Title length: {}", len));
+        }
+        if let Some(angle) = ft.get("angle").and_then(|v| v.as_str()) {
+            extra.push_str(&format!("\n- Angle: {}", angle));
+        }
+        if let Some(must) = ft.get("mustInclude").and_then(|v| v.as_str()) {
+            extra.push_str(&format!("\n- MUST include these words: {}", must));
+        }
+        if let Some(avoid) = ft.get("avoid").and_then(|v| v.as_str()) {
+            extra.push_str(&format!("\n- AVOID these words: {}", avoid));
+        }
+    }
+
     let prompt = format!(
         "Generate {} powerful, click-worthy titles about \"{}\" for: {}{}.\n\nCommunication style: {}\n\n\
         QUALITY RULES:\n- Emotional pull: make the reader feel something\n\
@@ -600,11 +596,11 @@ fn generate_with_ai(
         - Curiosity gap: the reader should need to click to satisfy an open question\n\
         - No filler: every title must be genuinely strong\n\
         - Variety: mix structures\n\
-        - No cliches: avoid AI cliches\n\n\
-        Return a JSON object with a \"titles\" key containing an array of objects with title, score (0-100), and breakdown.\n\n\
+        - No cliches: avoid AI cliches{}\n\n\
+        Return a JSON object with a \"titles\" key containing an array of objects with title, score (0-100), and breakdown with curiosityGap, emotionalTrigger, powerWords, lengthAnalysis, specificity fields.\n\n\
         EVERY title must have a complete breakdown with all 5 fields.\n\n\
         Remember: every title must be about \"{}\".",
-        quantity, keyword, cat_list, genre_text, style_desc, keyword
+        quantity, keyword, cat_list, genre_text, style_desc, extra, keyword
     );
 
     let client = reqwest::blocking::Client::builder()
@@ -687,7 +683,7 @@ fn generate_with_ai(
             let title = item["title"].as_str()?.trim().to_string();
             if title.is_empty() { return None; }
             let score = item["score"].as_u64().unwrap_or(50).min(100) as u32;
-            Some(TitleResult { title, score, categories: categories.clone() })
+            Some(TitleResult { title, score, categories: categories.clone(), breakdown: item.get("breakdown").cloned() })
         })
         .collect();
 

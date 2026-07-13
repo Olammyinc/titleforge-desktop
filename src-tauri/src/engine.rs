@@ -9,7 +9,7 @@ pub fn generate(
     conn: &Connection,
     keyword: &str,
     categories: &[String],
-    _style: &str,
+    style: &str,
     genre: &str,
     quantity: u32,
 ) -> Result<Vec<TitleResult>, String> {
@@ -19,12 +19,12 @@ pub fn generate(
     for cat in categories {
         let mut stmt = conn
             .prepare(
-                "SELECT template, slots, quality_score FROM patterns WHERE category = ?1 AND (genre = ?2 OR genre = 'any') ORDER BY quality_score DESC",
+                "SELECT template, slots, quality_score FROM patterns WHERE category = ?1 AND (genre = ?2 OR genre = 'any') AND (tone = ?3 OR tone = 'normal') ORDER BY quality_score DESC",
             )
             .map_err(|e| e.to_string())?;
 
         let templates: Vec<(String, String, f64)> = stmt
-            .query_map(rusqlite::params![cat, genre], |row| {
+            .query_map(rusqlite::params![cat, genre, style], |row| {
                 Ok((
                     row.get::<_, String>(0)?,
                     row.get::<_, String>(1)?,
@@ -50,6 +50,7 @@ pub fn generate(
                         title,
                         score,
                         categories: vec![cat.clone()],
+                        breakdown: None,
                     });
                 }
             }

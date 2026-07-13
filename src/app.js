@@ -408,8 +408,12 @@ function handleGenerate() {
   document.querySelectorAll('#categoryGrid input:checked').forEach(function (cb) { checkedCategories.push(cb.value); });
   if (checkedCategories.length === 0) { showError('Please select at least one category.'); return; }
 
-  var quantity = parseInt(document.getElementById('quantity').value);
-  var genre = document.getElementById('genre').value;
+  var wantCrossMedium = document.getElementById('crossMediumToggle').checked;
+  var wantSubtitles = document.getElementById('subtitlesToggle').checked;
+  var wantTranslation = document.getElementById('translateToggle').checked;
+  var translateLang = wantTranslation ? document.getElementById('translateLang').value : null;
+  var gender = selectedGender || 'any';
+  var finetune = collectFineTune();
 
   document.getElementById('loading').style.display = 'block';
   document.getElementById('results').innerHTML = '';
@@ -425,6 +429,14 @@ function handleGenerate() {
       style: selectedStyle,
       genre: genre,
       quantity: quantity,
+      cross_medium: wantCrossMedium,
+      include_subtitles: wantSubtitles,
+      include_translation: wantTranslation,
+      translate_lang: translateLang,
+      gender: gender,
+      finetune: finetune,
+      provider: aiProvider,
+      api_key: aiApiKey,
       provider: aiProvider,
       api_key: aiApiKey,
     });
