@@ -21,7 +21,7 @@ jobs:
         with:
           name: titleforge-linux
           path: src-tauri/target/release/bundle/**/*
-          if-no-files-found: false
+          if-no-files-found: ignore
 
   build-windows:
     runs-on: windows-latest
@@ -38,7 +38,7 @@ jobs:
         with:
           name: titleforge-windows
           path: src-tauri/target/release/bundle/**/*
-          if-no-files-found: false
+          if-no-files-found: ignore
 
   build-macos:
     runs-on: macos-latest
@@ -55,4 +55,4 @@ jobs:
         with:
           name: titleforge-macos
           path: src-tauri/target/release/bundle/**/*
-          if-no-files-found: false
+          if-no-files-found: ignore
