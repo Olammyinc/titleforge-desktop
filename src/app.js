@@ -34,6 +34,12 @@ function invoke(cmd, args) {
     // Dev mode fallback
     if (!_invoke) {
       console.warn('[TitleForge] No Tauri IPC bridge found — using dev mode mock.');
+      window.__TF_DEV_MODE = true;
+      // Show a visible indicator in the app
+      var devBanner = document.createElement('div');
+      devBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;text-align:center;padding:8px 16px;font:13px sans-serif;';
+      devBanner.textContent = '⚠ Dev Mode: Tauri IPC not found. Check console for details.';
+      document.body.prepend(devBanner);
       var mockDb = { license_status: '', settings: {} };
       _invoke = function (cmd, args) {
         if (cmd === 'get_settings') return Promise.resolve(mockDb.settings);
