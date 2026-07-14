@@ -5,18 +5,52 @@ use serde_json;
 
 use crate::TitleResult;
 
-/// Map common slot name variants to the canonical word_pool name in SQLite
-fn slot_name_to_pool_name(slot_name: &str) -> Option<&'static str> {
+/// Map common slot name variants to the canonical word_pool name in SQLite.
+/// Maps 80+ specialized pool names to the 8 available word pools.
+fn slot_name_to_pool_name(slot_name: &str) -> &'static str {
+    // Try the explicit slot.pool first if it exists in the DB
+    // (handled in fill_template). This function is the fallback.
     match slot_name {
-        "verb" | "action_verb" | "action_verbs" => Some("action_verbs"),
-        "adjective" | "adjectives" | "power_adjective" | "positive_adjective" | "positive_adjectives" | "power_adjectives" => Some("power_adjectives"),
-        "noun" | "nouns" | "topic" | "topics" => Some("nouns"),
-        "timeframe" | "timeframes" => Some("timeframes"),
-        "emotion" | "emotions" => Some("emotions"),
-        "number" | "numbers" => Some("numbers"),
-        "hook" | "hooks" => Some("hooks"),
-        "result" | "results" => Some("results"),
-        _ => None,
+        // Action verbs
+        "verb" | "verbs" | "action_verb" | "action_verbs" | "action_verbs_ing" | "action_verbs_past"
+        | "actions_positive" | "positive_action_verbs" | "comparison_verbs" | "imperative_verbs"
+        | "negative_action_verbs" | "transformational_verbs" | "gerund_verbs" | "gerunds" => "action_verbs",
+
+        // Adjectives
+        "adjective" | "adjectives" | "power_adjective" | "power_adjectives" | "positive_adjective"
+        | "positive_adjectives" | "negative_adjectives" | "overused_adjectives" | "contrarian_adjectives"
+        | "comparative_adjectives" | "descriptive_adjectives" | "opinion_adjectives"
+        | "adjectives_describing_movies" | "character_adjectives" | "superlative_adjectives"
+        | "superlatives" => "power_adjectives",
+
+        // Nouns / topics
+        "noun" | "nouns" | "topic" | "topics" | "common_nouns" | "abstract_nouns" | "nouns_contrast"
+        | "nouns_identity" | "nouns_opposite" | "nouns_persona" | "nouns_plural" | "concepts"
+        | "themes" | "scenarios" | "movie_topics" | "street_topics" | "trends" | "life_domains"
+        | "life_lessons" | "movie_elements" | "professions_or_roles" | "experiences" => "nouns",
+
+        // Results / outcomes
+        "result" | "results" | "outcomes" | "desired_outcomes" | "desired_results" | "benefits" => "results",
+
+        // Timeframes
+        "timeframe" | "timeframes" | "times" | "times_day" | "decades" => "timeframes",
+
+        // Emotions / feelings
+        "emotion" | "emotions" | "emotional_states" | "emotions_adj" | "emotions_negative"
+        | "positive_emotions" | "negative_traits" | "positive_traits" | "character_attributes" => "emotions",
+
+        // Numbers
+        "number" | "numbers" | "list_numbers" => "numbers",
+
+        // Hooks
+        "hook" | "hooks" | "question_words" | "alternatives" => "hooks",
+
+        // Everything else -> nouns
+        "audience" | "audiences" | "audience_types" | "names" | "pronouns" | "professions"
+        | "actors" | "directors" | "genres" | "film_achievements" | "production_events"
+        | "movie_titles" | "adverbs" | "character_elements" | "common_pitfalls" => "nouns",
+
+        _ => "nouns",
     }
 }
 
@@ -74,7 +108,7 @@ pub fn generate(
         // Fill remaining slots from curated titles if needed
         if (results.len() as u32) < quantity {
         let current_count = results.len() as u32;
-        let needed = (quantity - current_count).min(10);
+        let needed = (quantity - current_count).min(2);
         let mut stmt = conn
             .prepare("SELECT title, appeal_score FROM curated_titles WHERE category = ?1 ORDER BY RANDOM() LIMIT ?2")
             .map_err(|e| e.to_string())?;
@@ -130,13 +164,12 @@ fn fill_template(
         let placeholder = format!("{{{}}}", slot.name);
         let replacement = match slot.name.as_str() {
             "keyword" => keyword.to_string(),
-            "topic" => keyword.to_string(),
             "number" => format!("{}", rng.gen_range(3..=12)),
             _ => {
-                // Try the slot's pool name first, then map slot name to pool
+                // Determine pool: try slot.pool first (from seed data), then map name
                 let pool_name = slot.pool.as_deref()
-                    .or_else(|| slot_name_to_pool_name(&slot.name))
-                    .unwrap_or("nouns");
+                    .map(|p| slot_name_to_pool_name(p))
+                    .unwrap_or_else(|| slot_name_to_pool_name(&slot.name));
 
                 // Query word_pools table in SQLite for a random word
                 let word: Option<String> = conn
@@ -147,7 +180,14 @@ fn fill_template(
                     )
                     .ok();
 
-                word.unwrap_or_else(|| keyword.to_string())
+                word.unwrap_or_else(|| {
+                    // Last-resort fallback: try a random noun from the DB
+                    conn.query_row(
+                        "SELECT word FROM word_pools WHERE pool_name = 'nouns' ORDER BY RANDOM() LIMIT 1",
+                        [],
+                        |row| row.get::<_, String>(0),
+                    ).unwrap_or_else(|_| keyword.to_string())
+                })
             }
         };
         result = result.replace(&placeholder, &replacement);
