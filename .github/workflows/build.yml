@@ -99,53 +99,56 @@ jobs:
           find . -name "*.AppImage" -exec cp {} dist/ \;
           find . -name "*.sig" -exec cp {} dist/ \;
           
-          # Determine version from tag name (strip 'v' prefix)
+          # Determine version from tag name
           VER="${{ github.ref_name }}"
           VER="${VER#v}"
           
-          # Build updates.json with actual signatures
-          cat > dist/updates.json << 'JSONEOF'
+          echo "=== dist contents ==="
+          ls -la dist/
+          echo ""
+          
+          # Read signatures from .sig files
+          SIG_WIN=""
+          SIG_MAC=""
+          SIG_LINUX=""
+          for sigfile in dist/*.sig; do
+            [ -f "$sigfile" ] || continue
+            sigcontent=$(cat "$sigfile" | tr -d '\n')
+            base=$(basename "$sigfile")
+            echo "Found sig: $base"
+            if echo "$base" | grep -qi "setup.exe"; then
+              SIG_WIN="$sigcontent"
+            elif echo "$base" | grep -qi "x64.dmg"; then
+              SIG_MAC="$sigcontent"
+            elif echo "$base" | grep -qi "amd64.AppImage"; then
+              SIG_LINUX="$sigcontent"
+            fi
+          done
+          
+          # Build updates.json with actual signatures and resolved URLs
+          cat > dist/updates.json << JSONEOF
           {
-            "version": "VER_PLACEHOLDER",
+            "version": "${VER}",
             "notes": "Auto-release from CI",
-            "pub_date": "DATE_PLACEHOLDER",
+            "pub_date": "$(date -u +"%Y-%m-%dT00:00:00Z")",
             "platforms": {
               "windows-x86_64": {
-                "signature": "SIG_WIN",
+                "signature": "${SIG_WIN}",
                 "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64-setup.exe"
               },
               "darwin-x86_64": {
-                "signature": "SIG_MAC",
+                "signature": "${SIG_MAC}",
                 "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64.dmg"
               },
               "linux-x86_64": {
-                "signature": "SIG_LINUX",
+                "signature": "${SIG_LINUX}",
                 "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_amd64.AppImage"
               }
             }
           }
           JSONEOF
           
-          # Fill in signatures from .sig files
-          for sigfile in dist/*.sig; do
-            [ -f "$sigfile" ] || continue
-            sigcontent=$(cat "$sigfile")
-            base=$(basename "$sigfile")
-            if echo "$base" | grep -qi "setup.exe"; then
-              sed -i "s|SIG_WIN|$sigcontent|" dist/updates.json
-            elif echo "$base" | grep -qi "x64.dmg"; then
-              sed -i "s|SIG_MAC|$sigcontent|" dist/updates.json
-            elif echo "$base" | grep -qi "amd64.AppImage"; then
-              sed -i "s|SIG_LINUX|$sigcontent|" dist/updates.json
-            fi
-          done
-          
-          # Fill in version and date
-          TODAY=$(date -u +"%Y-%m-%dT00:00:00Z")
-          sed -i "s/VER_PLACEHOLDER/$VER/" dist/updates.json
-          sed -i "s/DATE_PLACEHOLDER/$TODAY/" dist/updates.json
-          
-          echo "--- updates.json ---"
+          echo "=== updates.json ==="
           cat dist/updates.json
           echo ""
           ls -la dist/
