@@ -103,11 +103,11 @@ pub fn generate(
             if let Some((template, slots_json)) = templates.choose(&mut rng) {
                 let slots: Vec<Slot> =
                     serde_json::from_str(slots_json).unwrap_or_default();
-                let title = fill_template(conn, template, &slots, keyword, &mut rng);
-                if title.len() > 5 && !results.iter().any(|r| r.title == title) {
-                    let (score, breakdown) = calculate_score(&title, keyword, cat);
+                let generated = fill_template(conn, template, &slots, keyword, &mut rng);
+                if generated.len() > 5 && !results.iter().any(|r| r.title == generated) {
+                    let (score, breakdown) = calculate_score(&generated, keyword, cat);
                     results.push(TitleResult {
-                        title,
+                        title: generated,
                         score,
                         categories: vec![cat.clone()],
                         breakdown: Some(breakdown),
@@ -145,11 +145,11 @@ pub fn generate(
                 for row in rows {
                     if let Ok((template, slots_json)) = row {
                         let slots: Vec<Slot> = serde_json::from_str(&slots_json).unwrap_or_default();
-                        let title = fill_template(conn, &template, &slots, keyword, &mut rng);
-                        if title.len() > 5 && !results.iter().any(|r| r.title == title) {
-                            let (score, breakdown) = calculate_score(&title, keyword, cat);
+                        let generated = fill_template(conn, &template, &slots, keyword, &mut rng);
+                        if generated.len() > 5 && !results.iter().any(|r| r.title == generated) {
+                            let (score, breakdown) = calculate_score(&generated, keyword, cat);
                             results.push(TitleResult {
-                                title,
+                                title: generated,
                                 score,
                                 categories: vec![cat.to_string()],
                                 breakdown: Some(breakdown),
@@ -229,7 +229,7 @@ fn calculate_score(title: &str, keyword: &str, _category: &str) -> (u32, serde_j
     let mut has_number = false;
     let mut has_curiosity = false;
     let mut has_emotional = false;
-    let mut has_power = false;
+    let mut _has_power = false;
 
     if lower.contains(&kw) { score += 15; has_keyword = true; }
     else if kw.split_whitespace().any(|w| lower.contains(w)) { score += 8; has_keyword = true; }
@@ -244,7 +244,7 @@ fn calculate_score(title: &str, keyword: &str, _category: &str) -> (u32, serde_j
 
     let power = ["why","how","what","when","stop","start","transform","unlock",
         "master","hack","build","create","destroy","save","kill","love","hate"];
-    if power.iter().any(|w| lower.contains(w)) { score += 5; has_power = true; }
+    if power.iter().any(|w| lower.contains(w)) { score += 5; _has_power = true; }
 
     if word_count >= 4 && word_count <= 14 { score += 10; }
     else if word_count >= 2 && word_count <= 18 { score += 5; }
