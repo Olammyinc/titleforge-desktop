@@ -327,6 +327,9 @@ function initApp() {
       if (el) el.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' key ready';
     }
   }).catch(function () {});
+
+  // Auto-update check on launch (with small delay so UI renders first)
+  setTimeout(setupUpdaterAutoCheck, 800);
 }
 
 // ---- CATEGORIES ----
@@ -1334,6 +1337,14 @@ function renderSettingsContent() {
   var el = document.getElementById('settingsUsage');
   if (el) el.textContent = dailyUsage;
 
+  // Update version from app_info
+  invoke('get_app_info').then(function (info) {
+    var verEl = document.getElementById('settingsVersion');
+    if (verEl && info.version) verEl.textContent = info.version;
+    var updateVerEl = document.getElementById('settingsUpdateVersion');
+    if (updateVerEl && info.version) updateVerEl.textContent = 'v' + info.version;
+  }).catch(function () {});
+
   invoke('get_settings').then(function (settings) {
     if (settings.ai_provider) {
       var p = document.getElementById('aiProvider');
@@ -1371,6 +1382,90 @@ function renderSettingsContent() {
       }).finally(function () { newBtn.disabled = false; newBtn.textContent = 'Save API Key'; });
     });
   }
+
+  // Wire up updater controls (Check for Updates button + auto-update toggle)
+  setupUpdaterControls();
+}
+
+// ---- UPDATER ----
+function setupUpdaterAutoCheck() {
+  invoke('get_settings').then(function (settings) {
+    if (settings.auto_update === 'true') {
+      // Silently check for updates — native dialog appears if update found
+      checkAndInstallUpdate(true);
+    }
+  }).catch(function () {});
+}
+
+function setupUpdaterControls() {
+  // Auto-update toggle (idempotent via _wired flag)
+  var autoToggle = document.getElementById('autoUpdateToggle');
+  if (autoToggle && !autoToggle._wired) {
+    autoToggle._wired = true;
+    // Load current setting
+    invoke('get_settings').then(function (settings) {
+      autoToggle.checked = settings.auto_update === 'true';
+    }).catch(function () {});
+    // Persist changes immediately
+    autoToggle.addEventListener('change', function () {
+      invoke('set_setting', { key: 'auto_update', value: autoToggle.checked ? 'true' : 'false' }).catch(function () {});
+    });
+  }
+
+  // "Check for Updates" button (idempotent)
+  var checkBtn = document.getElementById('checkUpdateBtn');
+  if (checkBtn && !checkBtn._wired) {
+    checkBtn._wired = true;
+    checkBtn.addEventListener('click', function () {
+      checkAndInstallUpdate(false);
+    });
+  }
+}
+
+function checkAndInstallUpdate(silent) {
+  var verEl = document.getElementById('settingsUpdateVersion');
+  var statusEl = document.getElementById('settingsUpdateStatus');
+  var checkBtn = document.getElementById('checkUpdateBtn');
+  var currentVer = (verEl && verEl.textContent) || '0.2.6';
+
+  if (!silent && checkBtn) {
+    checkBtn.disabled = true;
+    checkBtn.textContent = 'Checking...';
+  }
+  if (!silent && statusEl) {
+    statusEl.textContent = 'Checking for updates...';
+    statusEl.style.color = 'var(--text-secondary)';
+  }
+
+  invoke('plugin:updater|check').then(function (result) {
+    if (result) {
+      // Update available
+      if (!silent && statusEl) {
+        statusEl.textContent = 'Update found: v' + (result.version || '?') + ' — installing...';
+        statusEl.style.color = '#16a34a';
+      }
+      // Trigger download & install — native dialog appears automatically (dialog: true)
+      return invoke('plugin:updater|download_and_install', { update: result });
+    }
+    // No update available
+    if (!silent && statusEl) {
+      statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
+      statusEl.style.color = '#16a34a';
+    }
+    return null;
+  }).catch(function (err) {
+    var msg = typeof err === 'string' ? err : (err.message || 'Network error');
+    if (!silent && statusEl) {
+      statusEl.textContent = 'Could not check for updates: ' + msg;
+      statusEl.style.color = '#b91c1c';
+    }
+    // Silent mode — don't bother the user on launch
+  }).finally(function () {
+    if (!silent && checkBtn) {
+      checkBtn.disabled = false;
+      checkBtn.textContent = 'Check for Updates';
+    }
+  });
 }
 
 // ---- TAB SWITCHING ----

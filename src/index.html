@@ -38,7 +38,7 @@
       <button id="activationBtn" class="activation-btn">Activate</button>
       <p class="activation-footer">Don't have a license? <a href="#" id="activationBuyLink2">Purchase one here →</a></p>
     </div>
-    <span class="activation-version">v0.2.6</span>
+    <span class="activation-version">v0.2.7</span>
   </div>
 </div>
 
@@ -64,7 +64,7 @@
     </nav>
     <div class="sidebar-footer">
       <span class="sidebar-badge">PRO</span>
-      <span class="sidebar-version">v0.2.6</span>
+      <span class="sidebar-version">v0.2.7</span>
       <button id="debugToggleBtn" style="display:block;margin:8px auto 0;padding:3px 10px;font-size:10px;background:transparent;color:rgba(240,237,232,0.3);border:1px solid rgba(240,237,232,0.15);border-radius:4px;cursor:pointer;font-family:var(--font-body);">Show Debug Log</button>
     </div>
   </aside>
@@ -317,8 +317,22 @@
         <div class="settings-card">
           <h3 class="settings-card-title">Plan &amp; Version</h3>
           <div class="settings-row"><span class="settings-label">Current plan</span><span class="settings-value" style="color:#16a34a;font-weight:700;">Desktop Pro</span></div>
-          <div class="settings-row"><span class="settings-label">Version</span><span class="settings-value">0.1.1</span></div>
+          <div class="settings-row"><span class="settings-label">Version</span><span class="settings-value" id="settingsVersion">0.2.6</span></div>
           <div class="settings-row"><span class="settings-label">Generations today</span><span class="settings-value" id="settingsUsage">0</span></div>
+        </div>
+        <div class="settings-card">
+          <h3 class="settings-card-title">Updates</h3>
+          <div class="settings-row"><span class="settings-label">Current version</span><span class="settings-value" id="settingsUpdateVersion">v0.2.6</span></div>
+          <div class="settings-row">
+            <span class="settings-label">Status</span>
+            <span class="settings-value" id="settingsUpdateStatus">—</span>
+          </div>
+          <button id="checkUpdateBtn" class="btn btn-primary btn-small" style="margin-top:12px;">Check for Updates</button>
+          <label class="toggle-row" style="margin-top:16px;">
+            <input type="checkbox" id="autoUpdateToggle" />
+            <span>Auto-check for updates on launch</span>
+          </label>
+          <p class="toggle-hint">When enabled, TitleForge will check for new versions each time you open the app.</p>
         </div>
         <div class="settings-card">
           <h3 class="settings-card-title">AI Integration</h3>
