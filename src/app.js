@@ -1426,7 +1426,7 @@ function checkAndInstallUpdate(silent) {
   var verEl = document.getElementById('settingsUpdateVersion');
   var statusEl = document.getElementById('settingsUpdateStatus');
   var checkBtn = document.getElementById('checkUpdateBtn');
-  var currentVer = (verEl && verEl.textContent) || '0.3.1';
+  var currentVer = (verEl && verEl.textContent) || '0.4.0';
 
   if (!silent && checkBtn) {
     checkBtn.disabled = true;

@@ -8,31 +8,62 @@ use crate::TitleResult;
 /// Map 80+ specialized pool names to the 8 available SQLite word pools.
 fn slot_name_to_pool_name(slot_name: &str) -> &'static str {
     match slot_name {
+        // Verb variants
         "verb" | "verbs" | "action_verb" | "action_verbs" | "action_verbs_ing" | "action_verbs_past"
-        | "actions_positive" | "positive_action_verbs" | "comparison_verbs" | "imperative_verbs"
-        | "negative_action_verbs" | "transformational_verbs" | "gerund_verbs" | "gerunds" => "action_verbs",
+        | "actions_positive" | "positive_action" | "positive_action_verb" | "positive_action_verbs"
+        | "comparison_verb" | "comparison_verbs" | "imperative_verb" | "imperative_verbs"
+        | "negative_action_verb" | "negative_action_verbs" | "transformational_verb"
+        | "transformational_verbs" |         "gerund_verb" | "gerund_verbs" | "gerund_verb_2" | "gerund" | "gerunds"
+        | "verb_ing" | "verbing" | "verb_ing2" | "gerund2" | "right_verb" | "wrong_verb"
+        | "verb_alt" | "verb_2" | "verb_past" => "action_verbs",
 
+        // Adjective variants
         "adjective" | "adjectives" | "power_adjective" | "power_adjectives" | "positive_adjective"
-        | "positive_adjectives" | "negative_adjectives" | "overused_adjectives" | "contrarian_adjectives"
-        | "comparative_adjectives" | "descriptive_adjectives" | "opinion_adjectives"
-        | "adjectives_describing_movies" | "character_adjectives" | "superlative_adjectives"
-        | "superlatives" => "power_adjectives",
+        | "positive_adjectives" | "negative_adjective" | "negative_adjectives" | "overused_adjective"
+        | "overused_adjectives" | "contrarian_adjective" | "contrarian_adjectives"
+        | "comparative_adjective" | "comparative_adjectives" | "descriptive_adjective"
+        | "descriptive_adjectives" | "opinion_adjective" | "opinion_adjectives"
+        | "adjectives_describing_movies" | "character_adjective" | "character_adjectives"
+        | "superlative_adjective" | "superlative_adjectives" | "superlative"
+        | "adjective1" | "adjective2" | "adjective_2" | "adjective_alt" | "adjective_opinion" => "power_adjectives",
 
-        "noun" | "nouns" | "common_nouns" | "abstract_nouns" | "nouns_contrast"
-        | "nouns_identity" | "nouns_opposite" | "nouns_persona" | "nouns_plural"
-        | "concepts" | "themes" | "scenarios" | "movie_topics" | "street_topics" | "trends"
-        | "life_domains" | "life_lessons" | "movie_elements" | "professions_or_roles"
-        | "experiences" | "audience" | "audiences" | "audience_types" | "audience_type"
-        | "names" | "pronouns" | "professions" | "actors" | "directors" | "genres"
-        | "film_achievements" | "production_events" | "movie_titles" | "adverbs"
-        | "character_elements" | "common_pitfalls" | "topics" => "nouns",
+        // Noun/topic variants
+        "noun" | "nouns" | "common_noun" | "common_nouns" | "abstract_noun" | "abstract_nouns"
+        | "nouns_contrast" | "nouns_identity" | "nouns_opposite" | "nouns_persona" | "nouns_plural"
+        | "concept" | "concepts" | "theme" | "themes" | "scenario" | "scenarios"
+        | "movie_topic" | "movie_topics" | "street_topic" | "street_topics" | "trend" | "trends"
+        | "life_domain" | "life_domains" | "life_lesson" | "life_lessons" | "movie_element"
+        | "movie_elements" | "profession_or_role" | "professions_or_roles" | "profession" | "professions"
+        | "experience" | "experiences" | "audience" | "audiences" | "audience_type" | "audience_types"
+        | "audience2" | "name" | "names" | "pronoun" | "pronouns" | "actor" | "actors" | "director"
+        | "directors" | "director1" | "director2" | "genre" | "genres" | "different_genre"
+        | "film_achievement" | "film_achievements" | "production_event" | "production_events"
+        | "movie_title" | "movie_titles" | "adverb" | "adverbs" | "character_element"
+        | "character_elements" | "common_pitfall" | "common_pitfalls" | "pitfall" | "pitfalls"
+        | "topic" | "topics" | "topic1" | "topic2" | "topic_2" | "subject" | "another_movie"
+        | "movie_aspect" | "movie_genre" | "life_aspect" | "event" | "lesson"
+        | "opposite_noun" | "noun_a" | "noun_b" | "noun_alt" | "noun1" | "noun2" | "noun3"
+        | "negative_trait" | "negative_traits" | "positive_trait" | "positive_traits"
+        | "positive_emotion" | "positive_emotions" | "negative_emotion" | "negative_emotions" => "nouns",
 
-        "result" | "results" | "outcomes" | "desired_outcomes" | "desired_results" | "benefits" => "results",
-        "timeframe" | "timeframes" | "times" | "times_day" | "decades" => "timeframes",
-        "emotion" | "emotions" | "emotional_states" | "emotions_adj" | "emotions_negative"
-        | "positive_emotions" | "negative_traits" | "positive_traits" | "character_attributes" => "emotions",
-        "number" | "numbers" | "list_numbers" => "numbers",
-        "hook" | "hooks" | "question_words" | "alternatives" => "hooks",
+        // Results/outcomes
+        "result" | "results" | "outcome" | "outcomes" | "desired_outcome" | "desired_outcomes"
+        | "desired_result" | "desired_results" | "benefit" | "benefits" | "achievement" => "results",
+
+        // Timeframes
+        "timeframe" | "timeframes" | "time" | "times" | "time_day" | "time_of_day" | "times_day"
+        | "decade" | "decades" | "decade2" => "timeframes",
+
+        // Emotions
+        "emotion" | "emotions" | "emotional_state" | "emotional_states" | "emotions_adj"
+        | "emotion2" | "emotions_negative" => "emotions",
+
+        // Numbers
+        "number" | "numbers" | "list_number" | "list_numbers" => "numbers",
+
+        // Hooks
+        "hook" | "hooks" | "question_word" | "question_words" | "alternative" | "alternatives" => "hooks",
+
         _ => "nouns",
     }
 }
