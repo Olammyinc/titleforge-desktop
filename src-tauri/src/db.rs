@@ -81,7 +81,11 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
 pub fn import_seed(conn: &Connection, seed_path: &std::path::Path) -> Result<()> {
     let content = std::fs::read_to_string(seed_path)
         .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
-    let data: serde_json::Value = serde_json::from_str(&content)
+    import_seed_from_str(conn, &content)
+}
+
+pub fn import_seed_from_str(conn: &Connection, content: &str) -> Result<()> {
+    let data: serde_json::Value = serde_json::from_str(content)
         .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
 
     // Import templates

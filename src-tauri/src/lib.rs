@@ -725,19 +725,30 @@ pub fn run() {
             .query_row("SELECT COUNT(*) FROM patterns", [], |row| row.get(0))
             .unwrap_or(0);
         if count == 0 {
-            // Look for seed-data.json next to the binary, or in the resource dir
+            // Try file paths first (resource dir, app dir, CWD)
             let seed_paths = [
                 std::path::PathBuf::from("seed-data.json"),
                 app_dir.join("seed-data.json"),
             ];
+            let mut imported = false;
             for sp in &seed_paths {
                 if sp.exists() {
                     if let Err(e) = db::import_seed(&conn, sp) {
-                        eprintln!("Warning: seed import failed: {}", e);
+                        eprintln!("Warning: seed import from file failed: {}", e);
                     } else {
                         println!("Seed data imported from {:?}", sp);
+                        imported = true;
                     }
                     break;
+                }
+            }
+            // Guaranteed fallback: embed seed-data.json in the binary
+            if !imported {
+                println!("Seed file not found on disk, using embedded seed data...");
+                if let Err(e) = db::import_seed_from_str(&conn, include_str!("../../seed-data.json")) {
+                    eprintln!("Warning: embedded seed import failed: {}", e);
+                } else {
+                    println!("Seed data imported from embedded binary data");
                 }
             }
         }
