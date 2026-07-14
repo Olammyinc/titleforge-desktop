@@ -5,6 +5,21 @@ use serde_json;
 
 use crate::TitleResult;
 
+/// Map common slot name variants to the canonical word_pool name in SQLite
+fn slot_name_to_pool_name(slot_name: &str) -> Option<&'static str> {
+    match slot_name {
+        "verb" | "action_verb" | "action_verbs" => Some("action_verbs"),
+        "adjective" | "adjectives" | "power_adjective" | "positive_adjective" | "positive_adjectives" | "power_adjectives" => Some("power_adjectives"),
+        "noun" | "nouns" | "topic" | "topics" => Some("nouns"),
+        "timeframe" | "timeframes" => Some("timeframes"),
+        "emotion" | "emotions" => Some("emotions"),
+        "number" | "numbers" => Some("numbers"),
+        "hook" | "hooks" => Some("hooks"),
+        "result" | "results" => Some("results"),
+        _ => None,
+    }
+}
+
 pub fn generate(
     conn: &Connection,
     keyword: &str,
@@ -43,14 +58,14 @@ pub fn generate(
             if let Some((template, slots_json, _score)) = templates.choose(&mut rng) {
                 let slots: Vec<Slot> =
                     serde_json::from_str(slots_json).unwrap_or_default();
-                let title = fill_template(template, &slots, keyword, &mut rng);
+                let title = fill_template(conn, template, &slots, keyword, &mut rng);
                 if title.len() > 5 {
-                    let score = calculate_score(&title, keyword, cat);
+                    let (score, breakdown) = calculate_score(&title, keyword, cat);
                     results.push(TitleResult {
                         title,
                         score,
                         categories: vec![cat.clone()],
-                        breakdown: None,
+                        breakdown: Some(breakdown),
                     });
                 }
             }
@@ -74,11 +89,12 @@ pub fn generate(
 
         for (title, score) in curated {
             if !results.iter().any(|r| r.title == title) {
+                let (_, breakdown) = calculate_score(&title, "", "");
                 results.push(TitleResult {
                     title,
                     score: score as u32,
                     categories: vec![cat.clone()],
-                    breakdown: None,
+                    breakdown: Some(breakdown),
                 });
             }
         }
@@ -102,6 +118,7 @@ struct Slot {
 }
 
 fn fill_template(
+    conn: &Connection,
     template: &str,
     slots: &[Slot],
     keyword: &str,
@@ -112,48 +129,25 @@ fn fill_template(
     for slot in slots {
         let placeholder = format!("{{{}}}", slot.name);
         let replacement = match slot.name.as_str() {
-            "keyword" | "topic" => keyword.to_string(),
+            "keyword" => keyword.to_string(),
+            "topic" => keyword.to_string(),
             "number" => format!("{}", rng.gen_range(3..=12)),
-            "timeframe" => pick_random(&[
-                "Today", "This Week", "30 Days", "7 Days", "Right Now",
-                "2026", "This Year", "Tonight", "Overnight",
-            ], rng),
-            "result" => pick_random(&[
-                "That Will Change Your Life", "That Actually Work",
-                "That Matter", "Worth Your Time", "That Deliver Results",
-            ], rng),
-            "audience" => pick_random(&[
-                "for Beginners", "for Experts", "for Everyone",
-                "for Busy People", "for Creators",
-            ], rng),
-            "emotion" => pick_random(&[
-                "Hidden", "Secret", "Surprising", "Unexpected",
-                "Essential", "Ultimate", "Forgotten",
-            ], rng),
-            "hook" => pick_random(&[
-                "The Truth About", "What Nobody Tells You About",
-                "The Surprising Science of", "Why You Should",
-            ], rng),
             _ => {
-                if let Some(pool) = &slot.pool {
-                    match pool.as_str() {
-                        "action_verbs" => pick_random(&[
-                            "Master", "Build", "Create", "Transform",
-                            "Unlock", "Hack", "Accelerate", "Simplify",
-                        ], rng),
-                        "power_adjectives" => pick_random(&[
-                            "Essential", "Ultimate", "Radical", "Bold",
-                            "Powerful", "Proven", "Smart", "Fast",
-                        ], rng),
-                        "nouns" => pick_random(&[
-                            "Guide", "Blueprint", "Framework", "Toolkit",
-                            "System", "Strategy", "Formula", "Method",
-                        ], rng),
-                        _ => keyword.to_string(),
-                    }
-                } else {
-                    keyword.to_string()
-                }
+                // Try the slot's pool name first, then map slot name to pool
+                let pool_name = slot.pool.as_deref()
+                    .or_else(|| slot_name_to_pool_name(&slot.name))
+                    .unwrap_or("nouns");
+
+                // Query word_pools table in SQLite for a random word
+                let word: Option<String> = conn
+                    .query_row(
+                        "SELECT word FROM word_pools WHERE pool_name = ?1 ORDER BY RANDOM() LIMIT 1",
+                        rusqlite::params![pool_name],
+                        |row| row.get(0),
+                    )
+                    .ok();
+
+                word.unwrap_or_else(|| keyword.to_string())
             }
         };
         result = result.replace(&placeholder, &replacement);
@@ -167,41 +161,77 @@ fn fill_template(
     result
 }
 
-fn pick_random<'a>(items: &[&'a str], rng: &mut impl Rng) -> String {
-    items.choose(rng).unwrap_or(&"").to_string()
-}
-
-fn calculate_score(title: &str, keyword: &str, _category: &str) -> u32 {
+fn calculate_score(title: &str, keyword: &str, _category: &str) -> (u32, serde_json::Value) {
     let lower = title.to_lowercase();
     let kw = keyword.to_lowercase();
     let mut score = 45u32;
     let word_count = title.split_whitespace().count();
 
+    let mut has_keyword = false;
+    let mut has_number = false;
+    let mut has_curiosity = false;
+    let mut has_emotional = false;
+    let mut has_power = false;
+
     // Keyword match (0-15)
-    if lower.contains(&kw) { score += 15; }
-    else if kw.split_whitespace().any(|w| lower.contains(w)) { score += 8; }
+    if lower.contains(&kw) { score += 15; has_keyword = true; }
+    else if kw.split_whitespace().any(|w| lower.contains(w)) { score += 8; has_keyword = true; }
 
     // Numbers (0-10)
-    if title.chars().any(|c| c.is_ascii_digit()) { score += 10; }
+    if title.chars().any(|c| c.is_ascii_digit()) { score += 10; has_number = true; }
 
     // Curiosity (0-10)
-    if title.contains('?') || title.contains(':') || title.contains("...") { score += 10; }
+    if title.contains('?') || title.contains(':') || title.contains("...") { score += 10; has_curiosity = true; }
 
     // Emotional words (0-10)
     let emotional = ["secret","hidden","truth","never","wrong","best","worst",
         "ultimate","essential","proven","easy","fast","simple","every","anyone",
         "nobody","everyone","always","forever","impossible","possible"];
-    if emotional.iter().any(|w| lower.contains(w)) { score += 10; }
+    if emotional.iter().any(|w| lower.contains(w)) { score += 10; has_emotional = true; }
 
     // Power words (0-5)
     let power = ["why","how","what","when","stop","start","transform","unlock",
         "master","hack","build","create","destroy","save","kill","love","hate"];
-    if power.iter().any(|w| lower.contains(w)) { score += 5; }
+    if power.iter().any(|w| lower.contains(w)) { score += 5; has_power = true; }
 
     // Word count bonus/penalty (0-10)
     if word_count >= 4 && word_count <= 14 { score += 10; }
     else if word_count >= 2 && word_count <= 18 { score += 5; }
     else { score = score.saturating_sub(8); }
 
-    score.min(100)
+    score = score.min(100);
+
+    // Build breakdown JSON
+    let curiosity_gap = if has_curiosity { "High" } else if has_number { "Medium" } else { "Low" };
+    let emotional_trigger = if has_emotional {
+        if lower.contains("secret") || lower.contains("hidden") { "curiosity" }
+        else if lower.contains("truth") || lower.contains("never") || lower.contains("wrong") { "surprise" }
+        else if lower.contains("best") || lower.contains("ultimate") || lower.contains("essential") { "aspiration" }
+        else if lower.contains("easy") || lower.contains("fast") || lower.contains("simple") { "aspiration" }
+        else if lower.contains("every") || lower.contains("anyone") || lower.contains("nobody") { "curiosity" }
+        else if lower.contains("forever") || lower.contains("impossible") { "surprise" }
+        else { "curiosity" }
+    } else if has_number { "curiosity" } else { "neutral" };
+    let specificity = if has_keyword { "Concrete" } else if has_number { "Concrete" } else { "Abstract" };
+    let length_analysis = if word_count <= 3 { format!("Short ({} words)", word_count) }
+        else if word_count <= 8 { format!("Optimal ({} words)", word_count) }
+        else { format!("Long ({} words)", word_count) };
+
+    let mut power_words: Vec<&str> = Vec::new();
+    for w in &power {
+        if lower.contains(w) { power_words.push(w); }
+    }
+    for w in &emotional {
+        if lower.contains(w) && !power_words.contains(w) { power_words.push(w); }
+    }
+
+    let breakdown = serde_json::json!({
+        "curiosityGap": curiosity_gap,
+        "emotionalTrigger": emotional_trigger,
+        "powerWords": power_words,
+        "lengthAnalysis": length_analysis,
+        "specificity": specificity
+    });
+
+    (score, breakdown)
 }

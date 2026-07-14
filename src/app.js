@@ -693,6 +693,37 @@ function displayResults(titles, currentKeyword) {
       body.appendChild(projBtn);
     }
 
+    // Breakdown toggle
+    if (item.breakdown) {
+      var bdBtn = document.createElement('button');
+      bdBtn.className = 'breakdown-toggle';
+      bdBtn.textContent = 'Why this works';
+      bdBtn.addEventListener('click', function () {
+        var existing = div.querySelector('.breakdown-panel');
+        if (existing) { existing.classList.toggle('show'); return; }
+        var panel = document.createElement('div');
+        panel.className = 'breakdown-panel show';
+        var bd = item.breakdown;
+        var fields = [
+          { key: 'curiosityGap', label: 'Curiosity gap', val: bd.curiosityGap || 'Medium' },
+          { key: 'emotionalTrigger', label: 'Emotion', val: bd.emotionalTrigger || 'neutral' },
+          { key: 'powerWords', label: 'Power words', val: Array.isArray(bd.powerWords) ? bd.powerWords.join(', ') : (bd.powerWords || '—') },
+          { key: 'lengthAnalysis', label: 'Length', val: bd.lengthAnalysis || '—' },
+          { key: 'specificity', label: 'Specificity', val: bd.specificity || 'Abstract' },
+        ];
+        var html = '';
+        fields.forEach(function (f) {
+          var cls = 'medium';
+          if (f.val === 'High' || f.val === 'Concrete') cls = 'high';
+          else if (f.val === 'Low' || f.val === 'Abstract') cls = 'low';
+          html += '<div class="breakdown-row"><span class="breakdown-label">' + f.label + '</span><span class="breakdown-value ' + cls + '">' + escapeHtml(String(f.val)) + '</span></div>';
+        });
+        panel.innerHTML = html;
+        div.appendChild(panel);
+      });
+      body.appendChild(bdBtn);
+    }
+
     div.appendChild(body);
     container.appendChild(div);
   });
