@@ -104,7 +104,7 @@ pub fn generate(
                 let slots: Vec<Slot> =
                     serde_json::from_str(slots_json).unwrap_or_default();
                 let generated = fill_template(conn, template, &slots, keyword, &mut rng);
-                if generated.len() > 5 && !results.iter().any(|r| r.title == generated) {
+                if generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
                     results.push(TitleResult {
                         title: generated,
