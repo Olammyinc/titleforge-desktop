@@ -16,24 +16,29 @@ function invoke(cmd, args) {
     // Tauri v2 — __TAURI_INTERNALS__ is the low-level IPC injected by the Rust webview
     if (window.__TAURI_INTERNALS__) {
       console.log('[invoke setup] __TAURI_INTERNALS__ keys:', Object.keys(window.__TAURI_INTERNALS__));
+      dumpDebug('invoke setup: __TAURI_INTERNALS__ found, keys: ' + Object.keys(window.__TAURI_INTERNALS__).join(','));
       if (typeof window.__TAURI_INTERNALS__.invoke === 'function') {
         _invoke = function (c, a) { return window.__TAURI_INTERNALS__.invoke(c, a); };
+        dumpDebug('invoke setup: using __TAURI_INTERNALS__.invoke(cmd, args)');
       }
     }
 
     // Tauri v2 — __TAURI__ with core.invoke
     if (!_invoke && window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === 'function') {
       _invoke = function (c, a) { return window.__TAURI__.core.invoke(c, a); };
+      dumpDebug('invoke setup: using __TAURI__.core.invoke(cmd, args)');
     }
 
     // Tauri v1 — __TAURI__.invoke directly
     if (!_invoke && window.__TAURI__ && typeof window.__TAURI__.invoke === 'function') {
       _invoke = function (c, a) { return window.__TAURI__.invoke(c, a); };
+      dumpDebug('invoke setup: using __TAURI__.invoke(cmd, args)');
     }
 
     // Dev mode fallback
     if (!_invoke) {
       console.warn('[TitleForge] No Tauri IPC bridge found — using dev mode mock.');
+      dumpDebug('invoke setup: NO Tauri IPC found — falling back to DEV MODE MOCK');
       window.__TF_DEV_MODE = true;
       // Show a visible indicator in the app
       var devBanner = document.createElement('div');
@@ -220,6 +225,7 @@ function switchToDashboard() {
 
 // ---- LICENSE ACTIVATION ----
 document.addEventListener('DOMContentLoaded', function () {
+  _flushDebugLog(); // flush any diagnostic messages queued before DOM ready
   var activationScreen = document.getElementById('activationScreen');
   var mainApp = document.getElementById('mainApp');
 
@@ -519,6 +525,7 @@ function handleGenerate() {
   var genPromise;
 
   if (activeEngine === 'ai' && aiProvider && aiApiKey) {
+    dumpDebug('handleGenerate: using AI engine (' + aiProvider + '), keyword=' + keyword + ', cats=' + checkedCategories.join(',') + ', qty=' + quantity);
     genPromise = invoke('generate_with_ai', {
       keyword: keyword,
       categories: checkedCategories,
@@ -535,6 +542,7 @@ function handleGenerate() {
       api_key: aiApiKey,
     });
   } else {
+    dumpDebug('handleGenerate: using DB engine, keyword=' + keyword + ', cats=' + checkedCategories.join(',') + ', qty=' + quantity);
     genPromise = invoke('generate_titles', {
       keyword: keyword,
       categories: checkedCategories,
@@ -545,6 +553,7 @@ function handleGenerate() {
   }
 
   genPromise.then(function (titles) {
+    dumpDebug('generate: SUCCESS, titles count=' + (titles ? titles.length : 'null'));
     displayResults(titles, keyword);
     dailyUsage++;
     invoke('record_generation', {
@@ -558,7 +567,9 @@ function handleGenerate() {
     saveToHistoryLocal(keyword, checkedCategories, genre, selectedStyle, titles);
     genCountThisSession++;
   }).catch(function (err) {
-    showError(typeof err === 'string' ? err : (err.message || 'Something went wrong. Please try again.'));
+    var errMsg = typeof err === 'string' ? err : (err.message || 'Something went wrong. Please try again.');
+    dumpDebug('generate: FAILED — ' + errMsg + ' (err type: ' + (typeof err) + ', keys: ' + (err && typeof err === 'object' ? Object.keys(err).join(',') : 'N/A') + ')');
+    showError(errMsg);
   }).finally(function () {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('generateBtn').disabled = false;
@@ -583,13 +594,21 @@ function saveToHistoryLocal(keyword, categories, genre, style, titles) {
 // ============================================
 
 function displayResults(titles, currentKeyword) {
-  var container = document.getElementById('results');
-  container.innerHTML = '';
+  try {
+    var container = document.getElementById('results');
+    if (!container) {
+      dumpDebug('displayResults: #results element NOT FOUND in DOM');
+      return;
+    }
+    container.innerHTML = '';
 
-  if (!titles || titles.length === 0) {
-    container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">No titles generated. Try a different keyword or category.</p>';
-    return;
-  }
+    // Diagnostic: log what we received
+    dumpDebug('displayResults received: type=' + (typeof titles) + ', isArray=' + Array.isArray(titles) + ', len=' + (titles ? titles.length : 'null') + ', keyword=' + currentKeyword);
+
+    if (!titles || titles.length === 0) {
+      container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">No titles generated. Try a different keyword or category.</p>';
+      return;
+    }
 
   titles.forEach(function (item, idx) {
     var div = document.createElement('div');
@@ -677,6 +696,15 @@ function displayResults(titles, currentKeyword) {
     div.appendChild(body);
     container.appendChild(div);
   });
+  } catch (renderErr) {
+    dumpDebug('displayResults CRASHED: ' + (renderErr.message || String(renderErr)));
+    // Show the error in the results area so the user can see it
+    var fallback = document.getElementById('results');
+    if (fallback) {
+      fallback.innerHTML = '<div class="error-msg" style="display:block;border:2px solid #dc2626;background:rgba(220,38,38,0.08);padding:16px;border-radius:8px;color:#b91c1c;font-size:14px;"><strong>\u26A0\uFE0F Display Error:</strong> ' + escapeHtml(renderErr.message || String(renderErr)) + '<br><small style="font-size:11px;color:#666;">This is an internal rendering error. The titles were received but could not be displayed. Check the debug log below for details.</small></div>';
+    }
+    showError('Display failed: ' + (renderErr.message || String(renderErr)));
+  }
 }
 
 // ============================================
@@ -684,11 +712,59 @@ function displayResults(titles, currentKeyword) {
 // ============================================
 
 function showError(msg) {
+  // 1. Write to #error element
   var el = document.getElementById('error');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.display = 'block';
+  if (el) {
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  // 2. FALLBACK: always write to #results so error is visible even if #error fails
+  var resultsEl = document.getElementById('results');
+  if (resultsEl) {
+    var existing = resultsEl.innerHTML || '';
+    resultsEl.innerHTML = existing + '<div class="error-msg" style="display:block;border:2px solid #dc2626;background:rgba(220,38,38,0.08);padding:16px;border-radius:8px;margin-top:8px;color:#b91c1c;font-size:14px;font-weight:600;">\u26A0\uFE0F ' + escapeHtml(String(msg)) + '</div>';
+  }
+  // 3. Also dump to debug log
+  dumpDebug('ERROR: ' + String(msg));
 }
+
+/**
+ * Write a diagnostic message to the on-screen debug log.
+ * The #debugLog element must exist in the HTML.
+ * Messages sent before DOM ready are queued and flushed later.
+ */
+var _debugQueue = [];
+function dumpDebug(msg) {
+  _debugQueue.push({ time: new Date(), msg: msg });
+  _flushDebugLog();
+}
+function _flushDebugLog() {
+  var logEl = document.getElementById('debugLog');
+  if (!logEl || _debugQueue.length === 0) return;
+  while (_debugQueue.length > 0) {
+    var item = _debugQueue.shift();
+    var time = item.time.toLocaleTimeString();
+    var entry = document.createElement('div');
+    entry.style.cssText = 'font-family:monospace;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.05);color:#333;';
+    entry.textContent = '[' + time + '] ' + item.msg;
+    logEl.appendChild(entry);
+  }
+  logEl.style.display = 'block';
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+/**
+ * Attach global error traps that dump to the debug log.
+ */
+(function setupGlobalErrorTraps() {
+  window.addEventListener('error', function (e) {
+    dumpDebug('GLOBAL ERROR: ' + (e.message || String(e)) + ' @ ' + (e.filename || '?') + ':' + (e.lineno || '?'));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var reason = e.reason;
+    dumpDebug('UNHANDLED REJECTION: ' + (reason && reason.message ? reason.message : String(reason)));
+  });
+})();
 
 // ============================================
 // DASHBOARD
@@ -1326,3 +1402,18 @@ window.switchToGenerator = switchToGenerator;
 window.switchToDashboard = switchToDashboard;
 window.switchDashTab = switchDashTab;
 window.deleteProject = deleteProject;
+
+// ---- DEBUG LOG TOGGLE ----
+(function() {
+  var btn = document.getElementById('debugToggleBtn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var log = document.getElementById('debugLog');
+      if (log) {
+        var isVisible = log.style.display !== 'none';
+        log.style.display = isVisible ? 'none' : 'block';
+        btn.textContent = isVisible ? 'Show Debug Log' : 'Hide Debug Log';
+      }
+    });
+  }
+})();

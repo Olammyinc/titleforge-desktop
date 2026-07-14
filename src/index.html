@@ -38,7 +38,7 @@
       <button id="activationBtn" class="activation-btn">Activate</button>
       <p class="activation-footer">Don't have a license? <a href="#" id="activationBuyLink2">Purchase one here →</a></p>
     </div>
-    <span class="activation-version">v0.2.3</span>
+    <span class="activation-version">v0.2.4</span>
   </div>
 </div>
 
@@ -64,7 +64,8 @@
     </nav>
     <div class="sidebar-footer">
       <span class="sidebar-badge">PRO</span>
-      <span class="sidebar-version">v0.2.3</span>
+      <span class="sidebar-version">v0.2.4</span>
+      <button id="debugToggleBtn" style="display:block;margin:8px auto 0;padding:3px 10px;font-size:10px;background:transparent;color:rgba(240,237,232,0.3);border:1px solid rgba(240,237,232,0.15);border-radius:4px;cursor:pointer;font-family:var(--font-body);">Show Debug Log</button>
     </div>
   </aside>
 
@@ -261,6 +262,8 @@
           <span id="usageText"></span>
         </div>
         <div id="results" class="results"></div>
+        <!-- Debug Log (hidden by default; toggle from sidebar footer) -->
+        <div id="debugLog" style="display:none;margin-top:16px;padding:12px;background:#fdf6ee;border:1px solid var(--paper-border);border-radius:8px;max-height:300px;overflow-y:auto;font-family:monospace;font-size:11px;line-height:1.5;color:#333;"></div>
       </div>
     </div>
 

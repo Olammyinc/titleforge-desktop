@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/nicegui/main/src-tauri/tauri.conf.json",
   "productName": "TitleForge",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "identifier": "com.titleforge.desktop",
   "build": {
     "frontendDist": "../src",
@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; font-src 'self' https://api.fontshare.com; style-src 'self' 'unsafe-inline' https://api.fontshare.com; img-src 'self' data:; connect-src 'self' ipc:"
     }
   },
   "bundle": {
