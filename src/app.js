@@ -212,6 +212,11 @@ function showLicenseOverlay() {
 }
 
 function initApp() {
+  // Show main UI sections hidden by license gate CSS (and by showLicenseOverlay)
+  document.querySelectorAll('.nav, .hero-compact, .tool-section, .footer').forEach(function (el) {
+    el.style.display = '';
+  });
+
   // Show nav elements hidden until license activation
   var navDash = document.getElementById('navDashboard');
   var navPro = document.getElementById('navProBadge');
