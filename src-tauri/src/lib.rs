@@ -704,7 +704,7 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
         .unwrap_or(0);
     Ok(serde_json::json!({
         "app": "titleforge-desktop",
-        "version": "1.0.0",
+        "version": env!("CARGO_PKG_VERSION"),
         "seeded": count > 0,
         "templateCount": count,
     }))
