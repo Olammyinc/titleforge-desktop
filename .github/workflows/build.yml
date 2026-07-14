@@ -2,7 +2,12 @@ name: Build
 on:
   push:
     branches: [master, main]
+    tags: ['v*']
   workflow_dispatch:
+
+env:
+  TAURI_UPDATER_PRIVATE_KEY: ${{ secrets.TAURI_UPDATER_PRIVATE_KEY }}
+  TAURI_UPDATER_KEY_PASSWORD: ${{ secrets.TAURI_UPDATER_KEY_PASSWORD }}
 
 jobs:
   build-linux:
@@ -56,3 +61,24 @@ jobs:
           name: titleforge-macos
           path: src-tauri/target/release/bundle/**/*
           if-no-files-found: ignore
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { pattern: titleforge-*, merge-multiple: true }
+      - run: |
+          echo "## TitleForge v${{ github.ref_name }}" > notes.md
+          echo "" >> notes.md
+          echo "### Downloads" >> notes.md
+          for f in *; do echo "- [$f]($f)" >> notes.md; done
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: TitleForge v${{ github.ref_name }}
+          body_path: notes.md
+          files: .
+          generate_release_notes: true
