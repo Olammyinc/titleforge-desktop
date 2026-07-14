@@ -71,14 +71,20 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with: { pattern: titleforge-*, merge-multiple: true }
-      - run: |
+      - name: Find and rename binary files, write release notes
+        run: |
+          mkdir -p dist
+          find . -name "*.exe" -exec cp {} dist/ \;
+          find . -name "*.dmg" -exec cp {} dist/ \;
+          find . -name "*.deb" -exec cp {} dist/ \;
+          find . -name "*.AppImage" -exec cp {} dist/ \;
+          ls -la dist/
           echo "## TitleForge v${{ github.ref_name }}" > notes.md
           echo "" >> notes.md
           echo "### Downloads" >> notes.md
-          for f in *; do echo "- [$f]($f)" >> notes.md; done
+          for f in dist/*; do echo "- [$(basename "$f")]($(basename "$f"))" >> notes.md; done
       - uses: softprops/action-gh-release@v2
         with:
           name: TitleForge v${{ github.ref_name }}
           body_path: notes.md
-          files: .
-          generate_release_notes: true
+          files: dist/*
