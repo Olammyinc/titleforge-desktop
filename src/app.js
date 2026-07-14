@@ -132,7 +132,7 @@ function downloadFile(content, filename, mimeType) {
 
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', function () {
-  // Check license first — blocks the UI if not activated
+  // Block the UI completely — show nothing until license is validated
   checkLicense().then(function (activated) {
     if (activated) {
       initApp();
@@ -150,6 +150,12 @@ function checkLicense() {
 }
 
 function showLicenseOverlay() {
+  // Hide nav, hero, tool, footer — only show overlay
+  var elementsToHide = ['.nav', '.hero-compact', '.tool-section', '.footer'];
+  elementsToHide.forEach(function (sel) {
+    document.querySelectorAll(sel).forEach(function (el) { el.style.display = 'none'; });
+  });
+
   var overlay = document.getElementById('licenseOverlay');
   if (overlay) overlay.style.display = 'flex';
   var activateBtn = document.getElementById('licenseActivateBtn');
@@ -206,6 +212,12 @@ function showLicenseOverlay() {
 }
 
 function initApp() {
+  // Show nav elements hidden until license activation
+  var navDash = document.getElementById('navDashboard');
+  var navPro = document.getElementById('navProBadge');
+  if (navDash) navDash.style.display = '';
+  if (navPro) navPro.style.display = '';
+
   renderCategories();
   setupStyleButtons();
   setupGenderButtons();

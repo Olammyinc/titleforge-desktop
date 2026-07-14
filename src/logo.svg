@@ -1,20 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <linearGradient id="tf-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2563eb"/>
-      <stop offset="100%" style="stop-color:#1e3a5f"/>
+      <stop offset="0%" style="stop-color:#E8782B"/>
+      <stop offset="100%" style="stop-color:#D45C1A"/>
+    </linearGradient>
+    <linearGradient id="tf-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9147"/>
+      <stop offset="100%" style="stop-color:#E8782B"/>
     </linearGradient>
   </defs>
-  <!-- Anvil base -->
-  <path d="M14 38 L50 38 L46 44 L18 44 Z" fill="url(#tf-grad)"/>
-  <!-- Anvil top -->
-  <path d="M10 28 L54 28 L50 38 L14 38 Z" fill="url(#tf-grad)"/>
-  <!-- Pen nib in center -->
-  <path d="M32 12 L36 24 L32 34 L28 24 Z" fill="#93c5fd"/>
-  <circle cx="32" cy="34" r="2" fill="#1e3a5f"/>
-  <!-- Spark -->
-  <path d="M44 16 L46 20 L50 18 L47 22 L49 26 L44 24 L40 26 L42 22 L38 20 L43 22 Z" fill="#e8a040" opacity="0.9"/>
-  <!-- Stand -->
-  <rect x="28" y="44" width="8" height="6" fill="url(#tf-grad)"/>
-  <rect x="22" y="50" width="20" height="4" rx="2" fill="url(#tf-grad)"/>
+  <!-- Anvil body — simplified, modern -->
+  <path d="M10 38 L54 38 L48 48 L16 48 Z" fill="url(#tf-grad)"/>
+  <path d="M14 30 L50 30 L54 38 L10 38 Z" fill="url(#tf-light)"/>
+  <!-- Anvil horn (pointed right side) -->
+  <path d="M50 30 L58 22 L54 30 Z" fill="url(#tf-grad)"/>
+  <!-- Forge spark — stylized flame/pen nib -->
+  <path d="M32 8 C32 8 28 18 28 24 C28 28 30 30 32 30 C34 30 36 28 36 24 C36 18 32 8 32 8 Z" fill="#0B0A0A"/>
+  <path d="M32 12 C32 12 29 20 29 24 C29 27 30 28 32 28 C34 28 35 27 35 24 C35 20 32 12 32 12 Z" fill="url(#tf-light)"/>
+  <!-- Base/stand -->
+  <rect x="26" y="48" width="12" height="4" rx="1" fill="url(#tf-grad)"/>
+  <rect x="22" y="52" width="20" height="4" rx="2" fill="#0B0A0A"/>
 </svg>
