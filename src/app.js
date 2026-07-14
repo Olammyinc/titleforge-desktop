@@ -4,41 +4,51 @@
    Local SQLite — no Supabase, no Netlify, no auth.
    ============================================ */
 
-// ---- Tauri API ----
-const invoke = window.__TAURI__ && window.__TAURI__.invoke
-  ? window.__TAURI__.invoke
-  : (function () {
-      // Dev mode: return mock data when running outside Tauri
+// ---- Tauri API (lazy-initialized) ----
+var _invoke = null;
+function invoke(cmd, args) {
+  if (!_invoke) {
+    // Dump all Tauri-related globals for diagnostics
+    console.log('[invoke setup] __TAURI__:', typeof window.__TAURI__);
+    console.log('[invoke setup] __TAURI_INTERNALS__:', typeof window.__TAURI_INTERNALS__);
+    console.log('[invoke setup] __TAURI__ keys:', window.__TAURI__ ? Object.keys(window.__TAURI__) : 'N/A');
+
+    // Tauri v2 — __TAURI_INTERNALS__ is the low-level IPC injected by the Rust webview
+    if (window.__TAURI_INTERNALS__) {
+      console.log('[invoke setup] __TAURI_INTERNALS__ keys:', Object.keys(window.__TAURI_INTERNALS__));
+      if (typeof window.__TAURI_INTERNALS__.invoke === 'function') {
+        _invoke = function (c, a) { return window.__TAURI_INTERNALS__.invoke(c, a); };
+      }
+    }
+
+    // Tauri v2 — __TAURI__ with core.invoke
+    if (!_invoke && window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === 'function') {
+      _invoke = function (c, a) { return window.__TAURI__.core.invoke(c, a); };
+    }
+
+    // Tauri v1 — __TAURI__.invoke directly
+    if (!_invoke && window.__TAURI__ && typeof window.__TAURI__.invoke === 'function') {
+      _invoke = function (c, a) { return window.__TAURI__.invoke(c, a); };
+    }
+
+    // Dev mode fallback
+    if (!_invoke) {
+      console.warn('[TitleForge] No Tauri IPC bridge found — using dev mode mock.');
       var mockDb = { license_status: '', settings: {} };
-      return function (cmd, args) {
-        console.log('[DEV MODE] invoke:', cmd, args);
-        if (cmd === 'get_settings') {
-          return Promise.resolve(mockDb.settings);
-        }
-        if (cmd === 'validate_license') {
-          // In dev mode, ANY key/email combo works
-          mockDb.settings.license_status = 'valid';
-          mockDb.settings.license_tier = 'pro';
-          return Promise.resolve({ valid: true, tier: 'pro' });
-        }
-        if (cmd === 'get_categories') {
-          return Promise.resolve([]);
-        }
-        if (cmd === 'get_history' || cmd === 'get_favorites' || cmd === 'get_projects') {
-          return Promise.resolve([]);
-        }
-        if (cmd === 'get_usage_stats') {
-          return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0 });
-        }
-        if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') {
-          return Promise.resolve();
-        }
-        if (cmd === 'generate_titles') {
-          return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null }]);
-        }
+      _invoke = function (cmd, args) {
+        if (cmd === 'get_settings') return Promise.resolve(mockDb.settings);
+        if (cmd === 'validate_license') { mockDb.settings.license_status = 'valid'; mockDb.settings.license_tier = 'pro'; return Promise.resolve({ valid: true, tier: 'pro' }); }
+        if (cmd === 'get_categories') return Promise.resolve([]);
+        if (cmd === 'get_history' || cmd === 'get_favorites' || cmd === 'get_projects') return Promise.resolve([]);
+        if (cmd === 'get_usage_stats') return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0 });
+        if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') return Promise.resolve();
+        if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null }]);
         return Promise.reject(new Error('Tauri API not available in dev mode for: ' + cmd));
       };
-    })();
+    }
+  }
+  return _invoke(cmd, args);
+}
 
 // ---- CONFIG ----
 const FREE_MAX_TITLES = 10;
@@ -234,8 +244,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function openBuyLink() {
   var url = 'https://titleforge-tool.netlify.app/dashboard';
-  if (window.__TAURI__ && window.__TAURI__.core) {
-    window.__TAURI__.core.invoke('plugin:shell|open', { path: url });
+  // Try Tauri shell open — check __TAURI_INTERNALS__ first (earliest available), then __TAURI__
+  var ipc = (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+    || (window.__TAURI__ && window.__TAURI__.invoke);
+  if (ipc) {
+    ipc('plugin:shell|open', { path: url });
   } else {
     window.open(url, '_blank');
   }
