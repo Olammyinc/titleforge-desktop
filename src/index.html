@@ -4,290 +4,345 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TitleForge Desktop — Generate titles that get clicked</title>
-  <meta name="description" content="TitleForge Desktop — Offline title generator for books, articles, YouTube videos, songs, podcasts, and more. Powered by a curated database of 480+ templates." />
+  <meta name="description" content="TitleForge Desktop — Offline title generator for books, articles, YouTube videos, songs, podcasts, and more." />
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="stylesheet" href="styles.css" />
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<!-- ============ NAV BAR ============ -->
-<nav class="nav" style="display:none">
-  <div class="nav-inner">
-    <a href="#top" class="nav-logo">
-      <img src="logo.svg" alt="TitleForge" class="nav-logo-icon" />
-      TitleForge
-    </a>
-    <div class="nav-links">
-      <a href="#tool" class="nav-mobile-keep">Generator</a>
-      <a href="dashboard.html" id="navDashboard" style="display:none;">Dashboard</a>
-      <span class="nav-pro-badge" id="navProBadge" style="display:none;">PRO</span>
+<!-- ============ ACTIVATION SCREEN ============ -->
+<div id="activationScreen" class="activation-screen">
+  <div class="activation-left">
+    <div class="activation-left-content">
+      <img src="logo.svg" alt="TitleForge" class="activation-logo" />
+      <h1 class="activation-wordmark">TitleForge</h1>
+      <p class="activation-tagline">Your titles, forged offline.</p>
+      <p class="activation-subtitle">A warm, typographic title generator for creators who publish.</p>
+      <a href="#" class="activation-buy-link" id="activationBuyLink">Get a License →</a>
     </div>
   </div>
-</nav>
-
-<!-- ============ HERO (compact) ============ -->
-<section class="hero hero-compact" id="top" style="display:none">
-  <div class="hero-inner">
-    <h1 class="hero-title">The right title, in seconds.</h1>
-    <p class="hero-sub">Generate up to 100 titles for books, articles, YouTube videos, songs, podcasts, and more — each scored for appeal. All 16 categories unlocked.</p>
-    <div class="hero-cta-row">
-      <a href="#tool" class="btn btn-primary btn-large">Generate Titles →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ============ THE TOOL ============ -->
-<section class="tool-section section-light" id="tool" style="display:none">
-  <div class="tool-container">
-
-    <h2 class="section-heading">Generate Titles</h2>
-    <p class="section-sub">All features unlocked — all 16 categories, up to 100 titles per batch, appeal scores, subtitles &amp; translation.</p>
-
-    <!-- Usage counter -->
-    <div class="usage-bar" id="usageBar" style="display:none;">
-      <span id="usageText"></span>
-    </div>
-
-    <!-- Input -->
-    <div class="form-group">
-      <label for="keyword">Keyword or existing title</label>
-      <input type="text" id="keyword" placeholder="e.g. productivity, or paste an existing title to improve" />
-    </div>
-
-    <!-- Categories -->
-    <div class="form-group">
-      <label>What are you naming? <span class="hint">(check all that apply)</span></label>
-      <div class="checkbox-grid" id="categoryGrid"></div>
-    </div>
-
-    <!-- Genres -->
-    <div class="form-group">
-      <label for="genre">Genre / topic area</label>
-      <select id="genre">
-        <option value="any">Any genre</option>
-        <option value="fiction">Fiction</option>
-        <option value="nonfiction">Non-fiction</option>
-        <option value="memoir">Memoir / Biography</option>
-        <option value="selfhelp">Self-help / How-to</option>
-        <option value="business">Business / Marketing</option>
-        <option value="science">Science / Technology</option>
-        <option value="history">History</option>
-        <option value="spiritual">Spiritual / Religious</option>
-        <option value="health">Health / Wellness</option>
-        <option value="finance">Finance / Money</option>
-        <option value="children">Children's / Young Adult</option>
-        <option value="romance">Romance</option>
-        <option value="mystery">Mystery / Thriller</option>
-        <option value="fantasy">Fantasy / Sci-Fi</option>
-        <option value="poetry">Poetry / Literary</option>
-        <option value="comedy">Comedy / Humor</option>
-        <option value="sports">Sports</option>
-        <option value="travel">Travel / Adventure</option>
-        <option value="food">Food / Cooking</option>
-        <option value="politics">Politics / Current Events</option>
-      </select>
-    </div>
-
-    <!-- Communication style -->
-    <div class="form-group">
-      <label>Communication style</label>
-      <div class="style-row" id="styleRow">
-        <button class="style-btn active" data-style="normal">Normal</button>
-        <button class="style-btn" data-style="shout">Shout</button>
-        <button class="style-btn" data-style="whisper">Whisper</button>
-        <button class="style-btn" data-style="blessing">Blessing</button>
-        <button class="style-btn" data-style="provocative">Provocative</button>
-        <button class="style-btn" data-style="minimalist">Minimalist</button>
-        <button class="style-btn" data-style="storytelling">Storytelling</button>
-        <button class="style-btn" data-style="question">Question</button>
-        <button class="style-btn" data-style="playful">Playful</button>
+  <div class="activation-right">
+    <div class="activation-form-wrap">
+      <h2 class="activation-heading">ACTIVATE<br/>TITLEFORGE<br/>DESKTOP</h2>
+      <p class="activation-desc">Enter your license key and email to unlock the app.</p>
+      <div class="activation-field">
+        <label for="activationKey">License Key</label>
+        <input type="text" id="activationKey" placeholder="TF-BASIC-A1B2-C3D4-E5F6" class="activation-input" />
       </div>
-    </div>
-
-    <!-- Gender selector -->
-    <div class="form-group" id="genderGroup" style="display:none;">
-      <label for="nameGender">Name gender</label>
-      <div class="style-row" id="genderRow">
-        <button class="gender-btn active" data-gender="any">Any</button>
-        <button class="gender-btn" data-gender="male">Male</button>
-        <button class="gender-btn" data-gender="female">Female</button>
-        <button class="gender-btn" data-gender="neutral">Neutral</button>
+      <div class="activation-field">
+        <label for="activationEmail">Email Address</label>
+        <input type="email" id="activationEmail" placeholder="you@example.com" class="activation-input" />
       </div>
+      <p id="activationError" class="activation-error"></p>
+      <button id="activationBtn" class="activation-btn">Activate</button>
+      <p class="activation-footer">Don't have a license? <a href="#" id="activationBuyLink2">Purchase one here →</a></p>
     </div>
-
-    <!-- Fine-tune expander -->
-    <div class="form-group">
-      <button type="button" class="finetune-toggle" id="finetuneToggle" aria-expanded="false">
-        <span class="finetune-arrow">▸</span> Fine-tune your titles (optional)
-      </button>
-      <div class="finetune-panel" id="finetunePanel" style="display:none;">
-        <p class="finetune-intro">These 7 optional questions help generate sharper titles. Skip any — default values work fine.</p>
-
-        <div class="finetune-question">
-          <label for="ftAudience">1. Who is the primary audience?</label>
-          <select id="ftAudience" class="finetune-select">
-            <option value="">General / everyone</option>
-            <option value="parents">Parents</option>
-            <option value="teens">Teens &amp; young adults</option>
-            <option value="professionals">Professionals</option>
-            <option value="entrepreneurs">Entrepreneurs &amp; founders</option>
-            <option value="students">Students</option>
-            <option value="creatives">Creatives &amp; artists</option>
-            <option value="kids">Kids</option>
-            <option value="seniors">Seniors</option>
-            <option value="marketers">Marketers</option>
-            <option value="developers">Developers / technical</option>
-          </select>
-        </div>
-
-        <div class="finetune-question">
-          <label for="ftEmotion">2. What emotion should drive the click?</label>
-          <select id="ftEmotion" class="finetune-select">
-            <option value="">Auto (let AI decide)</option>
-            <option value="curiosity">Curiosity</option>
-            <option value="urgency">Urgency</option>
-            <option value="inspiration">Inspiration</option>
-            <option value="humor">Humor</option>
-            <option value="intrigue">Intrigue</option>
-            <option value="nostalgia">Nostalgia</option>
-            <option value="authority">Authority</option>
-          </select>
-        </div>
-
-        <div class="finetune-question">
-          <label for="ftLength">3. Preferred title length?</label>
-          <select id="ftLength" class="finetune-select">
-            <option value="">Default for medium</option>
-            <option value="short">Short &amp; punchy (2–5 words)</option>
-            <option value="medium">Medium (6–10 words)</option>
-            <option value="long">Long &amp; descriptive (11+ words)</option>
-          </select>
-        </div>
-
-        <div class="finetune-question">
-          <label for="ftAngle">4. What is your unique angle or hook? <span class="hint">(optional)</span></label>
-          <input type="text" id="ftAngle" class="finetune-input" placeholder="e.g. from a single mother's perspective" />
-        </div>
-
-        <div class="finetune-question">
-          <label for="ftMustInclude">5. Any words that MUST appear? <span class="hint">(optional)</span></label>
-          <input type="text" id="ftMustInclude" class="finetune-input" placeholder="e.g. brand name, key term" />
-        </div>
-
-        <div class="finetune-question">
-          <label for="ftAvoid">6. Any words to AVOID? <span class="hint">(optional)</span></label>
-          <input type="text" id="ftAvoid" class="finetune-input" placeholder="e.g. overused words, competitor terms" />
-        </div>
-
-        <div class="finetune-question">
-          <label for="ftBeat">7. Paste a title you want to beat <span class="hint">(optional)</span></label>
-          <input type="text" id="ftBeat" class="finetune-input" placeholder="e.g. 10 Productivity Hacks That Changed My Life" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Quantity -->
-    <div class="form-group">
-      <label for="quantity">How many titles? <span id="qtyDisplay" class="qty-display">10</span></label>
-      <input type="range" id="quantity" min="1" max="100" value="10" class="slider" />
-      <div class="slider-labels"><span>1</span><span>25</span><span>50</span><span>100</span></div>
-    </div>
-
-    <!-- Pro toggles (all enabled in desktop) -->
-    <div class="form-group pro-toggles">
-      <label class="toggle-row">
-        <input type="checkbox" id="crossMediumToggle" />
-        <span>Cross-medium adaptation <span class="pro-badge">BETA</span></span>
-      </label>
-      <p class="toggle-hint">Generate the same concept across all selected categories and see how it adapts to each medium.</p>
-      <label class="toggle-row">
-        <input type="checkbox" id="subtitlesToggle" />
-        <span>Generate subtitles</span>
-      </label>
-      <label class="toggle-row">
-        <input type="checkbox" id="translateToggle" />
-        <span>Translate titles</span>
-      </label>
-      <div id="translateLangs" class="translate-langs" style="display:none;">
-        <select id="translateLang">
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
-          <option value="de">German</option>
-          <option value="it">Italian</option>
-          <option value="pt">Portuguese</option>
-          <option value="nl">Dutch</option>
-          <option value="ru">Russian</option>
-          <option value="ja">Japanese</option>
-          <option value="ko">Korean</option>
-          <option value="zh">Chinese</option>
-          <option value="ar">Arabic</option>
-          <option value="hi">Hindi</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Engine toggle -->
-    <div class="engine-toggle" id="engineToggle">
-      <span class="engine-toggle-label">Engine:</span>
-      <button class="engine-btn active" data-engine="database" id="engineDbBtn">Database</button>
-      <button class="engine-btn" data-engine="ai" id="engineAiBtn">AI <span class="pro-badge">KEY</span></button>
-      <span class="engine-status" id="engineStatus">Local database — always available</span>
-    </div>
-
-    <!-- Generate button -->
-    <button id="generateBtn" class="btn btn-primary btn-large">Generate Titles</button>
-
-    <!-- Results -->
-    <div id="results" class="results"></div>
-
-    <!-- Loading -->
-    <div id="loading" class="loading" style="display:none;">
-      <div class="spinner"></div>
-      <p>Forging your titles...</p>
-    </div>
-
-    <!-- Error -->
-    <div id="error" class="error-msg" style="display:none;"></div>
-  </div>
-</section>
-
-<!-- ============ FOOTER ============ -->
-<footer class="footer" style="display:none">
-  <p>TitleForge Desktop — Generate titles that get clicked.</p>
-  <p class="footer-sub">Offline title generator for Windows, macOS, and Linux.</p>
-</footer>
-
-<!-- ============ LICENSE ACTIVATION OVERLAY ============ -->
-<div class="license-overlay" id="licenseOverlay">
-  <div class="license-modal">
-    <img src="logo.svg" alt="TitleForge" class="license-logo" />
-    <h2>Activate TitleForge Desktop</h2>
-    <p>Enter your license key to activate the app. You can find your key on the <strong>Dashboard → Settings</strong> page.</p>
-    <div class="license-input-group">
-      <input type="text" id="licenseKeyInput" placeholder="e.g. TF-BASIC-A1B2-C3D4-E5F6" class="license-input" />
-      <input type="email" id="licenseEmailInput" placeholder="Your email address" class="license-input" />
-    </div>
-    <p id="licenseError" class="license-error" style="display:none;"></p>
-    <button id="licenseActivateBtn" class="btn btn-primary btn-large btn-full">Activate</button>
-    <p class="license-footer">Don't have a license? <a href="#" id="licenseBuyLink">Get one here</a></p>
+    <span class="activation-version">v0.1.1</span>
   </div>
 </div>
 
-<script src="app.js"></script>
-<script>
-(function() {
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+<!-- ============ MAIN APP ============ -->
+<div id="mainApp" class="main-app" style="display:none">
 
-  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-})();
-</script>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <img src="logo.svg" alt="TitleForge" class="sidebar-logo" />
+      <span class="sidebar-wordmark">TitleForge</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item active" data-view="generator">
+        <span class="sidebar-dot"></span> Generator
+      </a>
+      <a class="sidebar-item" data-view="dashboard">
+        <span class="sidebar-dot"></span> Dashboard
+      </a>
+      <a class="sidebar-item" data-view="settings">
+        <span class="sidebar-dot"></span> Settings
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="sidebar-badge">PRO</span>
+      <span class="sidebar-version">v0.1.1</span>
+    </div>
+  </aside>
+
+  <!-- Content Area -->
+  <main class="content">
+    <div class="content-header">
+      <h1 class="content-title" id="pageTitle">Generator</h1>
+    </div>
+
+    <!-- ===== GENERATOR VIEW ===== -->
+    <div id="viewGenerator" class="content-view active">
+      <div class="gen-layout">
+        <!-- Left column -->
+        <div class="gen-col gen-col-input">
+          <div class="card">
+            <div class="form-group">
+              <label for="keyword">Keyword or existing title</label>
+              <input type="text" id="keyword" placeholder="e.g. productivity, or paste an existing title to improve" />
+            </div>
+            <button type="button" class="finetune-toggle" id="finetuneToggle" aria-expanded="false">
+              <span class="finetune-arrow">▸</span> Fine-tune your titles (optional)
+            </button>
+            <div class="finetune-panel" id="finetunePanel">
+              <p class="finetune-intro">These 7 optional questions help generate sharper titles. Skip any — default values work fine.</p>
+              <div class="finetune-question">
+                <label for="ftAudience">1. Who is the primary audience?</label>
+                <select id="ftAudience" class="finetune-select">
+                  <option value="">General / everyone</option>
+                  <option value="parents">Parents</option>
+                  <option value="teens">Teens &amp; young adults</option>
+                  <option value="professionals">Professionals</option>
+                  <option value="entrepreneurs">Entrepreneurs &amp; founders</option>
+                  <option value="students">Students</option>
+                  <option value="creatives">Creatives &amp; artists</option>
+                  <option value="kids">Kids</option>
+                  <option value="seniors">Seniors</option>
+                  <option value="marketers">Marketers</option>
+                  <option value="developers">Developers / technical</option>
+                </select>
+              </div>
+              <div class="finetune-question">
+                <label for="ftEmotion">2. What emotion should drive the click?</label>
+                <select id="ftEmotion" class="finetune-select">
+                  <option value="">Auto (let AI decide)</option>
+                  <option value="curiosity">Curiosity</option>
+                  <option value="urgency">Urgency</option>
+                  <option value="inspiration">Inspiration</option>
+                  <option value="humor">Humor</option>
+                  <option value="intrigue">Intrigue</option>
+                  <option value="nostalgia">Nostalgia</option>
+                  <option value="authority">Authority</option>
+                </select>
+              </div>
+              <div class="finetune-question">
+                <label for="ftLength">3. Preferred title length?</label>
+                <select id="ftLength" class="finetune-select">
+                  <option value="">Default for medium</option>
+                  <option value="short">Short &amp; punchy (2–5 words)</option>
+                  <option value="medium">Medium (6–10 words)</option>
+                  <option value="long">Long &amp; descriptive (11+ words)</option>
+                </select>
+              </div>
+              <div class="finetune-question">
+                <label for="ftAngle">4. What is your unique angle or hook?</label>
+                <input type="text" id="ftAngle" class="finetune-input" placeholder="e.g. from a single mother's perspective" />
+              </div>
+              <div class="finetune-question">
+                <label for="ftMustInclude">5. Any words that MUST appear?</label>
+                <input type="text" id="ftMustInclude" class="finetune-input" placeholder="e.g. brand name, key term" />
+              </div>
+              <div class="finetune-question">
+                <label for="ftAvoid">6. Any words to AVOID?</label>
+                <input type="text" id="ftAvoid" class="finetune-input" placeholder="e.g. overused words, competitor terms" />
+              </div>
+              <div class="finetune-question">
+                <label for="ftBeat">7. Paste a title you want to beat</label>
+                <input type="text" id="ftBeat" class="finetune-input" placeholder="e.g. 10 Productivity Hacks That Changed My Life" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:20px;">
+              <label for="quantity">How many titles? <span id="qtyDisplay" class="qty-display">10</span></label>
+              <input type="range" id="quantity" min="1" max="100" value="10" class="slider" />
+              <div class="slider-labels"><span>1</span><span>25</span><span>50</span><span>100</span></div>
+            </div>
+            <button id="generateBtn" class="gen-btn">Generate Titles</button>
+            <div id="loading" class="loading" style="display:none;">
+              <div class="spinner"></div>
+              <p>Forging your titles...</p>
+            </div>
+            <div id="error" class="error-msg" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="gen-col gen-col-config">
+          <div class="card">
+            <div class="form-group">
+              <label>What are you naming? <span class="hint">(check all that apply)</span></label>
+              <div class="checkbox-grid" id="categoryGrid"></div>
+            </div>
+            <div class="form-group">
+              <label for="genre">Genre / topic area</label>
+              <select id="genre">
+                <option value="any">Any genre</option>
+                <option value="fiction">Fiction</option>
+                <option value="nonfiction">Non-fiction</option>
+                <option value="memoir">Memoir / Biography</option>
+                <option value="selfhelp">Self-help / How-to</option>
+                <option value="business">Business / Marketing</option>
+                <option value="science">Science / Technology</option>
+                <option value="history">History</option>
+                <option value="spiritual">Spiritual / Religious</option>
+                <option value="health">Health / Wellness</option>
+                <option value="finance">Finance / Money</option>
+                <option value="children">Children's / Young Adult</option>
+                <option value="romance">Romance</option>
+                <option value="mystery">Mystery / Thriller</option>
+                <option value="fantasy">Fantasy / Sci-Fi</option>
+                <option value="poetry">Poetry / Literary</option>
+                <option value="comedy">Comedy / Humor</option>
+                <option value="sports">Sports</option>
+                <option value="travel">Travel / Adventure</option>
+                <option value="food">Food / Cooking</option>
+                <option value="politics">Politics / Current Events</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Communication style</label>
+              <div class="style-row" id="styleRow">
+                <button class="style-btn active" data-style="normal">Normal</button>
+                <button class="style-btn" data-style="shout">Shout</button>
+                <button class="style-btn" data-style="whisper">Whisper</button>
+                <button class="style-btn" data-style="blessing">Blessing</button>
+                <button class="style-btn" data-style="provocative">Provocative</button>
+                <button class="style-btn" data-style="minimalist">Minimalist</button>
+                <button class="style-btn" data-style="storytelling">Storytelling</button>
+                <button class="style-btn" data-style="question">Question</button>
+                <button class="style-btn" data-style="playful">Playful</button>
+              </div>
+            </div>
+            <div class="form-group" id="genderGroup" style="display:none;">
+              <label>Name gender</label>
+              <div class="style-row" id="genderRow">
+                <button class="gender-btn active" data-gender="any">Any</button>
+                <button class="gender-btn" data-gender="male">Male</button>
+                <button class="gender-btn" data-gender="female">Female</button>
+                <button class="gender-btn" data-gender="neutral">Neutral</button>
+              </div>
+            </div>
+            <div class="engine-toggle" id="engineToggle">
+              <span class="engine-toggle-label">Engine:</span>
+              <button class="engine-btn active" data-engine="database" id="engineDbBtn">Database</button>
+              <button class="engine-btn" data-engine="ai" id="engineAiBtn">AI <span class="pro-badge">KEY</span></button>
+            </div>
+            <span class="engine-status" id="engineStatus">Local database — always available</span>
+            <div class="gen-toggles">
+              <label class="toggle-row">
+                <input type="checkbox" id="crossMediumToggle" />
+                <span>Cross-medium adaptation <span class="pro-badge">BETA</span></span>
+              </label>
+              <p class="toggle-hint">Generate the same concept across all selected categories and see how it adapts to each medium.</p>
+              <label class="toggle-row">
+                <input type="checkbox" id="subtitlesToggle" />
+                <span>Subtitles</span>
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" id="translateToggle" />
+                <span>Translate</span>
+              </label>
+              <div id="translateLangs" class="translate-langs" style="display:none;">
+                <select id="translateLang">
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="it">Italian</option>
+                  <option value="pt">Portuguese</option>
+                  <option value="nl">Dutch</option>
+                  <option value="ru">Russian</option>
+                  <option value="ja">Japanese</option>
+                  <option value="ko">Korean</option>
+                  <option value="zh">Chinese</option>
+                  <option value="ar">Arabic</option>
+                  <option value="hi">Hindi</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results area (full width below columns) -->
+      <div class="gen-results">
+        <div id="usageBar" class="usage-bar" style="display:none;">
+          <span id="usageText"></span>
+        </div>
+        <div id="results" class="results"></div>
+      </div>
+    </div>
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div id="viewDashboard" class="content-view">
+      <div class="dash-stats" id="dashStats"></div>
+      <div class="dash-tabs">
+        <button class="dash-tab active" data-dashtab="overview">Overview</button>
+        <button class="dash-tab" data-dashtab="history">History</button>
+        <button class="dash-tab" data-dashtab="favorites">Favorites</button>
+        <button class="dash-tab" data-dashtab="projects">Projects</button>
+        <button class="dash-tab" data-dashtab="export">Export</button>
+      </div>
+      <div class="dash-panel active" id="dashOverview"><div id="dashOverviewList" class="dash-list"></div></div>
+      <div class="dash-panel" id="dashHistory">
+        <div class="dash-toolbar">
+          <input type="text" id="dashSearch" class="dash-search" placeholder="Search titles, keywords..." />
+          <select id="dashFilterCat" class="dash-filter"><option value="">All categories</option></select>
+          <select id="dashFilterSort" class="dash-filter">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="alpha">A → Z</option>
+          </select>
+        </div>
+        <div id="dashHistoryList" class="dash-list"></div>
+      </div>
+      <div class="dash-panel" id="dashFavorites"><div id="dashFavoritesList" class="dash-list"></div></div>
+      <div class="dash-panel" id="dashProjects">
+        <div class="dash-projects-header">
+          <input type="text" id="newProjectName" class="dash-input" placeholder="New project name..." />
+          <button id="createProjectBtn" class="btn btn-primary btn-small">Create Project</button>
+        </div>
+        <div id="dashProjectsList" class="dash-list"></div>
+      </div>
+      <div class="dash-panel" id="dashExport">
+        <p class="dash-export-text">Select titles below or use the quick-export buttons.</p>
+        <div class="dash-export-buttons">
+          <button id="exportSelectAllBtn" class="btn btn-ghost-dark btn-small">Select All</button>
+          <button id="exportDeselectAllBtn" class="btn btn-ghost-dark btn-small">Deselect All</button>
+          <button id="exportSelectedCsv" class="btn btn-primary btn-small">Export Selected (CSV)</button>
+          <button id="exportSelectedCopy" class="btn btn-ghost-dark btn-small">Copy Selected</button>
+        </div>
+        <div id="exportPreview" class="dash-export-preview"></div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS VIEW ===== -->
+    <div id="viewSettings" class="content-view">
+      <h2 class="settings-page-title">Settings</h2>
+      <div class="settings-layout">
+        <div class="settings-card">
+          <h3 class="settings-card-title">Plan &amp; Version</h3>
+          <div class="settings-row"><span class="settings-label">Current plan</span><span class="settings-value" style="color:#16a34a;font-weight:700;">Desktop Pro</span></div>
+          <div class="settings-row"><span class="settings-label">Version</span><span class="settings-value">0.1.1</span></div>
+          <div class="settings-row"><span class="settings-label">Generations today</span><span class="settings-value" id="settingsUsage">0</span></div>
+        </div>
+        <div class="settings-card">
+          <h3 class="settings-card-title">AI Integration</h3>
+          <p class="settings-card-desc">Bring your own API key for cloud AI-powered titles.</p>
+          <div class="settings-field">
+            <label for="aiProvider">Provider</label>
+            <select id="aiProvider">
+              <option value="">Select provider...</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="claude">Anthropic Claude</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
+          <div class="settings-field">
+            <label for="aiApiKey">API Key</label>
+            <input type="password" id="aiApiKey" placeholder="sk-..." />
+          </div>
+          <button id="saveApiKeyBtn" class="btn btn-primary btn-small">Save API Key</button>
+          <p id="aiKeyStatus" class="settings-status"></p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>

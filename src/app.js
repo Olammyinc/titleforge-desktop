@@ -55,7 +55,7 @@ const BREAKDOWN_FIELDS = [
   { key: 'originVibe',       label: 'Origin / vibe',   tip: 'Cultural origin or overall feel.' },
 ];
 
-// ---- STATE (Desktop Pro — no auth, no guest mode) ----
+// ---- STATE ----
 var isPro = true;
 var isLoggedIn = true;
 var isGuest = false;
@@ -130,99 +130,121 @@ function downloadFile(content, filename, mimeType) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-// ---- INIT ----
-document.addEventListener('DOMContentLoaded', function () {
-  // Block the UI completely — show nothing until license is validated
-  checkLicense().then(function (activated) {
-    if (activated) {
-      initApp();
-    } else {
-      showLicenseOverlay();
-    }
-  });
-});
+// ---- SIDEBAR NAVIGATION ----
+function setupSidebarNav() {
+  var items = document.querySelectorAll('.sidebar-item');
+  var views = {
+    generator: document.getElementById('viewGenerator'),
+    dashboard: document.getElementById('viewDashboard'),
+    settings: document.getElementById('viewSettings'),
+  };
+  var title = document.getElementById('pageTitle');
 
-function checkLicense() {
-  return invoke('get_settings').then(function (settings) {
-    var status = settings.license_status || '';
-    return status === 'valid';
-  }).catch(function () { return false; });
+  items.forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      e.preventDefault();
+      var view = item.getAttribute('data-view');
+      items.forEach(function (i) { i.classList.remove('active'); });
+      item.classList.add('active');
+      Object.keys(views).forEach(function (k) {
+        if (views[k]) views[k].classList.remove('active');
+      });
+      if (views[view]) views[view].classList.add('active');
+      if (title) title.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+      if (view === 'dashboard') {
+        renderDashboard();
+      }
+      if (view === 'settings') {
+        renderSettingsContent();
+      }
+    });
+  });
 }
 
-function showLicenseOverlay() {
-  // Hide nav, hero, tool, footer — only show overlay
-  var elementsToHide = ['.nav', '.hero-compact', '.tool-section', '.footer'];
-  elementsToHide.forEach(function (sel) {
-    document.querySelectorAll(sel).forEach(function (el) { el.style.display = 'none'; });
+function switchToGenerator() {
+  var gen = document.querySelector('.sidebar-item[data-view="generator"]');
+  if (gen) gen.click();
+}
+
+function switchToDashboard() {
+  var dash = document.querySelector('.sidebar-item[data-view="dashboard"]');
+  if (dash) dash.click();
+}
+
+// ---- LICENSE ACTIVATION ----
+document.addEventListener('DOMContentLoaded', function () {
+  var activationScreen = document.getElementById('activationScreen');
+  var mainApp = document.getElementById('mainApp');
+
+  // Wire buy links
+  document.getElementById('activationBuyLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    openBuyLink();
+  });
+  document.getElementById('activationBuyLink2').addEventListener('click', function (e) {
+    e.preventDefault();
+    openBuyLink();
   });
 
-  var overlay = document.getElementById('licenseOverlay');
-  if (overlay) overlay.style.display = 'flex';
-  var activateBtn = document.getElementById('licenseActivateBtn');
-  var keyInput = document.getElementById('licenseKeyInput');
-  var emailInput = document.getElementById('licenseEmailInput');
-  var errEl = document.getElementById('licenseError');
+  // Wire activation button
+  document.getElementById('activationBtn').addEventListener('click', handleActivation);
+  document.getElementById('activationKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleActivation(); });
+  document.getElementById('activationEmail').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleActivation(); });
 
-  if (activateBtn) {
-    activateBtn.addEventListener('click', function () {
-      var key = keyInput.value.trim();
-      var email = emailInput.value.trim();
-      if (!key || !email) {
-        errEl.textContent = 'Please enter both your license key and email.';
-        errEl.style.display = 'block';
-        return;
-      }
-      errEl.style.display = 'none';
-      activateBtn.textContent = 'Activating...';
-      activateBtn.disabled = true;
+  // Check license
+  invoke('get_settings').then(function (settings) {
+    if (settings.license_status === 'valid') {
+      activationScreen.style.display = 'none';
+      mainApp.style.display = 'flex';
+      initApp();
+    }
+  }).catch(function () {});
+});
 
-      invoke('validate_license', { key: key, email: email }).then(function (result) {
-        if (result.valid) {
-          overlay.style.display = 'none';
-          initApp();
-        } else {
-          errEl.textContent = 'Invalid license key or email. Check your dashboard or try again.';
-          errEl.style.display = 'block';
-          activateBtn.textContent = 'Activate';
-          activateBtn.disabled = false;
-        }
-      }).catch(function (err) {
-        errEl.textContent = 'Could not validate license: ' + err;
-        errEl.style.display = 'block';
-        activateBtn.textContent = 'Activate';
-        activateBtn.disabled = false;
-      });
-    });
-
-    keyInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') activateBtn.click(); });
-    emailInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') activateBtn.click(); });
+function openBuyLink() {
+  if (window.__TAURI__ && window.__TAURI__.shell) {
+    window.__TAURI__.shell.open('https://titleforge-tool.netlify.app/dashboard');
+  } else {
+    window.open('https://titleforge-tool.netlify.app/dashboard');
   }
+}
 
-  var buyLink = document.getElementById('licenseBuyLink');
-  if (buyLink) {
-    buyLink.addEventListener('click', function (e) {
-      e.preventDefault();
-      if (window.__TAURI__ && window.__TAURI__.shell) {
-        window.__TAURI__.shell.open('https://titleforge-tool.netlify.app/dashboard');
-      } else {
-        window.open('https://titleforge-tool.netlify.app/dashboard');
-      }
-    });
+function handleActivation() {
+  var key = document.getElementById('activationKey').value.trim();
+  var email = document.getElementById('activationEmail').value.trim();
+  var errEl = document.getElementById('activationError');
+  var btn = document.getElementById('activationBtn');
+
+  if (!key || !email) {
+    errEl.textContent = 'Please enter both your license key and email.';
+    errEl.style.display = 'block';
+    return;
   }
+  errEl.style.display = 'none';
+  btn.textContent = 'Activating...';
+  btn.disabled = true;
+
+  invoke('validate_license', { key: key, email: email }).then(function (result) {
+    if (result.valid) {
+      document.getElementById('activationScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'flex';
+      initApp();
+    } else {
+      errEl.textContent = 'Invalid license key or email. Check your dashboard or try again.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Activate';
+      btn.disabled = false;
+    }
+  }).catch(function (err) {
+    errEl.textContent = 'Could not validate license: ' + err;
+    errEl.style.display = 'block';
+    btn.textContent = 'Activate';
+    btn.disabled = false;
+  });
 }
 
 function initApp() {
-  // Show main UI sections hidden by license gate CSS (and by showLicenseOverlay)
-  document.querySelectorAll('.nav, .hero-compact, .tool-section, .footer').forEach(function (el) {
-    el.style.display = '';
-  });
-
-  // Show nav elements hidden until license activation
-  var navDash = document.getElementById('navDashboard');
-  var navPro = document.getElementById('navProBadge');
-  if (navDash) navDash.style.display = '';
-  if (navPro) navPro.style.display = '';
-
+  setupSidebarNav();
   renderCategories();
   setupStyleButtons();
   setupGenderButtons();
@@ -244,10 +266,11 @@ function initApp() {
     aiProvider = settings.ai_provider || '';
     aiApiKey = settings.ai_api_key || '';
     if (aiProvider && aiApiKey) {
-      document.getElementById('engineStatus').textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' key ready';
+      var el = document.getElementById('engineStatus');
+      if (el) el.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' key ready';
     }
   }).catch(function () {});
-});
+}
 
 // ---- CATEGORIES ----
 function renderCategories() {
@@ -261,7 +284,6 @@ function renderCategories() {
     checkbox.type = 'checkbox';
     checkbox.id = 'cat-' + cat.id;
     checkbox.value = cat.id;
-    // All categories enabled in desktop Pro
     var label = document.createElement('label');
     label.htmlFor = 'cat-' + cat.id;
     label.style.cursor = 'pointer';
@@ -363,7 +385,7 @@ function updateSliderTrack(slider) {
   var val = parseInt(slider.value);
   var max = parseInt(slider.max);
   var pct = (val / max) * 100;
-  slider.style.background = 'linear-gradient(to right, #2563eb 0%, #2563eb ' + pct + '%, #bfdbfe ' + pct + '%, #bfdbfe 100%)';
+  slider.style.background = 'linear-gradient(to right, var(--forge) 0%, var(--forge) ' + pct + '%, #E8E3D9 ' + pct + '%, #E8E3D9 100%)';
 }
 
 function updateQuantityLabel() {
@@ -392,7 +414,7 @@ function updateUsageDisplay() {
 }
 
 // ============================================
-// GENERATE TITLES (via Tauri invoke)
+// GENERATE TITLES
 // ============================================
 
 function setupEngineToggle() {
@@ -410,7 +432,7 @@ function setupEngineToggle() {
 
   aiBtn.addEventListener('click', function () {
     if (!aiProvider || !aiApiKey) {
-      if (status) status.textContent = 'No API key saved. Go to Dashboard → Settings → AI Key.';
+      if (status) status.textContent = 'No API key saved. Go to Settings.';
       return;
     }
     activeEngine = 'ai';
@@ -427,6 +449,9 @@ function handleGenerate() {
   var checkedCategories = [];
   document.querySelectorAll('#categoryGrid input:checked').forEach(function (cb) { checkedCategories.push(cb.value); });
   if (checkedCategories.length === 0) { showError('Please select at least one category.'); return; }
+
+  var genre = document.getElementById('genre').value;
+  var quantity = parseInt(document.getElementById('quantity').value);
 
   var wantCrossMedium = document.getElementById('crossMediumToggle').checked;
   var wantSubtitles = document.getElementById('subtitlesToggle').checked;
@@ -457,8 +482,6 @@ function handleGenerate() {
       finetune: finetune,
       provider: aiProvider,
       api_key: aiApiKey,
-      provider: aiProvider,
-      api_key: aiApiKey,
     });
   } else {
     genPromise = invoke('generate_titles', {
@@ -473,7 +496,6 @@ function handleGenerate() {
   genPromise.then(function (titles) {
     displayResults(titles, keyword);
     dailyUsage++;
-
     invoke('record_generation', {
       keyword: keyword,
       categories: checkedCategories,
@@ -481,10 +503,8 @@ function handleGenerate() {
       style: selectedStyle,
       titles: titles,
     }).catch(function () {});
-
     updateUsageDisplay();
     saveToHistoryLocal(keyword, checkedCategories, genre, selectedStyle, titles);
-
     genCountThisSession++;
   }).catch(function (err) {
     showError(typeof err === 'string' ? err : (err.message || 'Something went wrong. Please try again.'));
@@ -495,7 +515,6 @@ function handleGenerate() {
 }
 
 function saveToHistoryLocal(keyword, categories, genre, style, titles) {
-  // Add to local dashHistory so the dashboard updates immediately
   var entry = {
     id: Date.now(),
     keyword: keyword,
@@ -517,7 +536,7 @@ function displayResults(titles, currentKeyword) {
   container.innerHTML = '';
 
   if (!titles || titles.length === 0) {
-    container.innerHTML = '<p style="text-align:center;color:#6b6b8b;padding:20px;">No titles generated. Try a different keyword or category.</p>';
+    container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">No titles generated. Try a different keyword or category.</p>';
     return;
   }
 
@@ -525,7 +544,6 @@ function displayResults(titles, currentKeyword) {
     var div = document.createElement('div');
     div.className = 'result-item';
 
-    // Score column
     if (item.score !== undefined && item.score !== null) {
       var leftCol = document.createElement('div');
       leftCol.className = 'result-left';
@@ -552,7 +570,6 @@ function displayResults(titles, currentKeyword) {
       div.appendChild(leftCol);
     }
 
-    // Body
     var body = document.createElement('div');
     body.className = 'result-body';
 
@@ -577,7 +594,6 @@ function displayResults(titles, currentKeyword) {
       body.appendChild(tagsDiv);
     }
 
-    // Star/Favorite button
     if (item.title) {
       var starBtn = document.createElement('button');
       var isFav = isFavorited(item.title);
@@ -591,7 +607,6 @@ function displayResults(titles, currentKeyword) {
       })(item.title, starBtn);
       body.appendChild(starBtn);
 
-      // Project button
       var projBtn = document.createElement('button');
       projBtn.className = 'proj-add-btn';
       projBtn.title = 'Add to project';
@@ -625,7 +640,7 @@ function showError(msg) {
 }
 
 // ============================================
-// DASHBOARD DATA LOADING (via Tauri invoke)
+// DASHBOARD
 // ============================================
 
 function loadDashboardData() {
@@ -638,21 +653,16 @@ function loadDashboardData() {
     dashHistory = results[0] || [];
     dashFavorites = results[1] || [];
     dashProjects = results[2] || [];
-
-    // Parse titles JSON strings for history entries
     dashHistory.forEach(function (entry) {
       if (typeof entry.titles === 'string') {
         try { entry.titles = JSON.parse(entry.titles); } catch (e) { entry.titles = []; }
       }
     });
-
-    // Parse project titles
     dashProjects.forEach(function (proj) {
       if (typeof proj.titles === 'string') {
         try { proj.titles = JSON.parse(proj.titles); } catch (e) { proj.titles = []; }
       }
     });
-
     var stats = results[3];
     dailyUsage = stats.todayGenerations || 0;
     updateUsageDisplay();
@@ -669,19 +679,16 @@ function renderDashboard() {
   renderFavoritesTab();
   renderProjectsTab();
   renderExportTab();
-  renderSettingsTab();
 }
 
 function renderStatsBar() {
   var container = document.getElementById('dashStats');
   if (!container) return;
-
   var totalTitles = 0;
   dashHistory.forEach(function (entry) {
     var titles = Array.isArray(entry.titles) ? entry.titles : [];
     totalTitles += titles.length;
   });
-
   container.innerHTML =
     '<div class="stat-card"><span class="stat-number">' + totalTitles + '</span><span class="stat-label">Titles generated</span></div>' +
     '<div class="stat-card"><span class="stat-number">' + dashFavorites.length + '</span><span class="stat-label">Favorites</span></div>' +
@@ -693,13 +700,11 @@ function renderStatsBar() {
 function renderOverviewTab() {
   var container = document.getElementById('dashOverviewList');
   if (!container) return;
-
   var html = '';
   html += '<div class="overview-card">';
   html += '<h3 class="overview-card-title">Your usage today</h3>';
   html += '<div class="usage-row"><span>' + dailyUsage + ' generation' + (dailyUsage !== 1 ? 's' : '') + '</span><span>Unlimited</span></div>';
   html += '</div>';
-
   var recentHistory = dashHistory.slice(0, 3);
   if (recentHistory.length > 0) {
     html += '<h3 class="overview-section-title">Recent activity</h3>';
@@ -717,13 +722,12 @@ function renderOverviewTab() {
     html += '<div class="overview-empty-icon">\uD83C\uDFAF</div>';
     html += '<h3>No titles generated yet</h3>';
     html += '<p>Go to the generator and create your first batch of titles.</p>';
-    html += '<a href="index.html#tool" class="btn btn-primary" style="display:inline-block;margin-top:12px;">Generate Your First Titles \u2192</a>';
+    html += '<a href="#" onclick="switchToGenerator();return false;" class="btn btn-primary" style="display:inline-block;margin-top:12px;">Generate Your First Titles \u2192</a>';
     html += '</div>';
   }
-
   html += '<h3 class="overview-section-title" style="margin-top:24px;">Quick actions</h3>';
   html += '<div class="overview-actions">';
-  html += '<a href="index.html#tool" class="overview-action-btn"><span class="overview-action-icon">\u26A1</span> Generate Titles</a>';
+  html += '<a href="#" onclick="switchToGenerator();return false;" class="overview-action-btn"><span class="overview-action-icon">\u26A1</span> Generate Titles</a>';
   if (dashFavorites.length > 0) {
     html += '<a href="#" onclick="switchDashTab(\'favorites\');return false;" class="overview-action-btn"><span class="overview-action-icon">\u2605</span> Browse Favorites</a>';
   }
@@ -768,33 +772,25 @@ function renderHistoryTab() {
   var container = document.getElementById('dashHistoryList');
   if (!container) return;
   var filtered = getFilteredHistory();
-
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\uD83C\uDFAF</div><p class="dash-empty-text">' + (dashSearchQuery ? 'No results match your search.' : 'No titles generated yet.') + '</p>' + (dashSearchQuery ? '' : '<a href="index.html#tool" class="btn btn-primary" style="display:inline-block;margin-top:12px;">Generate Your First Titles \u2192</a>') + '</div>';
+    container.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\uD83C\uDFAF</div><p class="dash-empty-text">' + (dashSearchQuery ? 'No results match your search.' : 'No titles generated yet.') + '</p>' + (dashSearchQuery ? '' : '<a href="#" onclick="switchToGenerator();return false;" class="btn btn-primary" style="display:inline-block;margin-top:12px;">Generate Your First Titles \u2192</a>') + '</div>';
     return;
   }
-
   container.innerHTML = '';
   filtered.forEach(function (entry) {
     var card = document.createElement('div');
     card.className = 'history-card';
     var date = new Date(entry.created_at).toLocaleString();
     var titles = Array.isArray(entry.titles) ? entry.titles : [];
-
     var header = document.createElement('div');
     header.className = 'history-header';
     header.innerHTML = '<span class="history-keyword">"' + escapeHtml(entry.keyword) + '"</span><span class="history-date">' + date + '</span>';
     card.appendChild(header);
-
     var meta = document.createElement('div');
     meta.className = 'history-meta';
     var cats = entry.categories ? entry.categories.split(',') : [];
-    meta.innerHTML =
-      '<span class="history-tag">' + escapeHtml(cats.join(', ')) + '</span>' +
-      '<span class="history-tag">' + escapeHtml(entry.genre || 'any genre') + '</span>' +
-      '<span class="history-tag">' + escapeHtml(entry.style || 'normal') + '</span>';
+    meta.innerHTML = '<span class="history-tag">' + escapeHtml(cats.join(', ')) + '</span>' + '<span class="history-tag">' + escapeHtml(entry.genre || 'any genre') + '</span>' + '<span class="history-tag">' + escapeHtml(entry.style || 'normal') + '</span>';
     card.appendChild(meta);
-
     var titlesList = document.createElement('div');
     titlesList.className = 'history-titles';
     titles.slice(0, 10).forEach(function (t) {
@@ -802,13 +798,10 @@ function renderHistoryTab() {
       var score = typeof t === 'object' ? t.score : null;
       var itemDiv = document.createElement('div');
       itemDiv.className = 'history-title-item';
-      itemDiv.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;';
-
       var textSpan = document.createElement('span');
       textSpan.style.flex = '1';
       textSpan.textContent = titleText;
       itemDiv.appendChild(textSpan);
-
       if (score !== null && score !== undefined) {
         var scoreBadge = document.createElement('span');
         scoreBadge.className = 'dash-score-badge';
@@ -820,22 +813,14 @@ function renderHistoryTab() {
         scoreBadge.textContent = score;
         itemDiv.appendChild(scoreBadge);
       }
-
-      // Favorite star
       var hStar = document.createElement('button');
       var isFav = isFavorited(titleText);
       hStar.className = 'dash-star' + (isFav ? ' starred' : '');
       hStar.innerHTML = isFav ? '\u2605' : '\u2606';
-      hStar.title = 'Save to favorites';
-      hStar.addEventListener('click', function () {
-        toggleFavorite(titleText, entry.keyword, (typeof t === 'object' ? t.score : 0) || 0, cats[0] || '', hStar);
-      });
+      hStar.addEventListener('click', function () { toggleFavorite(titleText, entry.keyword, (typeof t === 'object' ? t.score : 0) || 0, cats[0] || '', hStar); });
       itemDiv.appendChild(hStar);
-
-      // Project button
       var hProj = document.createElement('button');
       hProj.className = 'dash-proj-btn';
-      hProj.title = 'Add to project';
       hProj.textContent = '\uD83D\uDCC1';
       hProj.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -844,10 +829,8 @@ function renderHistoryTab() {
         showProjectPicker(titleText, entry.keyword, (typeof t === 'object' ? t.score : 0) || 0, hProj);
       });
       itemDiv.appendChild(hProj);
-
       titlesList.appendChild(itemDiv);
     });
-
     if (titles.length > 10) {
       var more = document.createElement('div');
       more.className = 'history-more';
@@ -879,9 +862,7 @@ function toggleFavorite(titleText, sourceKeyword, score, category, starBtn) {
       if (starBtn) { starBtn.classList.remove('starred'); starBtn.innerHTML = '\u2606'; }
     }
     if (dashCurrentTab === 'favorites') renderFavoritesTab();
-  }).catch(function (err) {
-    console.error('Toggle favorite error:', err);
-  });
+  }).catch(function (err) { console.error('Toggle favorite error:', err); });
 }
 
 function renderFavoritesTab() {
@@ -926,25 +907,21 @@ function renderProjectsTab() {
     var count = projTitles.length;
     var header = document.createElement('div');
     header.className = 'history-header';
-
     var delBtn = document.createElement('button');
     delBtn.className = 'project-delete-btn';
     delBtn.textContent = '\u2715';
     delBtn.title = 'Delete project';
     delBtn.addEventListener('click', function () { deleteProject(proj.id); });
     header.appendChild(delBtn);
-
     var nameSpan = document.createElement('span');
     nameSpan.className = 'history-keyword';
     nameSpan.textContent = proj.name;
     header.appendChild(nameSpan);
-
     var countSpan = document.createElement('span');
     countSpan.className = 'history-date';
     countSpan.textContent = count + ' title' + (count === 1 ? '' : 's');
     header.appendChild(countSpan);
     card.appendChild(header);
-
     if (count > 0) {
       var titlesList = document.createElement('div');
       titlesList.className = 'history-titles';
@@ -954,12 +931,10 @@ function renderProjectsTab() {
         var titleText = typeof t === 'string' ? t : (t.title || '');
         var scoreText = (typeof t === 'object' && t.score) ? ' <span class="history-score">' + t.score + '</span>' : '';
         item.innerHTML = escapeHtml(titleText) + scoreText;
-
         if (typeof t === 'object') {
           var noteToggle = document.createElement('span');
           noteToggle.className = 'proj-note-toggle';
           noteToggle.textContent = t.notes ? ' \uD83D\uDCAC' : ' \u270F\uFE0F';
-          noteToggle.title = t.notes ? 'View note' : 'Add note';
           noteToggle.style.cssText = 'cursor:pointer;font-size:12px;margin-left:8px;';
           noteToggle.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -978,11 +953,7 @@ function renderProjectsTab() {
             saveBtn.style.cssText = 'margin-top:4px;padding:4px 12px;';
             saveBtn.addEventListener('click', function () {
               t.notes = textarea.value;
-              invoke('update_title_notes', {
-                projectId: proj.id,
-                title: titleText,
-                notes: textarea.value,
-              }).catch(function () {});
+              invoke('update_title_notes', { projectId: proj.id, title: titleText, notes: textarea.value }).catch(function () {});
               noteToggle.textContent = textarea.value ? ' \uD83D\uDCAC' : ' \u270F\uFE0F';
               editor.remove();
             });
@@ -1011,13 +982,11 @@ function setupProjects() {
   var createBtn = document.getElementById('createProjectBtn');
   var nameInput = document.getElementById('newProjectName');
   if (!createBtn || !nameInput) return;
-
   createBtn.addEventListener('click', function () {
     var name = nameInput.value.trim();
     if (!name) { nameInput.focus(); return; }
     createBtn.textContent = 'Creating...';
     createBtn.disabled = true;
-
     invoke('create_project', { name: name })
       .then(function (proj) {
         proj.titles = [];
@@ -1025,18 +994,10 @@ function setupProjects() {
         nameInput.value = '';
         renderProjectsTab();
       })
-      .catch(function (err) {
-        alert('Could not create project: ' + (err.message || err));
-      })
-      .finally(function () {
-        createBtn.textContent = 'Create Project';
-        createBtn.disabled = false;
-      });
+      .catch(function (err) { alert('Could not create project: ' + (err.message || err)); })
+      .finally(function () { createBtn.textContent = 'Create Project'; createBtn.disabled = false; });
   });
-
-  nameInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { createBtn.click(); }
-  });
+  nameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { createBtn.click(); } });
 }
 
 function deleteProject(projId) {
@@ -1047,50 +1008,32 @@ function deleteProject(projId) {
       renderProjectsTab();
       renderStatsBar();
     })
-    .catch(function (err) {
-      console.error('Delete project error:', err);
-    });
+    .catch(function (err) { console.error('Delete project error:', err); });
 }
 
 function addTitleToProject(titleText, sourceKeyword, score, projId) {
-  invoke('add_to_project', {
-    projectId: projId,
-    title: titleText,
-    keyword: sourceKeyword || '',
-    score: score || 0,
-  }).then(function () {
-    // Reload projects to get updated titles
-    invoke('get_projects').then(function (projects) {
-      projects.forEach(function (p) {
-        if (typeof p.titles === 'string') {
-          try { p.titles = JSON.parse(p.titles); } catch (e) { p.titles = []; }
-        }
+  invoke('add_to_project', { projectId: projId, title: titleText, keyword: sourceKeyword || '', score: score || 0 })
+    .then(function () {
+      invoke('get_projects').then(function (projects) {
+        projects.forEach(function (p) { if (typeof p.titles === 'string') { try { p.titles = JSON.parse(p.titles); } catch (e) { p.titles = []; } } });
+        dashProjects = projects;
+        if (dashCurrentTab === 'projects') renderProjectsTab();
       });
-      dashProjects = projects;
-      if (dashCurrentTab === 'projects') renderProjectsTab();
-    });
-  }).catch(function (err) {
-    console.error('Add to project error:', err);
-  });
+    })
+    .catch(function (err) { console.error('Add to project error:', err); });
 }
 
 function showProjectPicker(titleText, sourceKeyword, score, anchorBtn) {
-  if (dashProjects.length === 0) {
-    alert('No projects yet. Create one on the Dashboard first.');
-    return;
-  }
+  if (dashProjects.length === 0) { alert('No projects yet. Create one on the Dashboard first.'); return; }
   var existing = document.querySelector('.proj-dropdown');
   if (existing) existing.remove();
-
   var dropdown = document.createElement('div');
   dropdown.className = 'proj-dropdown active';
   dropdown._title = titleText;
-
   var label = document.createElement('div');
   label.className = 'proj-dropdown-label';
   label.textContent = 'Add to project:';
   dropdown.appendChild(label);
-
   dashProjects.forEach(function (proj) {
     var item = document.createElement('div');
     item.className = 'proj-dropdown-item';
@@ -1105,13 +1048,11 @@ function showProjectPicker(titleText, sourceKeyword, score, anchorBtn) {
     });
     dropdown.appendChild(item);
   });
-
   var rect = anchorBtn.getBoundingClientRect();
   dropdown.style.position = 'fixed';
   dropdown.style.top = (rect.bottom + 4) + 'px';
   dropdown.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - 200)) + 'px';
   document.body.appendChild(dropdown);
-
   setTimeout(function () {
     document.addEventListener('click', function closeDrop(ev) {
       var d = document.querySelector('.proj-dropdown');
@@ -1125,7 +1066,6 @@ function showProjectPicker(titleText, sourceKeyword, score, anchorBtn) {
 function renderExportTab() {
   var preview = document.getElementById('exportPreview');
   if (!preview) return;
-
   var items = [];
   dashHistory.forEach(function (entry) {
     var titles = Array.isArray(entry.titles) ? entry.titles : [];
@@ -1133,21 +1073,14 @@ function renderExportTab() {
       var titleText = typeof t === 'string' ? t : t.title;
       var score = typeof t === 'object' ? t.score : '';
       if (titleText) {
-        items.push({
-          title: titleText, score: score,
-          keyword: entry.keyword || '',
-          category: (entry.categories || '').replace(/,/g, '; '),
-          genre: entry.genre || '', style: entry.style || '', date: entry.created_at || ''
-        });
+        items.push({ title: titleText, score: score, keyword: entry.keyword || '', category: (entry.categories || '').replace(/,/g, '; '), genre: entry.genre || '', style: entry.style || '', date: entry.created_at || '' });
       }
     });
   });
-
   if (items.length === 0) {
-    preview.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\u2B07</div><p class="dash-empty-text">Nothing to export yet.</p><a href="index.html#tool" class="btn btn-primary" style="display:inline-block;">Generate Titles \u2192</a></div>';
+    preview.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\u2B07</div><p class="dash-empty-text">Nothing to export yet.</p><a href="#" onclick="switchToGenerator();return false;" class="btn btn-primary" style="display:inline-block;">Generate Titles \u2192</a></div>';
     return;
   }
-
   var html = '<div class="export-count-bar">' + items.length + ' titles — <span id="exportSelectedCount">0</span> selected</div>';
   html += '<div class="export-list">';
   items.forEach(function (item, i) {
@@ -1155,26 +1088,13 @@ function renderExportTab() {
     if (item.score >= 75) scoreColor = '#4caf50';
     else if (item.score >= 50) scoreColor = '#e8a040';
     else if (item.score >= 25) scoreColor = '#ff9800';
-    html += '<label class="export-item" data-index="' + i + '">';
-    html += '<input type="checkbox" class="export-checkbox" data-index="' + i + '" />';
-    html += '<span class="export-score" style="color:' + scoreColor + '">' + (item.score || '-') + '</span>';
-    html += '<span class="export-title">' + escapeHtml(item.title) + '</span>';
-    html += '<span class="export-meta">' + escapeHtml(item.keyword) + '</span>';
-    html += '</label>';
+    html += '<label class="export-item" data-index="' + i + '"><input type="checkbox" class="export-checkbox" data-index="' + i + '" /><span class="export-score" style="color:' + scoreColor + '">' + (item.score || '-') + '</span><span class="export-title">' + escapeHtml(item.title) + '</span><span class="export-meta">' + escapeHtml(item.keyword) + '</span></label>';
   });
   html += '</div>';
   preview.innerHTML = html;
-
-  preview.querySelectorAll('.export-checkbox').forEach(function (cb) {
-    cb.addEventListener('change', updateExportCount);
-  });
-  updateExportCount();
-
-  function updateExportCount() {
-    var checked = preview.querySelectorAll('.export-checkbox:checked').length;
-    var el = document.getElementById('exportSelectedCount');
-    if (el) el.textContent = checked;
-  }
+  preview.querySelectorAll('.export-checkbox').forEach(function (cb) { cb.addEventListener('change', function () { var c = preview.querySelectorAll('.export-checkbox:checked').length; var el = document.getElementById('exportSelectedCount'); if (el) el.textContent = c; }); });
+  var el = document.getElementById('exportSelectedCount');
+  if (el) el.textContent = '0';
 }
 
 function getSelectedExportItems() {
@@ -1186,17 +1106,9 @@ function getSelectedExportItems() {
     titles.forEach(function (t) {
       var titleText = typeof t === 'string' ? t : t.title;
       var score = typeof t === 'object' ? t.score : '';
-      if (titleText) {
-        allItems.push({
-          title: titleText, score: score,
-          keyword: entry.keyword || '',
-          category: (entry.categories || '').replace(/,/g, '; '),
-          genre: entry.genre || '', style: entry.style || '', date: entry.created_at || ''
-        });
-      }
+      if (titleText) allItems.push({ title: titleText, score: score, keyword: entry.keyword || '', category: (entry.categories || '').replace(/,/g, '; '), genre: entry.genre || '', style: entry.style || '', date: entry.created_at || '' });
     });
   });
-
   var items = [];
   preview.querySelectorAll('.export-checkbox:checked').forEach(function (cb) {
     var label = cb.closest('.export-item');
@@ -1214,13 +1126,10 @@ function setupExportButtons() {
       var items = getSelectedExportItems();
       if (items.length === 0) { alert('Select at least one title to export.'); return; }
       var rows = [['Title', 'Score', 'Keyword', 'Category', 'Genre', 'Style', 'Date']];
-      items.forEach(function (item) {
-        rows.push([csvEscape(item.title), item.score, csvEscape(item.keyword), csvEscape(item.category), csvEscape(item.genre), csvEscape(item.style), csvEscape(item.date)]);
-      });
+      items.forEach(function (item) { rows.push([csvEscape(item.title), item.score, csvEscape(item.keyword), csvEscape(item.category), csvEscape(item.genre), csvEscape(item.style), csvEscape(item.date)]); });
       downloadFile(rows.map(function (r) { return r.join(','); }).join('\n'), 'titleforge-export.csv', 'text/csv');
     });
   }
-
   var copySel = document.getElementById('exportSelectedCopy');
   if (copySel) {
     copySel.addEventListener('click', function () {
@@ -1228,10 +1137,7 @@ function setupExportButtons() {
       if (items.length === 0) { alert('Select at least one title to copy.'); return; }
       var text = items.map(function (item) { return item.title + (item.score ? ' (' + item.score + ')' : ''); }).join('\n');
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function () {
-          copySel.textContent = 'Copied!';
-          setTimeout(function () { copySel.textContent = 'Copy Selected'; }, 2000);
-        });
+        navigator.clipboard.writeText(text).then(function () { copySel.textContent = 'Copied!'; setTimeout(function () { copySel.textContent = 'Copy Selected'; }, 2000); });
       } else {
         var ta = document.createElement('textarea');
         ta.value = text;
@@ -1243,7 +1149,6 @@ function setupExportButtons() {
       }
     });
   }
-
   var selectAllBtn = document.getElementById('exportSelectAllBtn');
   if (selectAllBtn) {
     selectAllBtn.addEventListener('click', function () {
@@ -1254,7 +1159,6 @@ function setupExportButtons() {
       if (el) el.textContent = preview.querySelectorAll('.export-checkbox').length;
     });
   }
-
   var deselectAllBtn = document.getElementById('exportDeselectAllBtn');
   if (deselectAllBtn) {
     deselectAllBtn.addEventListener('click', function () {
@@ -1268,72 +1172,35 @@ function setupExportButtons() {
 }
 
 // ---- SETTINGS ----
-function renderSettingsTab() {
-  var container = document.getElementById('settingsContent');
-  if (!container) return;
+function renderSettingsContent() {
+  var el = document.getElementById('settingsUsage');
+  if (el) el.textContent = dailyUsage;
 
-  var html = '<div class="settings-card">';
-  html += '<div class="settings-row"><span class="settings-label">Current plan</span><span class="settings-value" style="color:#16a34a;font-weight:700;">Desktop Pro</span></div>';
-  html += '<div class="settings-row"><span class="settings-label">Version</span><span class="settings-value">1.0.0</span></div>';
-  html += '<div class="settings-row"><span class="settings-label">Generations today</span><span class="settings-value">' + dailyUsage + '</span></div>';
-  html += '</div>';
-
-  html += '<div class="settings-card" style="margin-top:12px;">';
-  html += '<h4 style="margin:0 0 8px;font-size:15px;color:var(--primary-dark);">TitleForge Desktop Pro</h4>';
-  html += '<p style="font-size:13px;color:var(--text-light);margin-bottom:14px;">All features unlocked — 16 categories, 100 titles per batch, full dashboard, local SQLite storage. No internet required.</p>';
-  html += '</div>';
-
-  html += '<div class="settings-card" style="margin-top:12px;">';
-  html += '<h4 style="margin:0 0 8px;font-size:14px;color:var(--text-light);">AI Integration</h4>';
-  html += '<p style="font-size:13px;color:var(--text-light);margin-bottom:10px;">Bring your own API key for cloud AI-powered titles.</p>';
-  html += '<div class="form-group" style="margin-bottom:12px;">';
-  html += '<label for="aiProvider" style="font-size:13px;">Provider</label>';
-  html += '<select id="aiProvider" style="padding:8px 12px;font-size:13px;">';
-  html += '<option value="">Select provider...</option>';
-  html += '<option value="openai">OpenAI (ChatGPT)</option>';
-  html += '<option value="deepseek">DeepSeek</option>';
-  html += '<option value="claude">Anthropic Claude</option>';
-  html += '<option value="gemini">Google Gemini</option>';
-  html += '</select>';
-  html += '</div>';
-  html += '<div class="form-group" style="margin-bottom:12px;">';
-  html += '<label for="aiApiKey" style="font-size:13px;">API Key</label>';
-  html += '<input type="password" id="aiApiKey" placeholder="sk-..." style="padding:8px 12px;font-size:13px;" />';
-  html += '</div>';
-  html += '<button id="saveApiKeyBtn" class="btn btn-primary btn-small">Save API Key</button>';
-  html += '<p id="aiKeyStatus" style="font-size:12px;color:var(--text-secondary);margin-top:8px;display:none;"></p>';
-  html += '</div>';
-
-  container.innerHTML = html;
-
-  // Load saved AI settings
   invoke('get_settings').then(function (settings) {
     if (settings.ai_provider) {
-      var providerEl = document.getElementById('aiProvider');
-      if (providerEl) providerEl.value = settings.ai_provider;
+      var p = document.getElementById('aiProvider');
+      if (p) p.value = settings.ai_provider;
     }
     if (settings.ai_api_key) {
-      // Don't show the actual key but indicate it's set
-      var keyInput = document.getElementById('aiApiKey');
-      if (keyInput) keyInput.placeholder = 'API key saved (enter new key to change)';
+      var ki = document.getElementById('aiApiKey');
+      if (ki) ki.placeholder = 'API key saved (enter new key to change)';
     }
   }).catch(function () {});
 
-  // Wire save button
   var saveBtn = document.getElementById('saveApiKeyBtn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', function () {
+    var newBtn = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+    newBtn.addEventListener('click', function () {
       var provider = document.getElementById('aiProvider').value;
       var apiKey = document.getElementById('aiApiKey').value.trim();
       var statusEl = document.getElementById('aiKeyStatus');
-
       if (!provider || !apiKey) {
         if (statusEl) { statusEl.textContent = 'Please select a provider and enter an API key.'; statusEl.style.color = '#b91c1c'; statusEl.style.display = 'block'; }
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
-
+      newBtn.disabled = true;
+      newBtn.textContent = 'Saving...';
       Promise.all([
         invoke('set_setting', { key: 'ai_provider', value: provider }),
         invoke('set_setting', { key: 'ai_api_key', value: apiKey }),
@@ -1343,10 +1210,7 @@ function renderSettingsTab() {
         document.getElementById('aiApiKey').placeholder = 'API key saved (enter new key to change)';
       }).catch(function (err) {
         if (statusEl) { statusEl.textContent = 'Error: ' + (err.message || err); statusEl.style.color = '#b91c1c'; statusEl.style.display = 'block'; }
-      }).finally(function () {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save API Key';
-      });
+      }).finally(function () { newBtn.disabled = false; newBtn.textContent = 'Save API Key'; });
     });
   }
 }
@@ -1359,13 +1223,12 @@ function setupDashboardTabs() {
       tabs.forEach(function (t) { t.classList.remove('active'); });
       tab.classList.add('active');
       dashCurrentTab = tab.getAttribute('data-dashtab');
-      var panels = ['overview', 'history', 'favorites', 'projects', 'export', 'settings'];
+      var panels = ['overview', 'history', 'favorites', 'projects', 'export'];
       panels.forEach(function (p) {
         var panel = document.getElementById('dash' + p.charAt(0).toUpperCase() + p.slice(1));
         if (panel) panel.style.display = (p === dashCurrentTab) ? 'block' : 'none';
       });
       if (dashCurrentTab === 'export') renderExportTab();
-      if (dashCurrentTab === 'settings') renderSettingsTab();
     });
   });
 }
@@ -1373,42 +1236,24 @@ function setupDashboardTabs() {
 function switchDashTab(tabName) {
   var tabs = document.querySelectorAll('.dash-tab');
   tabs.forEach(function (t) { t.classList.remove('active'); });
-  tabs.forEach(function (t) {
-    if (t.getAttribute('data-dashtab') === tabName) t.classList.add('active');
-  });
+  tabs.forEach(function (t) { if (t.getAttribute('data-dashtab') === tabName) t.classList.add('active'); });
   dashCurrentTab = tabName;
-  var panels = ['overview', 'history', 'favorites', 'projects', 'export', 'settings'];
+  var panels = ['overview', 'history', 'favorites', 'projects', 'export'];
   panels.forEach(function (p) {
     var panel = document.getElementById('dash' + p.charAt(0).toUpperCase() + p.slice(1));
     if (panel) panel.style.display = (p === dashCurrentTab) ? 'block' : 'none';
   });
   if (tabName === 'export') renderExportTab();
-  if (tabName === 'settings') renderSettingsTab();
 }
 
 // ---- SEARCH / FILTER ----
 function setupDashboardSearch() {
   var search = document.getElementById('dashSearch');
-  if (search) {
-    search.addEventListener('input', function () {
-      dashSearchQuery = search.value;
-      renderHistoryTab();
-    });
-  }
+  if (search) { search.addEventListener('input', function () { dashSearchQuery = search.value; renderHistoryTab(); }); }
   var filterCat = document.getElementById('dashFilterCat');
-  if (filterCat) {
-    filterCat.addEventListener('change', function () {
-      dashFilterCategory = filterCat.value;
-      renderHistoryTab();
-    });
-  }
+  if (filterCat) { filterCat.addEventListener('change', function () { dashFilterCategory = filterCat.value; renderHistoryTab(); }); }
   var filterSort = document.getElementById('dashFilterSort');
-  if (filterSort) {
-    filterSort.addEventListener('change', function () {
-      dashFilterSort = filterSort.value;
-      renderHistoryTab();
-    });
-  }
+  if (filterSort) { filterSort.addEventListener('change', function () { dashFilterSort = filterSort.value; renderHistoryTab(); }); }
 }
 
 function populateDashFilters() {
@@ -1426,7 +1271,7 @@ function populateDashFilters() {
 }
 
 // ---- EXPOSE GLOBALS ----
-window.openAuthModal = function () {};  // no-op for desktop
-window.showUpgradeModal = function () {};  // no-op for desktop
-window.deleteProject = deleteProject;
+window.switchToGenerator = switchToGenerator;
+window.switchToDashboard = switchToDashboard;
 window.switchDashTab = switchDashTab;
+window.deleteProject = deleteProject;
