@@ -9,26 +9,27 @@
       <stop offset="100%" style="stop-color:#E8782B"/>
     </linearGradient>
   </defs>
-  <!-- Background: Ink rounded rectangle -->
+  <!-- Full background: Ink -->
   <rect width="1024" height="1024" rx="180" fill="#0B0A0A"/>
-  <!-- Subtle radial glow behind anvil -->
-  <radialGradient id="glow" cx="50%" cy="40%" r="35%">
-    <stop offset="0%" style="stop-color:#E8782B;stop-opacity:0.08"/>
+  <!-- Bold radial glow behind forge -->
+  <radialGradient id="glow" cx="50%" cy="45%" r="45%">
+    <stop offset="0%" style="stop-color:#E8782B;stop-opacity:0.12"/>
+    <stop offset="60%" style="stop-color:#E8782B;stop-opacity:0.03"/>
     <stop offset="100%" style="stop-color:#0B0A0A;stop-opacity:0"/>
   </radialGradient>
   <rect width="1024" height="1024" fill="url(#glow)"/>
-  <!-- Anvil group centered, 70% of canvas (scaled) -->
-  <g transform="translate(512,512) scale(7.5) translate(-32,-32)">
-    <!-- Anvil body -->
-    <path d="M10 38 L54 38 L48 48 L16 48 Z" fill="url(#forge-grad)"/>
-    <path d="M14 30 L50 30 L54 38 L10 38 Z" fill="url(#forge-light)"/>
-    <!-- Anvil horn -->
-    <path d="M50 30 L58 22 L54 30 Z" fill="url(#forge-grad)"/>
-    <!-- Forge spark -->
-    <path d="M32 8 C32 8 28 18 28 24 C28 28 30 30 32 30 C34 30 36 28 36 24 C36 18 32 8 32 8 Z" fill="#0B0A0A"/>
-    <path d="M32 12 C32 12 29 20 29 24 C29 27 30 28 32 28 C34 28 35 27 35 24 C35 20 32 12 32 12 Z" fill="url(#forge-light)"/>
-    <!-- Base -->
-    <rect x="26" y="48" width="12" height="4" rx="1" fill="url(#forge-grad)"/>
-    <rect x="22" y="52" width="20" height="4" rx="2" fill="#0B0A0A"/>
+  <!-- Forge — fills the full icon, scale 13x from 64px center = ~832px (~81%) -->
+  <g transform="translate(512,546) scale(13) translate(-32,-32)">
+    <!-- Anvil body — massive -->
+    <path d="M6 40 L58 40 L52 50 L12 50 Z" fill="url(#forge-grad)"/>
+    <path d="M10 30 L54 30 L58 40 L6 40 Z" fill="url(#forge-light)"/>
+    <!-- Anvil horn — extended right -->
+    <path d="M54 30 L64 20 L58 30 Z" fill="url(#forge-grad)"/>
+    <!-- Forge flame — enlarged, prominent -->
+    <path d="M32 4 C32 4 26 16 26 24 C26 30 28 32 32 32 C36 32 38 30 38 24 C38 16 32 4 32 4 Z" fill="#0B0A0A"/>
+    <path d="M32 8 C32 8 28 18 28 24 C28 28 30 30 32 30 C34 30 36 28 36 24 C36 18 32 8 32 8 Z" fill="url(#forge-light)"/>
+    <!-- Base — sturdy -->
+    <rect x="24" y="50" width="16" height="6" rx="2" fill="url(#forge-grad)"/>
+    <rect x="20" y="56" width="24" height="6" rx="2" fill="#0B0A0A"/>
   </g>
 </svg>

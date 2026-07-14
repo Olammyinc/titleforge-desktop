@@ -7,7 +7,38 @@
 // ---- Tauri API ----
 const invoke = window.__TAURI__ && window.__TAURI__.invoke
   ? window.__TAURI__.invoke
-  : function () { return Promise.reject(new Error('Tauri API not available')); };
+  : (function () {
+      // Dev mode: return mock data when running outside Tauri
+      var mockDb = { license_status: '', settings: {} };
+      return function (cmd, args) {
+        console.log('[DEV MODE] invoke:', cmd, args);
+        if (cmd === 'get_settings') {
+          return Promise.resolve(mockDb.settings);
+        }
+        if (cmd === 'validate_license') {
+          // In dev mode, ANY key/email combo works
+          mockDb.settings.license_status = 'valid';
+          mockDb.settings.license_tier = 'pro';
+          return Promise.resolve({ valid: true, tier: 'pro' });
+        }
+        if (cmd === 'get_categories') {
+          return Promise.resolve([]);
+        }
+        if (cmd === 'get_history' || cmd === 'get_favorites' || cmd === 'get_projects') {
+          return Promise.resolve([]);
+        }
+        if (cmd === 'get_usage_stats') {
+          return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0 });
+        }
+        if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') {
+          return Promise.resolve();
+        }
+        if (cmd === 'generate_titles') {
+          return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null }]);
+        }
+        return Promise.reject(new Error('Tauri API not available in dev mode for: ' + cmd));
+      };
+    })();
 
 // ---- CONFIG ----
 const FREE_MAX_TITLES = 10;
