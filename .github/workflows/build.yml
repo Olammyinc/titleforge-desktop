@@ -90,20 +90,86 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with: { pattern: titleforge-*, merge-multiple: true }
-      - name: Find and rename binary files, write release notes
+      - name: Find binaries, collect signatures, generate updates.json
         run: |
           mkdir -p dist
           find . -name "*.exe" -exec cp {} dist/ \;
           find . -name "*.dmg" -exec cp {} dist/ \;
           find . -name "*.deb" -exec cp {} dist/ \;
           find . -name "*.AppImage" -exec cp {} dist/ \;
+          find . -name "*.sig" -exec cp {} dist/ \;
+          
+          # Determine version from tag name (strip 'v' prefix)
+          VER="${{ github.ref_name }}"
+          VER="${VER#v}"
+          
+          # Build updates.json with actual signatures
+          cat > dist/updates.json << 'JSONEOF'
+          {
+            "version": "VER_PLACEHOLDER",
+            "notes": "Auto-release from CI",
+            "pub_date": "DATE_PLACEHOLDER",
+            "platforms": {
+              "windows-x86_64": {
+                "signature": "SIG_WIN",
+                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64-setup.exe"
+              },
+              "darwin-x86_64": {
+                "signature": "SIG_MAC",
+                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64.dmg"
+              },
+              "linux-x86_64": {
+                "signature": "SIG_LINUX",
+                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_amd64.AppImage"
+              }
+            }
+          }
+          JSONEOF
+          
+          # Fill in signatures from .sig files
+          for sigfile in dist/*.sig; do
+            [ -f "$sigfile" ] || continue
+            sigcontent=$(cat "$sigfile")
+            base=$(basename "$sigfile")
+            if echo "$base" | grep -qi "setup.exe"; then
+              sed -i "s|SIG_WIN|$sigcontent|" dist/updates.json
+            elif echo "$base" | grep -qi "x64.dmg"; then
+              sed -i "s|SIG_MAC|$sigcontent|" dist/updates.json
+            elif echo "$base" | grep -qi "amd64.AppImage"; then
+              sed -i "s|SIG_LINUX|$sigcontent|" dist/updates.json
+            fi
+          done
+          
+          # Fill in version and date
+          TODAY=$(date -u +"%Y-%m-%dT00:00:00Z")
+          sed -i "s/VER_PLACEHOLDER/$VER/" dist/updates.json
+          sed -i "s/DATE_PLACEHOLDER/$TODAY/" dist/updates.json
+          
+          echo "--- updates.json ---"
+          cat dist/updates.json
+          echo ""
           ls -la dist/
-          echo "## TitleForge v${{ github.ref_name }}" > notes.md
-          echo "" >> notes.md
-          echo "### Downloads" >> notes.md
-          for f in dist/*; do echo "- [$(basename "$f")]($(basename "$f"))" >> notes.md; done
       - uses: softprops/action-gh-release@v2
         with:
           name: TitleForge v${{ github.ref_name }}
-          body_path: notes.md
+          body: "Generated release with signed binaries and auto-update manifest."
           files: dist/*
+          generate_release_notes: true
+      - name: Deploy updates.json to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "No NETLIFY_AUTH_TOKEN secret set — skipping Netlify deploy."
+            echo "To enable auto-deploy, add your Netlify PAT to repo secrets."
+            exit 0
+          fi
+          SITE_ID="titleforge-tool"
+          # Read file, escape for JSON string
+          UPDATES_JSON=$(cat dist/updates.json | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
+          curl -s -X POST \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"files\": {\"/updates.json\": $UPDATES_JSON}}" \
+            "https://api.netlify.com/api/v1/sites/$SITE_ID/deploys" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Deployed:', d.get('ssl_url','?'))"
