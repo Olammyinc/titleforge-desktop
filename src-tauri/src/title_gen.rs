@@ -4,7 +4,7 @@
 //! Replaces the sparse Markov chain model with a coherence-scored
 //! constraint-based generator that degrades gracefully on sparse data.
 //!
-//! Three generation modes (70/20/10 proportional):
+//! Three generation modes (80/10/10 proportional):
 //!   A — Exemplar-Guided Template Fill
 //!   B — Phrase Stitching (intro + keyword + closer fragments)
 //!   C — Keyword-Embedded Exemplar (swap topic in curated title)
@@ -97,17 +97,13 @@ impl Generator {
         let mut all_curated: Vec<(String, String)> = Vec::new();
 
         {
-            let mut stmt = conn
-                .prepare("SELECT title, category FROM curated_titles")
-                .expect("Failed to prepare curated_titles query");
-
-            let rows: Vec<(String, String)> = stmt
-                .query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-                })
-                .expect("Failed to query curated_titles")
-                .filter_map(|r| r.ok())
-                .collect();
+            let rows: Vec<(String, String)> = match conn.prepare("SELECT title, category FROM curated_titles") {
+                Ok(mut stmt) => stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+                    .ok()
+                    .map(|rows| rows.filter_map(|r| r.ok()).collect())
+                    .unwrap_or_default(),
+                Err(e) => { eprintln!("Warning: failed to load curated_titles: {}", e); vec![] }
+            };
 
             for (title, category) in rows {
                 all_curated.push((title.clone(), category.clone()));
@@ -121,17 +117,13 @@ impl Generator {
         // ── Load word pools ──
         let mut pools: HashMap<String, Vec<String>> = HashMap::new();
         {
-            let mut stmt = conn
-                .prepare("SELECT pool_name, word FROM word_pools")
-                .expect("Failed to prepare word_pools query");
-
-            let rows: Vec<(String, String)> = stmt
-                .query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-                })
-                .expect("Failed to query word_pools")
-                .filter_map(|r| r.ok())
-                .collect();
+            let rows: Vec<(String, String)> = match conn.prepare("SELECT pool_name, word FROM word_pools") {
+                Ok(mut stmt) => stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+                    .ok()
+                    .map(|rows| rows.filter_map(|r| r.ok()).collect())
+                    .unwrap_or_default(),
+                Err(e) => { eprintln!("Warning: failed to load word_pools: {}", e); vec![] }
+            };
 
             for (pool_name, word) in rows {
                 pools.entry(pool_name).or_default().push(word);
@@ -141,21 +133,15 @@ impl Generator {
         // ── Load templates ──
         let mut templates: HashMap<String, Vec<TemplateInfo>> = HashMap::new();
         {
-            let mut stmt = conn
-                .prepare("SELECT category, template, slots FROM patterns")
-                .expect("Failed to prepare patterns query");
-
-            let rows: Vec<(String, String, String)> = stmt
-                .query_map([], |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, String>(1)?,
-                        row.get::<_, String>(2)?,
-                    ))
+            let rows: Vec<(String, String, String)> = match conn.prepare("SELECT category, template, slots FROM patterns") {
+                Ok(mut stmt) => stmt.query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
                 })
-                .expect("Failed to query patterns")
-                .filter_map(|r| r.ok())
-                .collect();
+                    .ok()
+                    .map(|rows| rows.filter_map(|r| r.ok()).collect())
+                    .unwrap_or_default(),
+                Err(e) => { eprintln!("Warning: failed to load patterns: {}", e); vec![] }
+            };
 
             for (category, template, slots_json) in rows {
                 let slots: Vec<SlotDef> =
@@ -311,8 +297,8 @@ impl Generator {
     /// Generate titles using the EGCG algorithm.
     ///
     /// Produces up to `quantity` titles distributed across three modes:
-    /// - Mode A (70%): exemplar-guided template fill
-    /// - Mode B (20%): phrase stitching
+    /// - Mode A (80%): exemplar-guided template fill
+    /// - Mode B (10%): phrase stitching
     /// - Mode C (10%): keyword-embedded exemplar
     pub fn generate(
         &self,
@@ -322,7 +308,7 @@ impl Generator {
         _genre: &str,
         quantity: u32,
     ) -> Vec<TitleResult> {
-        if categories.is_empty() || keyword.len() <= 2 {
+        if categories.is_empty() || keyword.chars().count() <= 2 {
             return Vec::new();
         }
 
@@ -398,7 +384,7 @@ impl Generator {
             if results.len() >= q {
                 break;
             }
-            if let Some(title) = self.embed_mode(
+            if let Some((title, exemplar_cat)) = self.embed_mode(
                 &kw_lower, categories, &mut rng,
             ) {
                 let lower = title.to_lowercase();
@@ -406,13 +392,12 @@ impl Generator {
                     && lower.contains(&kw_lower)
                     && title.split_whitespace().count() >= 3
                 {
-                    let cat = categories.first().map(|s| s.as_str()).unwrap_or("generated").to_string();
-                    let (score, breakdown) = self.score_title(&title, &kw_lower, &cat);
+                    let (score, breakdown) = self.score_title(&title, &kw_lower, &exemplar_cat);
                     seen.insert(lower);
                     results.push(TitleResult {
                         title,
                         score,
-                        categories: vec![cat.clone()],
+                        categories: vec![exemplar_cat.clone()],
                         breakdown: Some(breakdown),
                     });
                 }
@@ -697,7 +682,7 @@ impl Generator {
         keyword: &str,
         categories: &[String],
         rng: &mut impl Rng,
-    ) -> Option<String> {
+    ) -> Option<(String, String)> {
         // Filter curated titles to matching categories
         let cat_set: HashSet<&String> = categories.iter().collect();
         let relevant: Vec<&(String, String)> = self
@@ -710,9 +695,14 @@ impl Generator {
             return None;
         }
 
-        // Score each title by keyword affinity to its words
-        let kw_id = self.word2id.get(keyword)?;
+        // Handle multi-word keywords: use first token for lookup
+        let kw_tokens: Vec<&str> = keyword.split_whitespace().collect();
+        let kw_id = match self.word2id.get(kw_tokens[0]) {
+            Some(&id) => id,
+            None => return None,
+        };
         let mut best_title: Option<&str> = None;
+        let mut best_cat: &str = "";
         let mut best_score: f64 = f64::NEG_INFINITY;
 
         // Sample a subset for performance (up to 50)
@@ -722,14 +712,14 @@ impl Generator {
             relevant.iter().collect()
         };
 
-        for (title, _cat) in &sample {
+        for (title, cat) in &sample {
             let tokens = tokenize(title);
             let mut total_aff = 0.0;
             let mut count = 0;
 
             for word in &tokens {
                 if let Some(&id) = self.word2id.get(word) {
-                    if let Some(&aff) = self.affinity.get(&(*kw_id, id)) {
+                    if let Some(&aff) = self.affinity.get(&(kw_id, id)) {
                         total_aff += aff as f64;
                         count += 1;
                     }
@@ -741,11 +731,13 @@ impl Generator {
                 if score > best_score {
                     best_score = score;
                     best_title = Some(title);
+                    best_cat = cat;
                 }
             }
         }
 
         let curated_title = best_title?;
+        let exemplar_category = best_cat.to_string();
 
         // Find the best position to swap the keyword
         let words: Vec<&str> = curated_title
@@ -778,14 +770,14 @@ impl Generator {
             let candidate = new_words.join(" ");
 
             // Score this variant
-            let score = self.variant_affinity(&candidate, kw_id);
+            let score = self.variant_affinity(&candidate, &kw_id);
             if score > best_variant_score {
                 best_variant_score = score;
                 best_variant = Some(candidate);
             }
         }
 
-        best_variant
+        best_variant.map(|v| (v, exemplar_category))
     }
 
     fn variant_affinity(&self, title: &str, kw_id: &usize) -> f64 {
