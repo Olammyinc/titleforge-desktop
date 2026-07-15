@@ -160,7 +160,6 @@ pub fn generate(
                     });
                 }
             }
-            }
         }
     }
 
