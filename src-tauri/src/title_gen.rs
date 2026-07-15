@@ -46,6 +46,7 @@ struct TemplateInfo {
     template: String,
     slots: Vec<SlotDef>,
     genre: String,
+    tone: String,
 }
 
 /// The EGCG generator — all indices are pre-built at startup for fast generation.
@@ -65,14 +66,14 @@ pub struct Generator {
     /// category → list of curated titles
     #[allow(dead_code)]
     curated: HashMap<String, Vec<String>>,
-    /// Intro fragments mined from curated titles (first 2-3 words)
-    intro_fragments: Vec<String>,
-    /// Closer fragments mined from curated titles (last 2-3 words)
-    closer_fragments: Vec<String>,
+    /// Intro fragments mined from curated titles (first 2-3 words), keyed by category
+    intro_fragments: HashMap<String, Vec<String>>,
+    /// Closer fragments mined from curated titles (last 2-3 words), keyed by category
+    closer_fragments: HashMap<String, Vec<String>>,
     /// per-category exemplar vocabulary (words appearing in curated titles)
     exemplar_vocab: HashMap<String, HashSet<String>>,
-    /// All curated titles for mode C (title, category, genre)
-    all_curated: Vec<(String, String, String)>,
+    /// All curated titles for mode C (title, category, genre, tone)
+    all_curated: Vec<(String, String, String, String)>,
 }
 
 // ── Public API ──
@@ -95,19 +96,19 @@ impl Generator {
     pub fn build(conn: &Connection) -> Self {
         // ── Load curated titles ──
         let mut curated: HashMap<String, Vec<String>> = HashMap::new();
-        let mut all_curated: Vec<(String, String, String)> = Vec::new();
+        let mut all_curated: Vec<(String, String, String, String)> = Vec::new();
 
         {
-            let rows: Vec<(String, String, String)> = match conn.prepare("SELECT title, category, COALESCE(genre, 'any') FROM curated_titles") {
-                Ok(mut stmt) => stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?)))
+            let rows: Vec<(String, String, String, String)> = match conn.prepare("SELECT title, category, COALESCE(genre, 'any'), COALESCE(tone, 'normal') FROM curated_titles") {
+                Ok(mut stmt) => stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?, row.get::<_, String>(3)?)))
                     .ok()
                     .map(|rows| rows.filter_map(|r| r.ok()).collect())
                     .unwrap_or_default(),
                 Err(e) => { eprintln!("Warning: failed to load curated_titles: {}", e); vec![] }
             };
 
-            for (title, category, genre) in rows {
-                all_curated.push((title.clone(), category.clone(), genre));
+            for (title, category, genre, tone) in rows {
+                all_curated.push((title.clone(), category.clone(), genre, tone));
                 curated
                     .entry(category)
                     .or_default()
@@ -134,9 +135,9 @@ impl Generator {
         // ── Load templates ──
         let mut templates: HashMap<String, Vec<TemplateInfo>> = HashMap::new();
         {
-            let rows: Vec<(String, String, String, String)> = match conn.prepare("SELECT category, template, slots, COALESCE(genre, 'any') FROM patterns") {
+            let rows: Vec<(String, String, String, String, String)> = match conn.prepare("SELECT category, template, slots, COALESCE(genre, 'any'), COALESCE(tone, 'normal') FROM patterns") {
                 Ok(mut stmt) => stmt.query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?, row.get::<_, String>(3)?))
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?, row.get::<_, String>(3)?, row.get::<_, String>(4)?))
                 })
                     .ok()
                     .map(|rows| rows.filter_map(|r| r.ok()).collect())
@@ -144,13 +145,13 @@ impl Generator {
                 Err(e) => { eprintln!("Warning: failed to load patterns: {}", e); vec![] }
             };
 
-            for (category, template, slots_json, genre) in rows {
+            for (category, template, slots_json, genre, tone) in rows {
                 let slots: Vec<SlotDef> =
                     serde_json::from_str(&slots_json).unwrap_or_default();
                 templates
                     .entry(category)
                     .or_default()
-                    .push(TemplateInfo { template, slots, genre });
+                    .push(TemplateInfo { template, slots, genre, tone });
             }
         }
 
@@ -260,9 +261,11 @@ impl Generator {
             "will", "would", "can", "could", "may", "might", "shall", "should",
         ];
 
-        let mut intro_set: HashSet<String> = HashSet::new();
-        let mut closer_set: HashSet<String> = HashSet::new();
-        for (_cat, titles) in &curated {
+        let mut intro_map: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut closer_map: HashMap<String, HashSet<String>> = HashMap::new();
+        for (cat, titles) in &curated {
+            let intro_set = intro_map.entry(cat.clone()).or_default();
+            let closer_set = closer_map.entry(cat.clone()).or_default();
             for title in titles {
                 let words: Vec<&str> = title
                     .split_whitespace()
@@ -307,8 +310,14 @@ impl Generator {
             }
         }
 
-        let intro_fragments: Vec<String> = intro_set.into_iter().collect();
-        let closer_fragments: Vec<String> = closer_set.into_iter().collect();
+        let intro_fragments: HashMap<String, Vec<String>> = intro_map
+            .into_iter()
+            .map(|(cat, set)| (cat, set.into_iter().collect()))
+            .collect();
+        let closer_fragments: HashMap<String, Vec<String>> = closer_map
+            .into_iter()
+            .map(|(cat, set)| (cat, set.into_iter().collect()))
+            .collect();
 
         Generator {
             word2id,
@@ -335,7 +344,7 @@ impl Generator {
         &self,
         keyword: &str,
         categories: &[String],
-        _style: &str,
+        style: &str,
         genre: &str,
         quantity: u32,
     ) -> Vec<TitleResult> {
@@ -363,7 +372,7 @@ impl Generator {
                     break;
                 }
                 if let Some(title) = self.fill_template_mode(
-                    &kw_lower, category, genre, &mut rng,
+                    &kw_lower, category, genre, style, &mut rng,
                 ) {
                     let lower = title.to_lowercase();
                     if !seen.contains(&lower)
@@ -416,7 +425,7 @@ impl Generator {
                 break;
             }
             if let Some((title, exemplar_cat)) = self.embed_mode(
-                &kw_lower, categories, genre, &mut rng,
+                &kw_lower, categories, genre, style, &mut rng,
             ) {
                 let lower = title.to_lowercase();
                 if !seen.contains(&lower)
@@ -451,22 +460,33 @@ impl Generator {
         keyword: &str,
         category: &str,
         genre: &str,
+        style: &str,
         rng: &mut impl Rng,
     ) -> Option<String> {
         let tmpls = self.templates.get(category)?;
-        let template_info: &TemplateInfo = if genre == "any" || genre.is_empty() {
-            tmpls.choose(rng)?
+
+        let genre_matches = |t: &&TemplateInfo| {
+            genre == "any" || genre.is_empty() || t.genre == genre || t.genre == "any"
+        };
+        let style_matches = |t: &&TemplateInfo| {
+            style.is_empty() || style == "any" || t.tone == style || t.tone == "normal"
+        };
+
+        // Fallback ladder: genre+style match -> genre-only match -> any template.
+        // Genre takes priority over style because topical relevance matters more
+        // than tone when a template satisfying both can't be found.
+        let genre_and_style: Vec<&TemplateInfo> = tmpls
+            .iter()
+            .filter(|t| genre_matches(t) && style_matches(t))
+            .collect();
+        let template_info: &TemplateInfo = if !genre_and_style.is_empty() {
+            genre_and_style.choose(rng).copied()?
         } else {
-            // Filter by genre (exact match or template marked 'any')
-            let matching: Vec<&TemplateInfo> = tmpls
-                .iter()
-                .filter(|t| t.genre == genre || t.genre == "any")
-                .collect();
-            if matching.is_empty() {
-                // Fall back to any-genre templates if no exact match
-                tmpls.choose(rng)?
+            let genre_only: Vec<&TemplateInfo> = tmpls.iter().filter(|t| genre_matches(t)).collect();
+            if !genre_only.is_empty() {
+                genre_only.choose(rng).copied()?
             } else {
-                matching.choose(rng).copied()?
+                tmpls.choose(rng)?
             }
         };
 
@@ -711,12 +731,18 @@ impl Generator {
     fn stitch_mode(
         &self,
         keyword: &str,
-        _category: &str,
+        category: &str,
         _genre: &str,
         rng: &mut impl Rng,
     ) -> Option<String> {
-        let intro = self.intro_fragments.choose(rng)?;
-        let closer = self.closer_fragments.choose(rng)?;
+        // Fragments are mined and stored per-category so an intro mined from
+        // one category (e.g. "article") never gets stitched to a closer mined
+        // from an unrelated one (e.g. "childname") — that mismatch was
+        // producing incoherent, off-topic phrase-stitch output.
+        let intros = self.intro_fragments.get(category)?;
+        let closers = self.closer_fragments.get(category)?;
+        let intro = intros.choose(rng)?;
+        let closer = closers.choose(rng)?;
 
         // Clean up intro and closer fragments
         let intro_clean = intro
@@ -750,39 +776,49 @@ impl Generator {
         keyword: &str,
         categories: &[String],
         genre: &str,
+        style: &str,
         rng: &mut impl Rng,
     ) -> Option<(String, String)> {
-        // Filter curated titles to matching categories AND matching genre
+        // Filter curated titles to matching categories, genre, and tone/style,
+        // relaxing tone then genre if nothing matches (category match matters
+        // most for relevance, so it's never relaxed).
         let cat_set: HashSet<&String> = categories.iter().collect();
-        let relevant: Vec<&(String, String, String)> = self
+        let genre_ok = |g: &str| genre == "any" || genre.is_empty() || g == genre || g == "any";
+        let style_ok = |t: &str| style.is_empty() || style == "any" || t == style || t == "normal";
+
+        let relevant: Vec<&(String, String, String, String)> = self
             .all_curated
             .iter()
-            .filter(|(_, cat, g)| {
-                cat_set.contains(cat) && 
-                (genre == "any" || genre.is_empty() || g == genre || g == "any")
-            })
+            .filter(|(_, cat, g, t)| cat_set.contains(cat) && genre_ok(g) && style_ok(t))
             .collect();
-
-        if relevant.is_empty() {
-            // Fall back to any genre within matching categories
-            let fallback: Vec<&(String, String, String)> = self
-                .all_curated
-                .iter()
-                .filter(|(_, cat, _)| cat_set.contains(cat))
-                .collect();
-            if fallback.is_empty() {
-                return None;
-            }
-            return self.embed_from_relevant(keyword, &fallback, rng);
+        if !relevant.is_empty() {
+            return self.embed_from_relevant(keyword, &relevant, rng);
         }
 
-        self.embed_from_relevant(keyword, &relevant, rng)
+        let genre_only: Vec<&(String, String, String, String)> = self
+            .all_curated
+            .iter()
+            .filter(|(_, cat, g, _)| cat_set.contains(cat) && genre_ok(g))
+            .collect();
+        if !genre_only.is_empty() {
+            return self.embed_from_relevant(keyword, &genre_only, rng);
+        }
+
+        let fallback: Vec<&(String, String, String, String)> = self
+            .all_curated
+            .iter()
+            .filter(|(_, cat, _, _)| cat_set.contains(cat))
+            .collect();
+        if fallback.is_empty() {
+            return None;
+        }
+        self.embed_from_relevant(keyword, &fallback, rng)
     }
 
     fn embed_from_relevant(
         &self,
         keyword: &str,
-        relevant: &[&(String, String, String)],
+        relevant: &[&(String, String, String, String)],
         rng: &mut impl Rng,
     ) -> Option<(String, String)> {
 
@@ -797,13 +833,13 @@ impl Generator {
         let mut best_score: f64 = f64::NEG_INFINITY;
 
         // Sample a subset for performance (up to 50)
-        let sample: Vec<&&(String, String, String)> = if relevant.len() > 50 {
+        let sample: Vec<&&(String, String, String, String)> = if relevant.len() > 50 {
             relevant.choose_multiple(rng, 50).collect()
         } else {
             relevant.iter().collect()
         };
 
-        for (title, cat, _g) in &sample {
+        for (title, cat, _g, _t) in &sample {
             let tokens = tokenize(title);
             let mut total_aff = 0.0;
             let mut count = 0;

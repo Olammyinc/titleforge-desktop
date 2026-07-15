@@ -102,3 +102,14 @@ let title = format!("{} {} {}", intro_clean, keyword, closer_clean);
 4. **Stitch seam check** (2.4) — start with the cheap mining-time filter; revisit scoring if Mode B quality still lags after 1–3.
 
 Fixing 1 and 2 alone should visibly change how the output reads even before touching the coherence math further — most of what currently looks like "the algorithm doesn't work" is actually "the algorithm is scoring against the wrong pool and displaying the result without capitalizing it."
+
+---
+
+## 5. Status update (2026-07-15, follow-up pass)
+
+Issues 2.2, 2.3, and 2.4 (capitalization, duplicate-word exclusion, stitch seam stop-words) were already fixed in `title_gen.rs` by the time of this pass. Issue 2.1 (genre) was also fixed for `fill_template_mode` and `embed_mode`, but two gaps remained and have now been closed:
+
+- **`style` was still fully unused inside EGCG.** The UI collects 9 tone/style options (Normal, Bold/Shout, Whisper, Blessing, Provocative, Minimalist, Storytelling, Question, Playful) and the `patterns`/`curated_titles` tables both carry a `tone` column, but `Generator::generate` took `_style: &str` and never read it — only the legacy template-engine fallback in `engine.rs` respected tone. Since EGCG produces the majority of output (80% Mode A + 10% Mode C), selecting a style had almost no visible effect. Fixed: `TemplateInfo` now carries `tone`, and `fill_template_mode`/`embed_mode` filter by genre+style with a fallback ladder (genre+style → genre-only → unfiltered), mirroring the existing genre-fix pattern.
+- **Mode B (phrase stitching) ignored category entirely.** `intro_fragments`/`closer_fragments` were mined once globally across all curated titles with no category segmentation, so a stitched title could combine an intro mined from an "article" title with a closer mined from a "childname" title. Fixed: fragments are now mined and stored per-category (`HashMap<String, Vec<String>>`), and `stitch_mode` only combines fragments from the requested category.
+
+Note: bash/cargo was unavailable in the session that made this pass, so these changes were verified by manual type-tracing rather than a live `cargo build` — worth running `cargo test` / `cargo build` before shipping.
