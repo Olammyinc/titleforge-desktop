@@ -1561,27 +1561,30 @@ function checkAndInstallUpdate(silent) {
     statusEl.style.color = 'var(--text-secondary)';
   }
 
-  // Use @tauri-apps/plugin-updater JS API if available (Tauri v2)
-  if (window.__TAURI__ && window.__TAURI__.updater) {
-    handleUpdateViaJSAPI(silent, statusEl, checkBtn);
-    return;
-  }
-
-  // Fallback: use raw invoke + provide download link
+  // Primary path: use invoke() to check and download via the updater plugin.
+  // This works without the @tauri-apps/plugin-updater npm package because
+  // the Rust plugin is already registered and responds to IPC commands.
   invoke('plugin:updater|check').then(function (result) {
+    dumpDebug('Update check result: ' + JSON.stringify(result));
     if (result && result.version) {
       if (!silent && statusEl) {
+        statusEl.textContent = 'Update v' + result.version + ' available. Downloading...';
         statusEl.style.color = '#16a34a';
-        statusEl.innerHTML = 'Update v' + result.version + ' available. <a href="#" id="downloadUpdateLink" style="color:var(--forge);font-weight:600;">Download from GitHub →</a>';
-        // Wire the download link
-        var dlLink = document.getElementById('downloadUpdateLink');
-        if (dlLink) {
-          dlLink.addEventListener('click', function (e) {
-            e.preventDefault();
-            openBuyLink(); // Uses same Tauri shell.open for external URLs
-          });
-        }
       }
+      // Download and install the update in-app via the updater plugin
+      return invoke('plugin:updater|download_and_install').then(function () {
+        if (!silent && statusEl) {
+          statusEl.textContent = 'Update downloaded. Restart to apply.';
+          statusEl.style.color = '#16a34a';
+        }
+      }).catch(function (dlErr) {
+        dumpDebug('Update download failed: ' + (dlErr.message || dlErr));
+        // Fall back to JS API if download via invoke fails
+        if (window.__TAURI__ && window.__TAURI__.updater) {
+          return tryUpdaterJSAPI(silent, statusEl);
+        }
+        throw dlErr;
+      });
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
       var currentVer = (verEl && verEl.textContent) || '0.8.0';
@@ -1593,6 +1596,10 @@ function checkAndInstallUpdate(silent) {
   }).catch(function (err) {
     var msg = typeof err === 'string' ? err : (err.message || 'Network error');
     dumpDebug('Update check failed: ' + msg);
+    // If invoke fails entirely, try the JS API as fallback
+    if (window.__TAURI__ && window.__TAURI__.updater) {
+      return tryUpdaterJSAPI(silent, statusEl);
+    }
     if (!silent && statusEl) {
       statusEl.textContent = 'Could not check for updates: ' + msg;
       statusEl.style.color = '#b91c1c';
@@ -1605,8 +1612,9 @@ function checkAndInstallUpdate(silent) {
   });
 }
 
-function handleUpdateViaJSAPI(silent, statusEl, checkBtn) {
-  window.__TAURI__.updater.check().then(function (update) {
+function tryUpdaterJSAPI(silent, statusEl) {
+  dumpDebug('Falling back to updater JS API');
+  return window.__TAURI__.updater.check().then(function (update) {
     if (update && update.version) {
       if (!silent && statusEl) {
         statusEl.textContent = 'Update v' + update.version + ' available. Downloading...';
@@ -1632,11 +1640,6 @@ function handleUpdateViaJSAPI(silent, statusEl, checkBtn) {
     if (!silent && statusEl) {
       statusEl.textContent = 'Could not check: ' + msg;
       statusEl.style.color = '#b91c1c';
-    }
-  }).finally(function () {
-    if (!silent && checkBtn) {
-      checkBtn.disabled = false;
-      checkBtn.textContent = 'Check for Updates';
     }
   });
 }

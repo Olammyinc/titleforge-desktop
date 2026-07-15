@@ -45,6 +45,7 @@ struct SlotDef {
 struct TemplateInfo {
     template: String,
     slots: Vec<SlotDef>,
+    genre: String,
 }
 
 /// The EGCG generator — all indices are pre-built at startup for fast generation.
@@ -70,8 +71,8 @@ pub struct Generator {
     closer_fragments: Vec<String>,
     /// per-category exemplar vocabulary (words appearing in curated titles)
     exemplar_vocab: HashMap<String, HashSet<String>>,
-    /// All curated titles for mode C (title, category)
-    all_curated: Vec<(String, String)>,
+    /// All curated titles for mode C (title, category, genre)
+    all_curated: Vec<(String, String, String)>,
 }
 
 // ── Public API ──
@@ -94,19 +95,19 @@ impl Generator {
     pub fn build(conn: &Connection) -> Self {
         // ── Load curated titles ──
         let mut curated: HashMap<String, Vec<String>> = HashMap::new();
-        let mut all_curated: Vec<(String, String)> = Vec::new();
+        let mut all_curated: Vec<(String, String, String)> = Vec::new();
 
         {
-            let rows: Vec<(String, String)> = match conn.prepare("SELECT title, category FROM curated_titles") {
-                Ok(mut stmt) => stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            let rows: Vec<(String, String, String)> = match conn.prepare("SELECT title, category, COALESCE(genre, 'any') FROM curated_titles") {
+                Ok(mut stmt) => stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?)))
                     .ok()
                     .map(|rows| rows.filter_map(|r| r.ok()).collect())
                     .unwrap_or_default(),
                 Err(e) => { eprintln!("Warning: failed to load curated_titles: {}", e); vec![] }
             };
 
-            for (title, category) in rows {
-                all_curated.push((title.clone(), category.clone()));
+            for (title, category, genre) in rows {
+                all_curated.push((title.clone(), category.clone(), genre));
                 curated
                     .entry(category)
                     .or_default()
@@ -133,9 +134,9 @@ impl Generator {
         // ── Load templates ──
         let mut templates: HashMap<String, Vec<TemplateInfo>> = HashMap::new();
         {
-            let rows: Vec<(String, String, String)> = match conn.prepare("SELECT category, template, slots FROM patterns") {
+            let rows: Vec<(String, String, String, String)> = match conn.prepare("SELECT category, template, slots, COALESCE(genre, 'any') FROM patterns") {
                 Ok(mut stmt) => stmt.query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?, row.get::<_, String>(3)?))
                 })
                     .ok()
                     .map(|rows| rows.filter_map(|r| r.ok()).collect())
@@ -143,13 +144,13 @@ impl Generator {
                 Err(e) => { eprintln!("Warning: failed to load patterns: {}", e); vec![] }
             };
 
-            for (category, template, slots_json) in rows {
+            for (category, template, slots_json, genre) in rows {
                 let slots: Vec<SlotDef> =
                     serde_json::from_str(&slots_json).unwrap_or_default();
                 templates
                     .entry(category)
                     .or_default()
-                    .push(TemplateInfo { template, slots });
+                    .push(TemplateInfo { template, slots, genre });
             }
         }
 
@@ -249,6 +250,16 @@ impl Generator {
         }
 
         // ── Mine intro and closer fragments ──
+        // Words that should NOT appear at fragment boundaries (they create incoherent seams)
+        const SEAM_STOP_WORDS: &[&str] = &[
+            "a", "an", "the", "in", "on", "at", "by", "for", "with", "to", "of", "from",
+            "and", "or", "but", "so", "as", "if", "than", "that", "about", "into",
+            "through", "during", "before", "after", "above", "below", "between",
+            "under", "over", "up", "down", "out", "off", "is", "be", "was", "are",
+            "were", "been", "being", "have", "has", "had", "do", "does", "did",
+            "will", "would", "can", "could", "may", "might", "shall", "should",
+        ];
+
         let mut intro_set: HashSet<String> = HashSet::new();
         let mut closer_set: HashSet<String> = HashSet::new();
         for (_cat, titles) in &curated {
@@ -260,17 +271,37 @@ impl Generator {
                     .collect();
 
                 if words.len() >= 2 {
-                    // Intro: first 2 words
-                    intro_set.insert(words[..2].join(" "));
-                    if words.len() >= 3 {
-                        // Intro: first 3 words
-                        intro_set.insert(words[..3].join(" "));
+                    // Intro: first 2 words — reject if last word is a seam stop word
+                    {
+                        let intro2 = words[..2].join(" ");
+                        let last_word_lower = words[1].to_lowercase();
+                        if !SEAM_STOP_WORDS.contains(&last_word_lower.as_str()) {
+                            intro_set.insert(intro2);
+                        }
                     }
-                    // Closer: last 2 words
-                    closer_set.insert(words[words.len() - 2..].join(" "));
                     if words.len() >= 3 {
-                        // Closer: last 3 words
-                        closer_set.insert(words[words.len() - 3..].join(" "));
+                        // Intro: first 3 words — reject if last word is a seam stop word
+                        let intro3 = words[..3].join(" ");
+                        let last_word_lower = words[2].to_lowercase();
+                        if !SEAM_STOP_WORDS.contains(&last_word_lower.as_str()) {
+                            intro_set.insert(intro3);
+                        }
+                    }
+                    // Closer: last 2 words — reject if first word is a seam stop word
+                    {
+                        let closer2 = words[words.len() - 2..].join(" ");
+                        let first_word_lower = words[words.len() - 2].to_lowercase();
+                        if !SEAM_STOP_WORDS.contains(&first_word_lower.as_str()) {
+                            closer_set.insert(closer2);
+                        }
+                    }
+                    if words.len() >= 3 {
+                        // Closer: last 3 words — reject if first word is a seam stop word
+                        let closer3 = words[words.len() - 3..].join(" ");
+                        let first_word_lower = words[words.len() - 3].to_lowercase();
+                        if !SEAM_STOP_WORDS.contains(&first_word_lower.as_str()) {
+                            closer_set.insert(closer3);
+                        }
                     }
                 }
             }
@@ -305,7 +336,7 @@ impl Generator {
         keyword: &str,
         categories: &[String],
         _style: &str,
-        _genre: &str,
+        genre: &str,
         quantity: u32,
     ) -> Vec<TitleResult> {
         if categories.is_empty() || keyword.chars().count() <= 2 {
@@ -332,7 +363,7 @@ impl Generator {
                     break;
                 }
                 if let Some(title) = self.fill_template_mode(
-                    &kw_lower, category, &mut rng,
+                    &kw_lower, category, genre, &mut rng,
                 ) {
                     let lower = title.to_lowercase();
                     if !seen.contains(&lower)
@@ -361,7 +392,7 @@ impl Generator {
                 Some(c) => c.clone(),
                 None => break,
             };
-            if let Some(title) = self.stitch_mode(&kw_lower, &cat, &mut rng) {
+            if let Some(title) = self.stitch_mode(&kw_lower, &cat, genre, &mut rng) {
                 let lower = title.to_lowercase();
                 if !seen.contains(&lower)
                     && lower.contains(&kw_lower)
@@ -385,7 +416,7 @@ impl Generator {
                 break;
             }
             if let Some((title, exemplar_cat)) = self.embed_mode(
-                &kw_lower, categories, &mut rng,
+                &kw_lower, categories, genre, &mut rng,
             ) {
                 let lower = title.to_lowercase();
                 if !seen.contains(&lower)
@@ -419,10 +450,25 @@ impl Generator {
         &self,
         keyword: &str,
         category: &str,
+        genre: &str,
         rng: &mut impl Rng,
     ) -> Option<String> {
         let tmpls = self.templates.get(category)?;
-        let template_info = tmpls.choose(rng)?;
+        let template_info: &TemplateInfo = if genre == "any" || genre.is_empty() {
+            tmpls.choose(rng)?
+        } else {
+            // Filter by genre (exact match or template marked 'any')
+            let matching: Vec<&TemplateInfo> = tmpls
+                .iter()
+                .filter(|t| t.genre == genre || t.genre == "any")
+                .collect();
+            if matching.is_empty() {
+                // Fall back to any-genre templates if no exact match
+                tmpls.choose(rng)?
+            } else {
+                matching.choose(rng).copied()?
+            }
+        };
 
         let mut filled_words: Vec<String> = Vec::new();
 
@@ -436,7 +482,13 @@ impl Generator {
                 }
                 _ => {
                     // Get candidates and score them
-                    let candidates = self.get_candidates(slot, category);
+                    let mut candidates = self.get_candidates(slot, category);
+                    if candidates.is_empty() {
+                        return None;
+                    }
+
+                    // Filter out words already used in this title (Issue 3: duplicate prevention)
+                    candidates.retain(|c| !filled_words.contains(c));
                     if candidates.is_empty() {
                         return None;
                     }
@@ -609,21 +661,36 @@ impl Generator {
         slots: &[SlotDef],
         _keyword: &str,
     ) -> String {
+        /// Small words that should remain lowercase in title-case when not leading.
+        const SMALL_WORDS: &[&str] = &[
+            "a", "an", "the", "in", "of", "to", "for", "and", "or", "but",
+            "by", "with", "at", "from", "on", "as", "is", "it",
+        ];
+
+        /// Capitalize a word for title-case display.
+        fn title_case_word(word: &str, is_first: bool) -> String {
+            if word.is_empty() {
+                return word.to_string();
+            }
+            let lower = word.to_lowercase();
+            if !is_first && SMALL_WORDS.contains(&lower.as_str()) {
+                return lower;
+            }
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+                None => word.to_string(),
+            }
+        }
+
         let mut result = template.to_string();
         for (i, slot) in slots.iter().enumerate() {
             if i < filled.len() {
                 let placeholder = format!("{{{}}}", slot.name);
                 let word = &filled[i];
-                // Capitalize if it's the first word
-                let replacement = if result.starts_with(&placeholder) {
-                    let mut chars = word.chars();
-                    match chars.next() {
-                        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
-                        None => word.clone(),
-                    }
-                } else {
-                    word.clone()
-                };
+                // Capitalize every filled word using title-case rules
+                let is_first_word = result.starts_with(&placeholder);
+                let replacement = title_case_word(word, is_first_word);
                 result = result.replace(&placeholder, &replacement);
             }
         }
@@ -645,6 +712,7 @@ impl Generator {
         &self,
         keyword: &str,
         _category: &str,
+        _genre: &str,
         rng: &mut impl Rng,
     ) -> Option<String> {
         let intro = self.intro_fragments.choose(rng)?;
@@ -681,19 +749,42 @@ impl Generator {
         &self,
         keyword: &str,
         categories: &[String],
+        genre: &str,
         rng: &mut impl Rng,
     ) -> Option<(String, String)> {
-        // Filter curated titles to matching categories
+        // Filter curated titles to matching categories AND matching genre
         let cat_set: HashSet<&String> = categories.iter().collect();
-        let relevant: Vec<&(String, String)> = self
+        let relevant: Vec<&(String, String, String)> = self
             .all_curated
             .iter()
-            .filter(|(_, cat)| cat_set.contains(cat))
+            .filter(|(_, cat, g)| {
+                cat_set.contains(cat) && 
+                (genre == "any" || genre.is_empty() || g == genre || g == "any")
+            })
             .collect();
 
         if relevant.is_empty() {
-            return None;
+            // Fall back to any genre within matching categories
+            let fallback: Vec<&(String, String, String)> = self
+                .all_curated
+                .iter()
+                .filter(|(_, cat, _)| cat_set.contains(cat))
+                .collect();
+            if fallback.is_empty() {
+                return None;
+            }
+            return self.embed_from_relevant(keyword, &fallback, rng);
         }
+
+        self.embed_from_relevant(keyword, &relevant, rng)
+    }
+
+    fn embed_from_relevant(
+        &self,
+        keyword: &str,
+        relevant: &[&(String, String, String)],
+        rng: &mut impl Rng,
+    ) -> Option<(String, String)> {
 
         // Handle multi-word keywords: use first token for lookup
         let kw_tokens: Vec<&str> = keyword.split_whitespace().collect();
@@ -706,13 +797,13 @@ impl Generator {
         let mut best_score: f64 = f64::NEG_INFINITY;
 
         // Sample a subset for performance (up to 50)
-        let sample: Vec<&&(String, String)> = if relevant.len() > 50 {
+        let sample: Vec<&&(String, String, String)> = if relevant.len() > 50 {
             relevant.choose_multiple(rng, 50).collect()
         } else {
             relevant.iter().collect()
         };
 
-        for (title, cat) in &sample {
+        for (title, cat, _g) in &sample {
             let tokens = tokenize(title);
             let mut total_aff = 0.0;
             let mut count = 0;
