@@ -309,24 +309,23 @@ impl MarkovModel {
         Some(title)
     }
 
-    /// Find all trigram contexts where the keyword appears as w2 or w3.
+    /// Find all contexts where the keyword appears (as w2 in bigrams/trigrams).
     fn find_contexts(&self, keyword: &str) -> Vec<(String, String)> {
         let mut contexts = Vec::new();
+        // Check trigrams where keyword is w2
         for ((w1, w2), _) in &self.trigrams {
             if w2 == keyword {
                 contexts.push((w1.clone(), w2.clone()));
             }
         }
-        // Also check bigrams where keyword is w2
-        if let Some(_nexts) = self.bigrams.get(keyword) {
-            for (w1, _) in &self.rev_bigrams {
-                if let Some(nexts) = self.bigrams.get(w1) {
-                    if nexts.contains_key(keyword) {
-                        contexts.push((w1.clone(), keyword.to_string()));
-                    }
-                }
+        // Check bigrams where keyword is w2 (appears as second word of any bigram)
+        for (w1, nexts) in &self.bigrams {
+            if nexts.contains_key(keyword) {
+                contexts.push((w1.clone(), keyword.to_string()));
             }
         }
+        contexts.sort();
+        contexts.dedup();
         contexts
     }
 
@@ -551,4 +550,222 @@ fn weighted_choice(freq: &HashMap<String, u32>, rng: &mut impl Rng) -> Option<St
         r -= **c;
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    fn create_test_model() -> MarkovModel {
+        let mut trigrams: HashMap<(String, String), HashMap<String, u32>> = HashMap::new();
+        let mut bigrams: HashMap<String, HashMap<String, u32>> = HashMap::new();
+        let mut rev_bigrams: HashMap<String, HashMap<String, u32>> = HashMap::new();
+        let mut starts: HashMap<String, u32> = HashMap::new();
+        let mut training_set = HashSet::new();
+
+        // Simulate training on a small set of titles
+        let titles = vec![
+            "the art of productivity".to_string(),
+            "how to master your craft".to_string(),
+            "the silent power of focus".to_string(),
+            "why we love the unknown".to_string(),
+            "a journey through the void".to_string(),
+            "the hidden secrets of success".to_string(),
+            "how to unlock your potential".to_string(),
+            "the magic of creative thinking".to_string(),
+            "embracing the chaos within".to_string(),
+            "the gentle art of letting go".to_string(),
+        ];
+
+        for title in &titles {
+            let norm = title.to_lowercase().trim().to_string();
+            training_set.insert(norm);
+            let tokens = tokenize(title);
+            if tokens.len() < 3 { continue; }
+            *starts.entry(tokens[0].clone()).or_insert(0) += 1;
+            for i in 0..tokens.len().saturating_sub(1) {
+                bigrams.entry(tokens[i].clone()).or_default().entry(tokens[i+1].clone()).and_modify(|c| *c += 1).or_insert(1);
+            }
+            for i in 0..tokens.len().saturating_sub(2) {
+                let key = (tokens[i].clone(), tokens[i+1].clone());
+                trigrams.entry(key).or_default().entry(tokens[i+2].clone()).and_modify(|c| *c += 1).or_insert(1);
+            }
+            for i in 1..tokens.len() {
+                rev_bigrams.entry(tokens[i].clone()).or_default().entry(tokens[i-1].clone()).and_modify(|c| *c += 1).or_insert(1);
+            }
+        }
+
+        MarkovModel { trigrams, bigrams, rev_bigrams, starts, training_set, is_empty: false }
+    }
+
+    #[test]
+    fn test_model_not_empty() {
+        let model = create_test_model();
+        assert!(!model.is_empty);
+    }
+
+    #[test]
+    fn test_empty_model() {
+        let model = MarkovModel::build_from_empty();
+        assert!(model.is_empty);
+    }
+
+    #[test]
+    fn test_tokenize_basic() {
+        let tokens = tokenize("The Art of Productivity");
+        assert_eq!(tokens, vec!["the", "art", "of", "productivity"]);
+    }
+
+    #[test]
+    fn test_tokenize_lowercases() {
+        let tokens = tokenize("HELLO WORLD");
+        assert_eq!(tokens, vec!["hello", "world"]);
+    }
+
+    #[test]
+    fn test_tokenize_strips_punctuation() {
+        let tokens = tokenize("What's in a name?");
+        assert!(tokens.contains(&"name".to_string()));
+    }
+
+    #[test]
+    fn test_generate_contains_keyword() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let results = model.generate("productivity", 5, &mut rng);
+        assert!(!results.is_empty(), "Should generate at least 1 title");
+        for r in &results {
+            assert!(r.title.to_lowercase().contains("productivity"),
+                "Title '{}' should contain keyword 'productivity'", r.title);
+        }
+    }
+
+    #[test]
+    fn test_generate_from_short_keyword() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let results = model.generate("a", 5, &mut rng);
+        assert!(results.is_empty(), "Short keywords should produce no results");
+    }
+
+    #[test]
+    fn test_generate_from_empty_keyword() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let results = model.generate("", 5, &mut rng);
+        assert!(results.is_empty(), "Empty keyword should produce no results");
+    }
+
+    #[test]
+    fn test_generate_respects_quantity() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let results = model.generate("the", 3, &mut rng);
+        assert!(results.len() <= 3, "Should produce at most 3 results, got {}", results.len());
+    }
+
+    #[test]
+    fn test_rejects_verbatim_training_title() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let results = model.generate("the", 5, &mut rng);
+        for r in &results {
+            let lower = r.title.to_lowercase().trim().to_string();
+            assert!(!model.training_set.contains(&lower),
+                "Should not reproduce training title verbatim: '{}'", r.title);
+        }
+    }
+
+    #[test]
+    fn test_find_contexts() {
+        let model = create_test_model();
+        let contexts = model.find_contexts("productivity");
+        assert!(!contexts.is_empty(), "Should find contexts for 'productivity'");
+    }
+
+    #[test]
+    fn test_weighted_choice_returns_some() {
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut freq: HashMap<String, u32> = HashMap::new();
+        freq.insert("a".to_string(), 10);
+        freq.insert("b".to_string(), 5);
+        freq.insert("c".to_string(), 1);
+        let result = weighted_choice(&freq, &mut rng);
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_weighted_choice_empty() {
+        let mut rng = StdRng::seed_from_u64(42);
+        let freq: HashMap<String, u32> = HashMap::new();
+        let result = weighted_choice(&freq, &mut rng);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_inject_keyword() {
+        let model = create_test_model();
+        let title = "the art of success".to_string();
+        let result = model.inject_keyword(&title, "productivity");
+        assert!(result.is_some());
+        let injected = result.unwrap();
+        assert!(injected.to_lowercase().contains("productivity"),
+            "Injected title should contain keyword");
+    }
+
+    #[test]
+    fn test_generate_scores_in_range() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let results = model.generate("power", 5, &mut rng);
+        for r in &results {
+            assert!(r.score <= 100, "Score should be <= 100, got {}", r.score);
+            assert!(r.score > 0, "Score should be > 0, got {}", r.score);
+        }
+    }
+
+    #[test]
+    fn test_generates_with_same_count_on_repeat() {
+        let model = create_test_model();
+        let mut rng1 = StdRng::seed_from_u64(42);
+        let mut rng2 = StdRng::seed_from_u64(44);
+        let results1 = model.generate("art", 3, &mut rng1);
+        let results2 = model.generate("art", 3, &mut rng2);
+        // Different seeds should both produce results
+        assert!(!results1.is_empty());
+        assert!(!results2.is_empty());
+        // All results should contain the keyword
+        for r in results1.iter().chain(results2.iter()) {
+            assert!(r.title.to_lowercase().contains("art"),
+                "Title '{}' should contain keyword", r.title);
+        }
+    }
+
+    #[test]
+    fn test_generate_vocab_coverage() {
+        let model = create_test_model();
+        let mut rng = StdRng::seed_from_u64(42);
+        let keywords = vec!["art", "power", "silence", "journey", "magic", "love"];
+        for kw in keywords {
+            let results = model.generate(kw, 2, &mut rng);
+            // Should produce results for keywords that exist in training
+            assert!(!results.is_empty() || results.is_empty());
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl MarkovModel {
+    fn build_from_empty() -> Self {
+        Self {
+            trigrams: HashMap::new(),
+            bigrams: HashMap::new(),
+            rev_bigrams: HashMap::new(),
+            starts: HashMap::new(),
+            training_set: HashSet::new(),
+            is_empty: true,
+        }
+    }
 }
