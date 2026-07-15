@@ -133,30 +133,33 @@ pub fn generate(
                 Some(c) => *c,
                 None => break,
             };
-            let mut stmt = match conn.prepare(
+            // Collect eagerly so the PreparedStatement can be dropped
+            let fallback_rows: Vec<(String, String)> = match conn.prepare(
                 "SELECT template, slots FROM patterns WHERE category = ?1 ORDER BY RANDOM() LIMIT 1"
             ) {
-                Ok(s) => s,
+                Ok(mut stmt) => {
+                    stmt.query_map(rusqlite::params![cat], |row| {
+                        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                    })
+                    .ok()
+                    .map(|rows| rows.filter_map(|r| r.ok()).collect())
+                    .unwrap_or_default()
+                }
                 Err(_) => break,
             };
-            if let Ok(rows) = stmt.query_map(rusqlite::params![cat], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            }) {
-                for row in rows {
-                    if let Ok((template, slots_json)) = row {
-                        let slots: Vec<Slot> = serde_json::from_str(&slots_json).unwrap_or_default();
-                        let generated = fill_template(conn, &template, &slots, keyword, &mut rng);
+            for (template, slots_json) in &fallback_rows {
+                let slots: Vec<Slot> = serde_json::from_str(slots_json).unwrap_or_default();
+                let generated = fill_template(conn, template, &slots, keyword, &mut rng);
                 if generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
-                            let (score, breakdown) = calculate_score(&generated, keyword, cat);
-                            results.push(TitleResult {
-                                title: generated,
-                                score,
-                                categories: vec![cat.to_string()],
-                                breakdown: Some(breakdown),
-                            });
-                        }
-                    }
+                    let (score, breakdown) = calculate_score(&generated, keyword, cat);
+                    results.push(TitleResult {
+                        title: generated,
+                        score,
+                        categories: vec![cat.to_string()],
+                        breakdown: Some(breakdown),
+                    });
                 }
+            }
             }
         }
     }
