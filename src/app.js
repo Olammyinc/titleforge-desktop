@@ -290,6 +290,16 @@ function openBuyLink() {
   }
 }
 
+function openExternalUrl(url) {
+  var ipc = (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+    || (window.__TAURI__ && window.__TAURI__.invoke);
+  if (ipc) {
+    ipc('plugin:shell|open', { path: url });
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
 function handleActivation() {
   var key = document.getElementById('activationKey').value.trim();
   var email = document.getElementById('activationEmail').value.trim();
@@ -1563,14 +1573,21 @@ function checkAndInstallUpdate(silent) {
     return;
   }
 
-  // Fallback: use raw invoke (works with dialog: true)
+  // Fallback: use raw invoke + provide download link
   invoke('plugin:updater|check').then(function (result) {
     if (result && result.version) {
       if (!silent && statusEl) {
-        statusEl.textContent = 'Update v' + result.version + ' available.';
         statusEl.style.color = '#16a34a';
+        statusEl.innerHTML = 'Update v' + result.version + ' available. <a href="#" id="downloadUpdateLink" style="color:var(--forge);font-weight:600;">Download from GitHub →</a>';
+        // Wire the download link
+        var dlLink = document.getElementById('downloadUpdateLink');
+        if (dlLink) {
+          dlLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            openBuyLink(); // Uses same Tauri shell.open for external URLs
+          });
+        }
       }
-      // dialog: true — Tauri shows native update dialog automatically
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
       var currentVer = (verEl && verEl.textContent) || '0.7.0';
