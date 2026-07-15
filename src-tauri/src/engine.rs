@@ -76,6 +76,9 @@ pub fn generate(
     genre: &str,
     quantity: u32,
 ) -> Result<Vec<TitleResult>, String> {
+    if categories.is_empty() {
+        return Ok(vec![]);
+    }
     let mut rng = rand::thread_rng();
     let mut results = Vec::new();
     let per_cat = (quantity.max(categories.len() as u32) / categories.len() as u32).max(3) + 3;
@@ -92,7 +95,7 @@ pub fn generate(
                 Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
             })
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
+            .filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() })
             .collect();
 
         if templates.is_empty() {
@@ -142,7 +145,7 @@ pub fn generate(
                         Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
                     })
                     .ok()
-                    .map(|rows| rows.filter_map(|r| r.ok()).collect())
+                    .map(|rows| rows.filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() }).collect())
                     .unwrap_or_default()
                 }
                 Err(_) => break,

@@ -66,7 +66,7 @@ fn generate_titles(
     quantity: u32,
     state: tauri::State<AppState>,
 ) -> Result<Vec<TitleResult>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     engine::generate(&db, &keyword, &categories, &style, &genre, quantity)
 }
 
@@ -83,7 +83,7 @@ fn get_categories() -> Vec<&'static str> {
 
 #[tauri::command]
 fn get_usage_stats(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
     let total_gens: i64 = db
         .query_row("SELECT COUNT(*) FROM user_history", [], |row| row.get(0))
@@ -118,7 +118,7 @@ fn record_generation(
     titles: Vec<TitleResult>,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let cats_json = categories.join(",");
     let titles_json = serde_json::to_string(&titles).map_err(|e| e.to_string())?;
 
@@ -133,7 +133,7 @@ fn record_generation(
 
 #[tauri::command]
 fn get_history(state: tauri::State<AppState>) -> Result<Vec<HistoryEntry>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let mut stmt = db
         .prepare("SELECT id, keyword, categories, genre, style, titles, created_at FROM user_history ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
@@ -151,7 +151,7 @@ fn get_history(state: tauri::State<AppState>) -> Result<Vec<HistoryEntry>, Strin
             })
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() })
         .collect();
 
     Ok(entries)
@@ -161,7 +161,7 @@ fn get_history(state: tauri::State<AppState>) -> Result<Vec<HistoryEntry>, Strin
 
 #[tauri::command]
 fn get_favorites(state: tauri::State<AppState>) -> Result<Vec<FavoriteEntry>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let mut stmt = db
         .prepare("SELECT id, title, COALESCE(keyword,''), COALESCE(score,0), COALESCE(category,''), created_at FROM user_favorites ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
@@ -178,7 +178,7 @@ fn get_favorites(state: tauri::State<AppState>) -> Result<Vec<FavoriteEntry>, St
             })
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() })
         .collect();
 
     Ok(entries)
@@ -192,7 +192,7 @@ fn toggle_favorite(
     category: String,
     state: tauri::State<AppState>,
 ) -> Result<bool, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
     // Check if already favorited
     let exists: bool = db
@@ -224,7 +224,7 @@ fn toggle_favorite(
 
 #[tauri::command]
 fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let mut stmt = db
         .prepare(
             "SELECT p.id, p.name, COALESCE(p.created_at,''), 
@@ -244,7 +244,7 @@ fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, Stri
             })
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() })
         .collect();
 
     Ok(entries)
@@ -252,7 +252,7 @@ fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, Stri
 
 #[tauri::command]
 fn create_project(name: String, state: tauri::State<AppState>) -> Result<ProjectEntry, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
     db.execute(
         "INSERT INTO user_projects (name) VALUES (?1)",
@@ -272,7 +272,7 @@ fn create_project(name: String, state: tauri::State<AppState>) -> Result<Project
 
 #[tauri::command]
 fn delete_project(project_id: i64, state: tauri::State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     db.execute(
         "DELETE FROM project_titles WHERE project_id = ?1",
         rusqlite::params![project_id],
@@ -294,7 +294,7 @@ fn add_to_project(
     score: i64,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     db.execute(
         "INSERT INTO project_titles (project_id, title, keyword, score) VALUES (?1, ?2, ?3, ?4)",
         rusqlite::params![project_id, title, keyword, score],
@@ -310,7 +310,7 @@ fn update_title_notes(
     notes: String,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     db.execute(
         "UPDATE project_titles SET notes = ?1 WHERE project_id = ?2 AND title = ?3",
         rusqlite::params![notes, project_id, title],
@@ -391,7 +391,7 @@ fn is_sensitive_key(key: &str) -> bool {
 
 #[tauri::command]
 fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashMap<String, String>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let mut stmt = db
         .prepare("SELECT key, value FROM user_settings")
         .map_err(|e| e.to_string())?;
@@ -401,7 +401,7 @@ fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashM
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() })
         .map(|(k, v)| {
             // Deobfuscate sensitive values on read
             let value = if is_sensitive_key(&k) {
@@ -418,7 +418,7 @@ fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashM
 
 #[tauri::command]
 fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
     // Obfuscate sensitive values (API keys, tokens, etc.) before storing
     let stored_value = if is_sensitive_key(&key) {
@@ -457,7 +457,7 @@ fn validate_license(key: String, email: String, state: tauri::State<AppState>) -
         Some((valid, tier))
     }).join().map_err(|_| "Thread panicked".to_string())?;
 
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
     if let Some((is_valid, tier)) = result {
         if is_valid {
@@ -500,7 +500,7 @@ fn validate_license(key: String, email: String, state: tauri::State<AppState>) -
 
 #[tauri::command]
 fn deactivate_license(state: tauri::State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -698,7 +698,7 @@ fn generate_with_ai(
 
 #[tauri::command]
 fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let count: i64 = db
         .query_row("SELECT COUNT(*) FROM patterns", [], |row| row.get(0))
         .unwrap_or(0);

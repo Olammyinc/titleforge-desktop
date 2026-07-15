@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
       mainApp.style.display = 'flex';
       initApp();
     }
-  }).catch(function () {});
+  }).catch(function (err) { console.error('get_settings on init failed:', err); });
 });
 
 function openBuyLink() {
@@ -326,7 +326,7 @@ function initApp() {
       var el = document.getElementById('engineStatus');
       if (el) el.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' key ready';
     }
-  }).catch(function () {});
+  }).catch(function (err) { console.error('get_settings for AI provider failed:', err); });
 
   // Auto-update check on launch (with small delay so UI renders first)
   setTimeout(setupUpdaterAutoCheck, 800);
@@ -565,7 +565,7 @@ function handleGenerate() {
       genre: genre,
       style: selectedStyle,
       titles: titles,
-    }).catch(function () {});
+    }).catch(function (err) { console.error('record_generation failed:', err); });
     updateUsageDisplay();
     saveToHistoryLocal(keyword, checkedCategories, genre, selectedStyle, titles);
     genCountThisSession++;
@@ -1114,7 +1114,7 @@ function renderProjectsTab() {
             saveBtn.style.cssText = 'margin-top:4px;padding:4px 12px;';
             saveBtn.addEventListener('click', function () {
               t.notes = textarea.value;
-              invoke('update_title_notes', { projectId: proj.id, title: titleText, notes: textarea.value }).catch(function () {});
+              invoke('update_title_notes', { projectId: proj.id, title: titleText, notes: textarea.value }).catch(function (err) { console.error('update_title_notes failed:', err); });
               noteToggle.textContent = textarea.value ? ' \uD83D\uDCAC' : ' \u270F\uFE0F';
               editor.remove();
             });
@@ -1343,7 +1343,7 @@ function renderSettingsContent() {
     if (verEl && info.version) verEl.textContent = info.version;
     var updateVerEl = document.getElementById('settingsUpdateVersion');
     if (updateVerEl && info.version) updateVerEl.textContent = 'v' + info.version;
-  }).catch(function () {});
+  }).catch(function (err) { console.error('get_app_info failed:', err); });
 
   invoke('get_settings').then(function (settings) {
     if (settings.ai_provider) {
@@ -1354,7 +1354,7 @@ function renderSettingsContent() {
       var ki = document.getElementById('aiApiKey');
       if (ki) ki.placeholder = 'API key saved (enter new key to change)';
     }
-  }).catch(function () {});
+  }).catch(function (err) { console.error('get_settings for AI config failed:', err); });
 
   var saveBtn = document.getElementById('saveApiKeyBtn');
   if (saveBtn) {
@@ -1394,7 +1394,7 @@ function setupUpdaterAutoCheck() {
       // Silently check for updates — native dialog appears if update found
       checkAndInstallUpdate(true);
     }
-  }).catch(function () {});
+  }).catch(function (err) { console.error('get_settings for auto-update check failed:', err); });
 }
 
 function setupUpdaterControls() {
@@ -1405,10 +1405,10 @@ function setupUpdaterControls() {
     // Load current setting
     invoke('get_settings').then(function (settings) {
       autoToggle.checked = settings.auto_update === 'true';
-    }).catch(function () {});
+    }).catch(function (err) { console.error('get_settings for toggle load failed:', err); });
     // Persist changes immediately
     autoToggle.addEventListener('change', function () {
-      invoke('set_setting', { key: 'auto_update', value: autoToggle.checked ? 'true' : 'false' }).catch(function () {});
+      invoke('set_setting', { key: 'auto_update', value: autoToggle.checked ? 'true' : 'false' }).catch(function (err) { console.error('set_setting auto_update failed:', err); });
     });
   }
 
@@ -1445,7 +1445,7 @@ function checkAndInstallUpdate(silent) {
         statusEl.style.color = '#16a34a';
       }
       // Trigger download & install — Tauri v2 updater expects the rid from the check result
-      if (result.rid) {
+      if (result.rid !== undefined && result.rid !== null) {
         return invoke('plugin:updater|download_and_install', { rid: result.rid });
       } else if (result.version) {
         return invoke('plugin:updater|download_and_install', result);
