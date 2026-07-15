@@ -114,7 +114,7 @@ var isGuest = false;
 var selectedStyle = 'normal';
 var selectedGender = 'any';
 var dailyUsage = 0;
-var activeEngine = 'database';
+var activeEngine = 'auto';
 var aiProvider = '';
 var aiApiKey = '';
 
@@ -355,11 +355,38 @@ function initApp() {
       var el = document.getElementById('engineStatus');
       if (el) el.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' key ready';
     }
+    // Show first-launch prompt if no API key configured
+    promptApiKeySetup();
   }).catch(function (err) { console.error('get_settings for AI provider failed:', err); });
 
   // Auto-update check on launch (with small delay so UI renders first)
   setupUpdaterEvents();
   setTimeout(setupUpdaterAutoCheck, 800);
+}
+
+// Show API key setup prompt on first launch (no key configured)
+function promptApiKeySetup() {
+  if (aiProvider && aiApiKey) return; // Already have a key
+  setTimeout(function () {
+    var existing = document.getElementById('apiKeyNotice');
+    if (existing) return;
+    var notice = document.createElement('div');
+    notice.id = 'apiKeyNotice';
+    notice.style.cssText = 'background:linear-gradient(135deg, #E8782B, #FF9147);color:#fff;padding:12px 16px;border-radius:8px;margin-bottom:16px;font:14px var(--font-body);line-height:1.5;';
+    notice.innerHTML = '<strong>Want better titles?</strong> Add an API key in Settings for AI-powered generation. <a href="#" id="apiKeyNoticeLink" style="color:#fff;font-weight:700;text-decoration:underline;">Go to Settings →</a>';
+    var settingsView = document.getElementById('viewSettings');
+    if (settingsView && !settingsView.querySelector('#apiKeyNotice')) {
+      settingsView.insertBefore(notice, settingsView.firstChild);
+    }
+    var link = document.getElementById('apiKeyNoticeLink');
+    if (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var settingsItem = document.querySelector('.sidebar-item[data-view="settings"]');
+        if (settingsItem) settingsItem.click();
+      });
+    }
+  }, 1000);
 }
 
 // ---- CATEGORIES ----
@@ -508,13 +535,25 @@ function updateUsageDisplay() {
 // ============================================
 
 function setupEngineToggle() {
+  var autoBtn = document.getElementById('engineAutoBtn');
   var dbBtn = document.getElementById('engineDbBtn');
   var aiBtn = document.getElementById('engineAiBtn');
   var status = document.getElementById('engineStatus');
   if (!dbBtn || !aiBtn) return;
 
+  if (autoBtn) {
+    autoBtn.addEventListener('click', function () {
+      activeEngine = 'auto';
+      autoBtn.classList.add('active');
+      dbBtn.classList.remove('active');
+      aiBtn.classList.remove('active');
+      if (status) status.textContent = aiProvider ? 'AI-first, falls back to local database' : 'No API key — using local database';
+    });
+  }
+
   dbBtn.addEventListener('click', function () {
     activeEngine = 'database';
+    if (autoBtn) autoBtn.classList.remove('active');
     dbBtn.classList.add('active');
     aiBtn.classList.remove('active');
     if (status) status.textContent = 'Local database — always available';
@@ -522,9 +561,16 @@ function setupEngineToggle() {
 
   aiBtn.addEventListener('click', function () {
     if (!aiProvider || !aiApiKey) {
-      if (status) status.textContent = 'No API key saved. Go to Settings.';
+      if (status) status.textContent = 'No API key saved. Go to Settings → AI Integration.';
       return;
     }
+    activeEngine = 'ai';
+    if (autoBtn) autoBtn.classList.remove('active');
+    dbBtn.classList.remove('active');
+    aiBtn.classList.add('active');
+    if (status) status.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' — using your key';
+  });
+}
     activeEngine = 'ai';
     aiBtn.classList.add('active');
     dbBtn.classList.remove('active');
@@ -558,6 +604,7 @@ function handleGenerate() {
   var genPromise;
 
   if (activeEngine === 'ai' && aiProvider && aiApiKey) {
+    // Pure AI mode
     dumpDebug('handleGenerate: using AI engine (' + aiProvider + '), keyword=' + keyword + ', cats=' + checkedCategories.join(',') + ', qty=' + quantity);
     genPromise = invoke('generate_with_ai', {
       keyword: keyword,
@@ -574,7 +621,38 @@ function handleGenerate() {
       provider: aiProvider,
       api_key: aiApiKey,
     });
+  } else if (activeEngine === 'auto' && aiProvider && aiApiKey) {
+    // Auto mode: try AI first, fall back to database
+    dumpDebug('handleGenerate: auto mode, trying AI first (' + aiProvider + '), keyword=' + keyword + ', cats=' + checkedCategories.join(',') + ', qty=' + quantity);
+    genPromise = invoke('generate_with_ai', {
+      keyword: keyword,
+      categories: checkedCategories,
+      style: selectedStyle,
+      genre: genre,
+      quantity: quantity,
+      cross_medium: wantCrossMedium,
+      include_subtitles: wantSubtitles,
+      include_translation: wantTranslation,
+      translate_lang: translateLang,
+      gender: gender,
+      finetune: finetune,
+      provider: aiProvider,
+      api_key: aiApiKey,
+    }).catch(function (aiErr) {
+      // AI failed — fall back to database
+      dumpDebug('AI failed in auto mode, falling back to database: ' + (aiErr.message || aiErr));
+      var statusEl = document.getElementById('engineStatus');
+      if (statusEl) statusEl.textContent = 'AI unavailable — using local database';
+      return invoke('generate_titles', {
+        keyword: keyword,
+        categories: checkedCategories,
+        style: selectedStyle,
+        genre: genre,
+        quantity: quantity,
+      });
+    });
   } else {
+    // Database mode (or auto without API key)
     dumpDebug('handleGenerate: using DB engine, keyword=' + keyword + ', cats=' + checkedCategories.join(',') + ', qty=' + quantity);
     genPromise = invoke('generate_titles', {
       keyword: keyword,
@@ -1495,7 +1573,7 @@ function checkAndInstallUpdate(silent) {
       // dialog: true — Tauri shows native update dialog automatically
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
-      var currentVer = (verEl && verEl.textContent) || '0.5.0';
+      var currentVer = (verEl && verEl.textContent) || '0.6.0';
       if (!silent && statusEl) {
         statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
         statusEl.style.color = '#16a34a';
@@ -1531,7 +1609,7 @@ function handleUpdateViaJSAPI(silent, statusEl, checkBtn) {
       });
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
-      var currentVer = (verEl && verEl.textContent) || '0.5.0';
+      var currentVer = (verEl && verEl.textContent) || '0.6.0';
       if (!silent && statusEl) {
         statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
         statusEl.style.color = '#16a34a';
