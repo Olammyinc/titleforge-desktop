@@ -5,11 +5,11 @@ use std::sync::Mutex;
 
 mod db;
 mod engine;
-mod markov;
+mod title_gen;
 
 pub struct AppState {
     pub db: Mutex<rusqlite::Connection>,
-    pub markov: std::sync::Mutex<markov::MarkovModel>,
+    pub generator: std::sync::Mutex<title_gen::Generator>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -69,8 +69,8 @@ fn generate_titles(
     state: tauri::State<AppState>,
 ) -> Result<Vec<TitleResult>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    let markov = state.markov.lock().unwrap_or_else(|e| e.into_inner());
-    engine::generate(&db, &markov, &keyword, &categories, &style, &genre, quantity)
+    let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
+    engine::generate(&db, &generator, &keyword, &categories, &style, &genre, quantity)
 }
 
 #[tauri::command]
@@ -763,20 +763,16 @@ pub fn run() {
         }
     }
 
-    // Build Markov model from curated titles (after seeding is complete)
-    let markov_model = markov::MarkovModel::build(&conn);
-    if markov_model.is_empty {
-        eprintln!("Warning: Markov model is empty — no curated titles available for AI-free generation");
-    } else {
-        println!("Markov model built successfully");
-    }
+    // Build EGCG generator from curated titles (after seeding is complete)
+    let generator = title_gen::Generator::build(&conn);
+    println!("EGCG generator built successfully ({} words in vocabulary)", generator.word_count());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             db: Mutex::new(conn),
-            markov: std::sync::Mutex::new(markov_model),
+            generator: std::sync::Mutex::new(generator),
         })
         .invoke_handler(tauri::generate_handler![
             generate_titles,

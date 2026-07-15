@@ -3,29 +3,25 @@ use rand::Rng;
 use rusqlite::Connection;
 use serde_json;
 
-use crate::markov::MarkovModel;
+use crate::title_gen::Generator;
 use crate::TitleResult;
 
-/// Orchestrate title generation: try Markov first, fall back to template engine.
+/// Orchestrate title generation: try EGCG first, fall back to template engine.
 pub fn generate(
     conn: &Connection,
-    model: &MarkovModel,
+    generator: &Generator,
     keyword: &str,
     categories: &[String],
     style: &str,
     genre: &str,
     quantity: u32,
 ) -> Result<Vec<TitleResult>, String> {
-    let mut rng = rand::thread_rng();
     let mut results = Vec::new();
 
-    // Pass 1: Try Markov chain generation (only if model has data)
-    if !model.is_empty && keyword.len() > 2 {
-        let markov_results = model.generate(keyword, quantity, &mut rng);
-        results.extend(markov_results.into_iter().map(|mut r| {
-            r.categories = categories.to_vec();
-            r
-        }));
+    // Pass 1: Try EGCG generation
+    if keyword.len() > 2 {
+        let egcg_results = generator.generate(keyword, categories, style, genre, quantity);
+        results.extend(egcg_results);
     }
 
     // Pass 2: Template engine fills remaining slots
