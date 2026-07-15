@@ -1,6 +1,6 @@
 [package]
 name = "titleforge-desktop"
-version = "0.4.0"
+version = "0.4.1"
 description = "Offline title generator for Windows, Mac, and Linux"
 authors = ["Olammyinc"]
 edition = "2021"

@@ -1441,11 +1441,17 @@ function checkAndInstallUpdate(silent) {
     if (result) {
       // Update available
       if (!silent && statusEl) {
-        statusEl.textContent = 'Update found: v' + (result.version || '?') + ' — installing...';
+        statusEl.textContent = 'Update found: v' + (result.version || '?') + ' — downloading...';
         statusEl.style.color = '#16a34a';
       }
-      // Trigger download & install — native dialog appears automatically (dialog: true)
-      return invoke('plugin:updater|download_and_install', { update: result });
+      // Trigger download & install — Tauri v2 updater expects the rid from the check result
+      if (result.rid) {
+        return invoke('plugin:updater|download_and_install', { rid: result.rid });
+      } else if (result.version) {
+        return invoke('plugin:updater|download_and_install', result);
+      } else {
+        return invoke('plugin:updater|download_and_install', { update: result });
+      }
     }
     // No update available
     if (!silent && statusEl) {
