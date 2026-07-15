@@ -723,13 +723,15 @@ pub fn run() {
     let db_path = app_dir.join("titles.db");
     let conn = db::init_db(&db_path).expect("Failed to initialize database");
 
-    // Seed on first launch if tables are empty
+    // Seed on first launch if tables are empty — check both patterns AND curated_titles
     {
-        let count: i64 = conn
+        let patterns_count: i64 = conn
             .query_row("SELECT COUNT(*) FROM patterns", [], |row| row.get(0))
             .unwrap_or(0);
-        if count == 0 {
-            // Try file paths first (resource dir, app dir, CWD)
+        let curated_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM curated_titles", [], |row| row.get(0))
+            .unwrap_or(0);
+        if patterns_count == 0 || curated_count == 0 {
             let seed_paths = [
                 std::path::PathBuf::from("seed-data.json"),
                 app_dir.join("seed-data.json"),

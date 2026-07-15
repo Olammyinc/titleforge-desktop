@@ -1,0 +1,5608 @@
+{
+  "curated_titles": {
+    "book": [
+      {
+        "title": "The Last Migration",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Beneath the Ash",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "We Have Always Lived in the Forest",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "The Cartographer's Daughter",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "A House Made of Stars",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Ocean at the End of the Lane",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Night Watchman's Son",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "All the Light That Remains",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Geography of Longing",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "The Half-Drowned King",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "What the River Knows",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Book of Lost Names",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Falling Apart",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "The Orphan's Tale",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "When the Sky Falls",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Weight of Silence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Last Letter from Your Lover",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Girl Who Chased the Moon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Forgotten Garden",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "The Language of Thorns",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Devil in the White City",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Educated: A Memoir",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Emperor of All Maladies",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Thinking, Fast and Slow",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Sapiens: A Brief History of Humankind",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "The Immortal Life of Henrietta Lacks",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Tipping Point",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Outliers: The Story of Success",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The Power of Now",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "The Alchemist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The House in the Cerulean Sea",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Midnight Library",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Invisible Life of Addie LaRue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Piranesi",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Starless Sea",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Ten Thousand Doors of January",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Song of Achilles",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Circe",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "The Witch's Heart",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "The Once and Future Witches",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "The Poppy War",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "The Goblin Emperor",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Fifth Season",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The Left Hand of Darkness",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Dune",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Neuromancer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Snow Crash",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Three-Body Problem",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Name of the Wind",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "The Final Empire",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      }
+    ],
+    "article": [
+      {
+        "title": "The Quiet Collapse of American Infrastructure",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Why We Can't Stop Scrolling: The Neuroscience of Attention",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Last Coal Town: A Dispatch from Appalachia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "How Algorithms Shape Our Moral Choices",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Rise of the 'Lone Wolf' Terrorist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "What Climate Migration Looks Like in the American South",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "The Dark Side of the Sharing Economy",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Reclaiming the Night: Women and Urban Safety",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden History of Black Cowboy Culture",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "How Social Media Killed the Art of Conversation",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Great Protein Debate: Plant vs. Animal",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "In the Shadow of the Silk Road: Modern Uyghur Identity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Prisoners of Conscience: Whistleblowers in the Digital Age",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Why Gen Z Is Rejecting Traditional Career Paths",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Loneliness: What Isolation Does to the Brain",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Unseen Labor of Content Moderators",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "How the Suburbs Became a Battleground for School Integration",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "The Myth of the Self-Made Man",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Inside the World of Competitive Eating",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Ethics of Gene Editing: Beyond CRISPR Babies",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "What We Get Wrong About the Opioid Epidemic",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Forgetting: Memory and Trauma",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "How Chinatowns Are Fighting Gentrification",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "The New Face of Homelessness: Families in Motels",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "The Quiet Revolution of Urban Farming",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Why We Need to Rethink Public Defenders",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "The Psychology of Superfans",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden Cost of Fast Fashion",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "How Big Tech Is Rewriting the Rules of War",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Search for a Universal Influenza Vaccine",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The Rise of 'Digital Nomad' Communities in Southeast Asia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Unspoken Rules of Male Friendship",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "What Happens to Abandoned Amusement Parks?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Politics of Memory: Monuments and National Identity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Why We Can't Look Away from True Crime",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "The Promise and Peril of Vertical Farming",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "How the Pandemic Changed Our Sense of Time",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Future of Work: Remote, Hybrid, or Return to Office?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden World of Illegal Wildlife Trade",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Effective Altruism",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Why We Romanticize the Lives of Famous Writers",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Rise of 'Quiet Quitting' and Its Discontents",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "How Bilingualism Shapes the Brain",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Fight over Water Rights in the Colorado River Basin",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Cultural Significance of the Blockbuster Movie",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "What We Owe to Strangers: The Philosophy of Hospitality",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "The Dark Web of Campus Sexual Assault Investigations",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "How the Rubber Industry Devastated the Amazon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Art of the Interview: Crafting the Perfect Question",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Why We Crave Horror: The Psychology of Fear",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      }
+    ],
+    "blog": [
+      {
+        "title": "How I Cut My Screen Time in Half Without Going Offline",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "10 Books That Changed the Way I Think About Money",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Why You Should Stop Trying to Be Productive All the Time",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Day I Quit Social Media for a Month \u2014 Here's What Happened",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "5 Morning Habits That Actually Boosted My Creativity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "How to Write Better Emails in Under 100 Words",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Truth About Networking: It's Not Who You Know, It's How You Listen",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Why Minimalism Isn't About Owning Less But Wanting Less",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "My Failed Attempt at a 5 AM Wake-Up Routine",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "7 Podcasts That Made Me a Better Communicator",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "How to Say No Without Feeling Guilty",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The One Skill That Transformed My Career (And It's Not Technical)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Why I Stopped Chasing Passion and Started Chasing Purpose",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "10 Minute Habits That Improved My Mental Health",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "How to Turn a Hobby Into a Side Income: My Story",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Asking Better Questions in Meetings",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Why You Don't Need a Mentor \u2014 You Need a Community",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Lessons Learned From My First Year as a Freelancer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "How to Read More Books When You Have No Time",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "The Silent Productivity Killer Nobody Talks About",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Why I Started Saying 'I Don't Know' More Often",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "5 Ways to Make Your Home Office Feel Like a Sanctuary",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "How to Give Feedback That Actually Gets Heard",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Year I Learned to Embrace Boredom",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Why Multitasking Is Making You Dumber and What to Do Instead",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "10 Simple Recipes That Saved Me From Takeout Addiction",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "How to Negotiate Your Salary Without Being Aggressive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "The Morning Routine That Finally Stuck After 10 Attempts",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Why You Should Keep a 'Done' List (Not Just a To-Do List)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "How to Build Confidence When You Feel Like a Fraud",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "My Journey From People-Pleaser to Boundary-Setter",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "5 Lessons From Traveling Solo That Apply to Everyday Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Best Advice I Ever Got About Dealing With Criticism",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "How to Create a Weekly Reset Routine That Actually Works",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Why I Stopped Setting New Year's Resolutions",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Power of a 10-Minute Walk: My Creative Reset",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "How to Fund a Passion Project Without Going Broke",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Why Being a Generalist Is a Superpower in a Specialized World",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Unsubscribing: Decluttering Your Digital Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "How I Overcame Impostor Syndrome by Faking It Less",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "5 Types of Friends Everyone Needs in Their Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Why I Switched From Coffee to Tea (And How It Changed My Afternoons)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "How to Learn a New Skill in 30 Days: A Practical Guide",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The Unexpected Benefit of Writing by Hand",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Why I Stopped Trying to Be an Expert and Started Being a Learner",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "10 Questions to Ask Yourself Before Quitting Your Job",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "How to Handle Rejection Like a Professional",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "The Nightly Ritual That Helped Me Sleep Better",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Why Comparison Is the Thief of Joy (And How to Stop It)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "How to Find Your Own Voice in a Sea of Online Noise",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      }
+    ],
+    "movie": [
+      {
+        "title": "Solstice",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Weight of Silence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Fractured Light",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Keeper",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Rust and Bone",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "After the Rain",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Glass Hour",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Silhouette",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Mix-Up",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Uncle Vinny",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Double Date Disaster",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Petty Crimes",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Late Bloomer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Road Trip Ruckus",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Blunder",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Reverb",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Whisper Room",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Blind Spot",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Dark Corridor",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Counterfeit",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "The Third Hour",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "Nexus",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Neon Sky",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Echo Station",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Last Transmission",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Quantum Dawn",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Singularity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Terra Nova",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Orbital",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Hollow Place",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Crawlspace",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Widow's Peak",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Beneath the Bed",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Harvest",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Skin Deep",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Thirst",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Letters from Nowhere",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Second Sight",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Falling",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Maybe in Another Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Warm November",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Last Dance",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Firelight",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "The Long Road Home",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Secrets of the Soil",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Last Refuge",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Faces of Change",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Out of the Shadows",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Beneath the Ice",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Voices",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      }
+    ],
+    "song": [
+      {
+        "title": "Midnight in Neon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Broken Compass",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Whiskey and Regret",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Digital Tears",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Fading Polaroid",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "City of Rust",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Electric Heartbeat",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Dusty Boots",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Neon Graveyard",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Paper Thin",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Gravity Well",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Cigarette Smoke and Honey",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Low Tide",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Pixelated Dreams",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Rearview Mirror",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Static Noise",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Bourbon Street Blues",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Hyperdrive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Cotton Candy Skies",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Ghost in the Machine",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Shotgun Wedding",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Cybernetic Lullaby",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Diesel and Diamonds",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Polaroid Memories",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Subway Serenade",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Velvet Underground",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Algorithm of Love",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Cactus Flower",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Hologram Heart",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Rusty Nail",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Plastic Paradise",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Sagebrush and Smoke",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Voltage",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Porcelain Crown",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Radio Silence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Last Drop",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Silk and Steel",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Nitro",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Moonlit Motel",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Binary Sunset",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Bootleg Whiskey",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Synthwave Sorrow",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Dandelion Wine",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Crimson Tide",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "Honey Trap",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Ghost Town Heart",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Overdrive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Honeysuckle Highway",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Circuit Breaker",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Smoke Rings",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      }
+    ],
+    "youtube": [
+      {
+        "title": "How to Start a Vegetable Garden from Scratch",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Building a PC Under $500: Complete Guide",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Making Sourdough Bread at Home",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Learn Japanese in 30 Days: My Honest Experience",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "DIY Macrame Wall Hanging for Beginners",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Samsung Galaxy S25 Ultra Review: A Month Later",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Best Wireless Earbuds Under $100 (2025)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Is the Kindle Paperwhite Still Worth It?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Top 10 Productivity Apps That Actually Work",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Honest Review: Airbnb vs. Hotels for Budget Travel",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "A Day in the Life of a Firefighter",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Van Life: One Month on the Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "My Minimalist Apartment Tour",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "How I Quit My Job to Travel Full-Time",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Behind the Scenes of a Wedding Photographer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "The Forgotten History of the Silk Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Inside the World\u2019s Largest Recycling Plant",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "How Street Art Transformed a Neighborhood",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Why We Dream",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Documenting the Last Traditional Ice Harvest",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "I Tried Living Off the Grid for a Week",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "The Most Dangerous Roads in the World",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "What Happens to Your Body After 24 Hours Without Sleep",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Mystery of the Bermuda Triangle: Explained",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "How a Small Town Saved Its Local Cinema",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Reacting to My 10-Year-Old YouTube Videos",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "I Bought the Cheapest Car on Craigslist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Trying Every Item on a Dollar Menu",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "The World\u2019s Most Expensive Coffee: Is It Worth It?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "I Spent 48 Hours in a Silent Retreat",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Top 10 Movie Plot Twists That Blew My Mind",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "How to Make a No-Sew Fleece Blanket",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "The Ultimate Guide to Meal Prepping for a Week",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Photography Tips for Beginners: Shooting in Manual Mode",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "How to Write a Resume That Gets You Hired",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Simple Home Workouts That Don't Require Equipment",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The Best Vegan Recipes for Busy Weeknights",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Understanding Color Theory for Digital Art",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "How to Start a Podcast from Scratch",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Fixing a Leaky Faucet: Step-by-Step DIY",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Review: The Most Comfortable Running Shoes of 2025",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Is the Apple Watch a Fitness Game Changer?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Comparing the Top Streaming Services: Which One Is Best?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Budget vs. Luxury: A Comparison of Hotel Stays",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Truth About Electric Cars: Pros and Cons",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Why I Switched from Android to iOS",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Exploring an Abandoned Theme Park",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Craft of Handmade Pottery",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "How to Train for a Marathon in 3 Months",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden Secrets of Your Favorite Coffee Shop",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      }
+    ],
+    "podcast": [
+      {
+        "title": "The Quiet Hours: Inside a Night Owl's Brain",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "How to Fail at Being a Genius",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Behind the Scenes of a Billion-Dollar Heist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Why We Can't Stop Scrolling",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Forgetting on Purpose",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Conversations with a Former Cult Leader",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "What Your Taste in Music Says About You",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Crying in the Shower",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "From Prison to Professor: A Second Chance",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "How to Talk to Strangers (and Why You Should)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Day the Internet Went Dark",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Unpacking the Male Loneliness Epidemic",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Growing Up in a Digital Panopticon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Woman Who Saved a Language from Extinction",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Why Your Brain Loves Bad News",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Solo Travel: Escaping Yourself or Finding Yourself?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden History of the Office Chair",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "How to Make a Decision When Every Option Sucks",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Confessions of a Recovering Perfectionist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The Physics of Falling in Love",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "What Happens When You Stop Being Nice",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Forgotten Innovations: The Guy Who Invented Ctrl+Z",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Secrets of a Michelin-Starred Janitor",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Why We Keep Horoscopes in Our Back Pockets",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The First Year After Losing Everything",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "How to Argue Without Losing Friends",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Inside the World's Quietest Room",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Pleasures and Perils of Being a Late Bloomer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Building a Life on Mars: The Real Challenges",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "What the Tooth Fairy Teaches Us About Grief",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "The Accidental Invention of Velcro and Other Fateful Mistakes",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Why Time Speeds Up as We Age",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Conversations with a Deep-Sea Diver",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Doing Nothing Productively",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "How to Outsmart Your Own Biases",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Rise and Fall of the Mall",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "What Your Handwriting Reveals (and Hides)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "The Psychology of Superstitions in Sports",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Living Off the Grid: A Modern Pioneer's Diary",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Why We Lie to Ourselves About Money",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Unexpected Joy of Being Wrong",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "How to Build a Tiny House (and a Big Life)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Mystery of the Most Stolen Book in Libraries",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "From Punk Rock to Professor: A Life Unconventional",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Why We Love Horror Movies",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "How to Apologize Like a Grown-Up",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Secret Life of Public Benches",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Why We Crave Validation from Strangers Online",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Man Who Tried to Count Every Star",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Rethinking the 9-to-5: Stories of Career Rebels",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "What Bees Teach Us About Democracy",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      }
+    ],
+    "newsletter": [
+      {
+        "title": "The One Metric That Matters Most",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Why Your Strategy Needs a Reset",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Lessons from a $10M Launch",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Saying No",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "What Nobody Tells You About Growth",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "A Blueprint for Sustainable Success",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden Cost of Perfectionism",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "How to Turn Critics into Allies",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The 5-Hour Rule for Leaders",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Why Boredom Is Your Secret Weapon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Rethinking Your Priorities This Quarter",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Power of Micro-Experiments",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "What We Learned from a Failed Project",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Case for Thinking Small",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "How to Build Trust in 3 Minutes",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Data Behind Better Decisions",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "A Simple Framework for Tough Choices",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Why You Should Stop Multitasking",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The ROI of a Thank-You Note",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Navigating Uncertainty with Confidence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Myth of the Perfect Product",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "How to Ask for Feedback (and Mean It)",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Key to Long-Term Engagement",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Why Speed Beats Perfection",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "A New Approach to Problem-Solving",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Power of a Weekly Review",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "What Great Listeners Do Differently",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "The Strategy That Saved Our Year",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "How to Avoid the Busy Trap",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Why Your Team Needs More Slack",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Constructive Disagreement",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "From Overwhelm to Action: 3 Steps",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Most Underrated Leadership Skill",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Why We\u2019re Betting on Curiosity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "A Shortcut to Better Collaboration",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "The Mindset Shift That Changed Everything",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "How to Make Your Next Meeting Matter",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Smarter Goals",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "What We Got Wrong About Productivity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "The Unexpected Benefit of Constraints",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Why You Should Start with Why",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Power of a Single Question",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "How to Master the Art of Pivoting",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Rule of Three for Clear Communication",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "Why Vulnerability Is a Strength",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "The Case for Radical Candor",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "What the Best Leaders Do on Fridays",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "How to Turn Setbacks into Comebacks",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Simple Habit That Boosts Creativity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Your Plan for the Next 90 Days",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      }
+    ],
+    "ebook": [
+      {
+        "title": "The One Percent Edge: Small Changes for Massive Results",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Unhack Your Brain: Rewiring Neural Pathways for Success",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Strategic Patience",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Zero to Scale: Building a Business Without Venture Capital",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Algorithmic Leadership: Data-Driven Decisions for Humans",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Sleep Revolution: Reclaiming Your Nights for a Better Day",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Digital Minimalism for High Performers",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "The Microdosing Effect: Enhancing Creativity Without Overdosing",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Emotional Agility: Navigating Life\u2019s Ups and Downs",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Feedback Fallacy: Why Criticism Stifles Growth",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Decode the Code: Programming Your Mind for Innovation",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Resilience Paradox: Growing Stronger Through Trauma",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Lean into Chaos: How Disorder Breeds Breakthroughs",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "The 5 AM Club: A Fable About the Power of Mornings",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Disrupt Yourself: The Art of Strategic Reinvention",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "The Cognitive Load: Managing Mental Bandwidth in a Distracted Age",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Gut-Brain Connection: Heal Your Gut, Transform Your Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Negotiation Playbook: Getting What You Want Without Selling Out",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Tiny Habits: The Lazy Person\u2019s Guide to Lasting Change",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "The Attention Merchant: How to Win in the Age of Distraction",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Beyond Burnout: Reclaiming Your Energy and Purpose",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "AI for Executives: A Non-Technical Guide to Leveraging Machine Learning",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "The Courage to Be Average: Redefining Success on Your Terms",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Scalable Mindset: Growth Hacks for Personal and Professional Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "The Hormone Reset: Balancing Your Body for Peak Performance",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Data Storytelling: Turning Numbers into Narratives",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Minimalist Entrepreneur: Less Stuff, More Impact",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "The Psychology of Money: Timeless Lessons on Wealth and Greed",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Focus Fix: How to Get Deep Work Done in a Shallow World",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Disappearing: Digital Detox for the Modern Professional",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Second Brain: Building a Personal Knowledge Management System",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The Longevity Code: Secrets to Living Past 100",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Startup of You: Building a Career in the Gig Economy",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Innovation Stack: Building Unbeatable Business Models",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Stress Advantage: Using Pressure to Perform Better",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "The Empathy Economy: How Compassion Drives Business Success",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "The Creativity Incubator: Unlocking Ideas in Everyday Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "The Remote Team Playbook: Leading Across Distance and Time Zones",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "The Habit Loop: Hacking Your Brain for Automatic Success",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "The Content Code: How to Create Meaningful Engagement in a Noise-Filled World",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Biohacker\u2019s Guide to High Performance",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Zero Waste Lifestyle: Less Trash, More Life",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "The Fearless Organization: Psychological Safety in the Workplace",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "The Mindful Investor: Balancing Risk and Peace of Mind",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Future of Work: Adapting to the Hybrid Economy",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "The Body Keeps the Score: Healing Trauma Through Somatic Practices",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Leader\u2019s Guide to Difficult Conversations",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Algorithm of Success: Decoding Patterns of High Achievers",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "The Quiet Power: Introverts Thriving in an Extroverted World",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Dopamine Detox: Reclaiming Your Brain\u2019s Reward System",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      }
+    ],
+    "speech": [
+      {
+        "title": "The Art of Not Knowing",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Why Your Brain Craves Discomfort",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Invisible Architecture: How Systems Shape Our Lives",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Power of Quiet Decisions",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "What We Get Wrong About Happiness",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Bridging the Gap Between Intention and Action",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "The Science of Serendipity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Rethinking Failure as a Data Point",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden Cost of Certainty",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "How to Love Your Questions More Than Your Answers",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "The Myth of Multitasking",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Finding Purpose in a World of Distractions",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "The Courage to Be Incomplete",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Why We Need More Slow Thinkers",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Unlearning to Lead",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Paradox of Vulnerability in Leadership",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Designing for Dissent",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "What Trees Teach Us About Community",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "The Beauty of Imperfect Systems",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Why Your Story Matters More Than Your Resume",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "The Rise of the Generalist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "How to Disagree Without Destroying",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Creativity Crisis and How to Solve It",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Rethinking Productivity in the Age of Burnout",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "The Unseen Influence of Everyday Objects",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Why We Should Celebrate Cognitive Diversity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Constructive Doubt",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "What If We Measured Success Differently?",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Power of a Shared Meal",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "How to Be a Beginner Again",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "The Secret Life of Algorithms",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Why Silence Is a Superpower",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "The Future of Work Is Human",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "What We Lose When We Optimize Everything",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The Courage to Be Seen",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "How to Build a Resilient City",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "The Ethics of Empathy",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Why We Need More Play in Our Lives",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Cost of Always Being Right",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Rethinking the Status Quo",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Listening to What\u2019s Not Said",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Why Connection Outlasts Perfection",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Hidden Potential of Constraints",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "How to Thrive in a World of Uncertainty",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Power of Choosing Your Own Metrics",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "What We Can Learn from Ancient Wisdom",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "The Danger of Single Stories",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Why We Must Embrace Our Contradictions",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Gift of a Second Chance",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "How to Build a Life, Not Just a Career",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      }
+    ],
+    "album": [
+      {
+        "title": "Neon Ghost",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Velvet Horizon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Cipher",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Weight of Salt",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Lunar Drift",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Ash & Ember",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Fracture",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Tides of Rust",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Hollow Ground",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Strange Compass",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Bleached",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Cartography of Loss",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Warp",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Static Bloom",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "River of No Return",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Dissonance",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Burnt Sugar",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Phantom Limb",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Cascadia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Low Fidelity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Polaris",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Falling",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Shiver",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Glass Cathedral",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Wander",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Echoes in a Dead Mall",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Rustic Logic",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Saturation",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Thaw",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Infinite Sadness of Suburbs",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Flux",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Chrome and Dust",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Signal Lost",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Fever Dream Sequence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Marrow",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Saltwater Psalms",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Vertigo",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Dirt and Stardust",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Lullaby for a Circuit",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Pulse",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Crimson Static",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The Space Between Raindrops",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Honey & Tar",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Refraction",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Molten",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Ghost Notes",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Plastic Moon",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Siren's Silhouette",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "Ache",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Sunbleached Bones",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      }
+    ],
+    "poem": [
+      {
+        "title": "The Glass Hour",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "What the River Remembers",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Late Summer, Early Evening",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Elegy for a Sparrow",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "In the Archive of Absence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "How to Bury a Song",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Color of Forgetting",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Orchid and Rust",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "A Love Letter to the Abyss",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Watching the Moon from a Moving Train",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "The Salt of Another Ocean",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Fragment of a Broken Psalm",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Snow Falling on a Dead Star",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Physics of Grief",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "After the Last Hummingbird",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Inventory of a Burning House",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "The Edge of the Horizon Is a Lie",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Blue Hour, Red Shift",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Echo in a Corridor of Bones",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Cartography of Silence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "How the Wind Learns Your Name",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "A Brief History of Falling",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Patience of Stone",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Waking in a Language I Forgot",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Ode to the Incomplete",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "The Acrobat\u2019s Last Breath",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "In the Museum of Failed Attempts",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "The Mathematics of Leaving",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Night Blooming in the Key of F",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "The Archaeology of a Kiss",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "A Dictionary of Unspoken Things",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "The Sorrow of a Perfect Circle",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Letter to a Dying Star",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "The Gravity of Absence",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Still Life with Shadows and Rain",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Metaphysics of a Frayed Thread",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Lullaby for the Waking World",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Anatomy of a Memory",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Almanac of Lost Light",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "The Weight of a Single Note",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "A Theory of Unknowing",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "The Geography of After",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Elegy for a Parallel Universe",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "The Alchemy of Decay",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "How to Measure the Distance Between Stars",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "The Persistence of Echoes",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "A Psalm for the Unfinished",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "The Cartographer\u2019s Lament",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Small Hours, Large Regrets",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "The Art of Falling Upward",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      }
+    ],
+    "street": [
+      {
+        "title": "Oak Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Maple Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Elm Drive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Pine Lane",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Cedar Court",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Birch Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Walnut Way",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Cherry Circle",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Willow Bend",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Ash Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Sycamore Drive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Poplar Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Hickory Lane",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Magnolia Place",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Dogwood Terrace",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Redwood Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Spruce Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Linden Boulevard",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Juniper Way",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Laurel Lane",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Hemlock Drive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Beechwood Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Lakeview Drive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Meadow Lane",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "River Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Hillcrest Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Sunset Boulevard",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Ocean Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Park Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Main Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Church Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "School Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Mill Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Bridge Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Water Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "High Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Market Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Station Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Park Lane",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Victoria Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Queen Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "King Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "George Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Albert Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Elizabeth Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Windsor Drive",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Cambridge Road",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "Oxford Street",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "York Avenue",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Lancaster Way",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      }
+    ],
+    "character": [
+      {
+        "title": "Elena Marchetti",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Kael Draven",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Orin Blackwood",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Sera Nightingale",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Dorian Vale",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Lila Chen",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Ronan Ashford",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Ivy Thorne",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Cassian Locke",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      },
+      {
+        "title": "Freya Storm",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "The Whisper",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Marcus Reed",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Anya Petrova",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "The Fixer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Julian Cross",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Mira Solace",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "The Rook",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Tess Harding",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Leo Zephyr",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Nadia Kuzmin",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Oracle",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Gideon Frost",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Rowan Oakley",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "The Viper",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Isla Wren",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Caleb Horn",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "The Warden",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Vera Sinclair",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The Seeker",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Felix Grimm",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Lena Oshiro",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Shepherd",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Dante Moreau",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Archivist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Zara Khan",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "The Emissary",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Hugo Sterling",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "The Harbinger",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Maya Santos",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Guardian",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Oscar Lindqvist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "The Nomad",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Priya Shah",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "The Alchemist",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Rex Magnus",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "The Cartographer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Tara O'Neal",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "The Wayfarer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Vance Corrigan",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "The Chronicler",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      }
+    ],
+    "product": [
+      {
+        "title": "Velora",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Briskly",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "NovaPulse",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Zentrim",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 78,
+        "notes": ""
+      },
+      {
+        "title": "Lumio",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 71,
+        "notes": ""
+      },
+      {
+        "title": "Glimmer",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Aerify",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Trove",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Sylvan",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "PixieDust",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Cascade",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "TerraForm",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Flux",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Mosaic",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Nectar",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Solace",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Ember",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Kaleido",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Orbit",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Prism",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 81,
+        "notes": ""
+      },
+      {
+        "title": "Ripple",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Strata",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Vivid",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Wisp",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Aether",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 99,
+        "notes": ""
+      },
+      {
+        "title": "Bloom",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Chisel",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Drift",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Echo",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Fable",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 97,
+        "notes": ""
+      },
+      {
+        "title": "Grove",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 73,
+        "notes": ""
+      },
+      {
+        "title": "Haven",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Infinia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Jovial",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Keen",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Lunar",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Mellow",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Nimbus",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Oasis",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Pinnacle",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Quasar",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 92,
+        "notes": ""
+      },
+      {
+        "title": "Radiant",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Sage",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Tide",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 74,
+        "notes": ""
+      },
+      {
+        "title": "Unity",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Vantage",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Verde",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Whim",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Zephyr",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Axiom",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      }
+    ],
+    "childname": [
+      {
+        "title": "Liam",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Olivia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Noah",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Emma",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Oliver",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Ethan",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Sophia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 82,
+        "notes": ""
+      },
+      {
+        "title": "Mason",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 87,
+        "notes": ""
+      },
+      {
+        "title": "Isabella",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Lucas",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 70,
+        "notes": ""
+      },
+      {
+        "title": "Logan",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Amelia",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Ella",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Aiden",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 83,
+        "notes": ""
+      },
+      {
+        "title": "Charlotte",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Harper",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 88,
+        "notes": ""
+      },
+      {
+        "title": "Elijah",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Luna",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "James",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Aria",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Benjamin",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Zara",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 84,
+        "notes": ""
+      },
+      {
+        "title": "Henry",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Layla",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 76,
+        "notes": ""
+      },
+      {
+        "title": "Theo",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Nora",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 85,
+        "notes": ""
+      },
+      {
+        "title": "Stella",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Ezra",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 98,
+        "notes": ""
+      },
+      {
+        "title": "Sage",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Aurora",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 95,
+        "notes": ""
+      },
+      {
+        "title": "Jasper",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 93,
+        "notes": ""
+      },
+      {
+        "title": "Miles",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 75,
+        "notes": ""
+      },
+      {
+        "title": "Hazel",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Arlo",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Willow",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 79,
+        "notes": ""
+      },
+      {
+        "title": "Freya",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 86,
+        "notes": ""
+      },
+      {
+        "title": "Asher",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 91,
+        "notes": ""
+      },
+      {
+        "title": "Aaliyah",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 90,
+        "notes": ""
+      },
+      {
+        "title": "Felix",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 89,
+        "notes": ""
+      },
+      {
+        "title": "Naomi",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 80,
+        "notes": ""
+      },
+      {
+        "title": "Bodhi",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 72,
+        "notes": ""
+      },
+      {
+        "title": "Amara",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 96,
+        "notes": ""
+      },
+      {
+        "title": "Orion",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 100,
+        "notes": ""
+      },
+      {
+        "title": "Maya",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 94,
+        "notes": ""
+      },
+      {
+        "title": "Atlas",
+        "genre": "any",
+        "tone": "normal",
+        "appeal_score": 77,
+        "notes": ""
+      }
+    ]
+  }
+}

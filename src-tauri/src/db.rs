@@ -5,7 +5,7 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
     let conn = Connection::open(path)?;
 
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS patterns (
+        "        CREATE TABLE IF NOT EXISTS patterns (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category TEXT NOT NULL,
             template TEXT NOT NULL,
@@ -15,6 +15,8 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
             quality_score REAL DEFAULT 0.5,
             usage_count INTEGER DEFAULT 0
         );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_patterns_unique ON patterns(category, template);
 
         CREATE TABLE IF NOT EXISTS word_pools (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +35,8 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
             appeal_score INTEGER,
             notes TEXT
         );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_curated_titles_unique ON curated_titles(title, category);
 
         CREATE TABLE IF NOT EXISTS user_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
