@@ -98,8 +98,8 @@ def main():
     total_curated = sum(len(v) for v in existing_curated.values())
 
     seed['stats'] = {
-        'templates': 480,
-        'wordPools': 475,
+        'templates': total_templates,
+        'wordPools': total_word_pools,
         'curatedTitles': total_curated,
         'curated_titles': total_curated
     }

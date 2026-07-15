@@ -152,3 +152,31 @@ Right now the script builds the whole result in memory and writes `curated-title
 | `titleforge/seed-data.json` | Same merge, kept in sync |
 | `CONTEXT.md` | Update template/curated-title counts once merged |
 | (follow-up, not blocking) | Decide on a re-seed mechanism for existing installs |
+
+---
+
+## 7. Review findings (2026-07-15, independently verified)
+
+Went through the actual output files line-by-line rather than taking the completion report at face value. Short version: **the execution is solid and matches the plan closely.** Found two real bugs and one content-quality gap, all now fixed. One item is still genuinely outstanding and one is unverifiable from this session.
+
+### Confirmed correct
+- `curated-titles-output.json`: 2,692 entries, exactly matching Phase 1 + Phase 2 targets (16 categories × (90 normal + 10×8 tones), with a ~2% shortfall in a few tone batches — `shout`/`whisper`/`blessing`/`storytelling`/`playful` hit 160/160, `provocative` 149/160, `minimalist` 157/160, `question` 150/160. Negligible, not worth re-running for.
+- `seed-data.json` (desktop): 2,623 curated titles = 796 original + 1,827 newly merged, exactly matching the report's dedup math (865 skipped = 796 pre-existing carry-forwards + 69 genuine near-duplicates across tone batches, 1,827 net new). The `stats` block reflects the real counts now.
+- `scripts/generate-curated-titles.py` was properly rewritten ("v2"): tone guidance table matches this plan's spec closely, batching structure matches (Phase 2 top-up then Phase 1 tone loop), additive/resumable output (loads existing file, atomic temp-file+rename writes, saves after every batch), 600ms rate-limit delay. `scripts/resume-curated-titles.py` is a sensible companion that tops up any category/tone short of target — explains the small shortfalls above.
+- `scripts/merge-new-titles.py` dedup logic (case-insensitive, punctuation-stripped, checked incrementally against both pre-existing and already-merged-this-run titles) is correct and matches the observed 865/1,827 split exactly.
+- Spot-checked ~40 titles across `provocative`, `whisper`, `playful`, `shout`, `minimalist` in `book`, `poem`, `product`, `street`, `character` — they genuinely read in the intended tone, not just labeled ("You Don't Actually Care About Climate Change" / provocative, "The Way the Light Falls" / whisper, "The Da Vinci Codex of Dad Jokes" / playful). This part of the QC checklist was not oversold.
+- `title_gen.rs` untouched — the genre/style filtering fixes from the earlier pass are intact.
+
+### Bugs found and fixed (by me, just now)
+1. **`scripts/merge-new-titles.py` was silently hardcoding the stats block** — it computed `total_templates`/`total_word_pools` correctly but then wrote the literal old values (`480`, `475`) instead of using them. The *current* `seed-data.json` happens to show the right numbers (1,300 / 889), so this didn't bite this time, but running this script again for a future batch would have quietly reset those two stats fields to stale numbers. Fixed: now writes the computed totals.
+2. **`childname` category + `shout` tone produced unusable output.** All 10 entries were "NAME: GRANDIOSE SENTENCE" fantasy-epithet titles (e.g. `"ALEXANDER: THE DEFINITIVE PROTECTOR OF MANKIND"`) — the "big, urgent, declarative" tone guidance pushed the model away from the category's actual requirement ("a real, usable name"). Every other tone × `childname` combination I checked was fine (`whisper`, `provocative` both kept a real name intact with a stylistic wrapper). This is the one spot where the QC checklist's "spot-check a few tones" didn't happen to land on the combination that broke. Fixed: replaced those 10 entries in `seed-data.json` with genuinely usable bold names (Axel, Blaze, Roman, Kingston, Maverick, Zion, Knox, Valor, Titan, Phoenix) that still read as "shout" tone.
+
+### Minor, not fixed (low priority, flagging only)
+- `scripts/generate-curated-titles.js` was never updated — only the `.py` twin got the tone/genre rewrite. It still hardcodes `genre: 'any', tone: 'normal'`. Not a functional problem since `.py` is what actually ran, but it's now misleading if anyone reaches for the `.js` version later. Worth deleting it or porting the same rewrite over.
+- `CONTEXT.md` had a couple of stale sub-details left over from the count update (templates still said "30 per category," a cost figure that only counted the new batch, not the original). Corrected these while reviewing.
+- `curated-titles-output.json` still has the old "ALEXANDER: THE DEFINITIVE..." style entries for `childname`/`shout` — I only patched the shipped `seed-data.json`, not this staging file. Harmless since the app never reads this file directly, but worth knowing if it's reused as a source later.
+
+### Outstanding
+- **Web repo sync is unverified.** `merge-new-titles.py` writes to both `titleforge-desktop/seed-data.json` and `titleforge/seed-data.json`, and the desktop copy is confirmed correct — but the `titleforge` (web) repo isn't accessible from this session to check independently. Worth a quick confirmation that the write there actually succeeded.
+- **"Generate a few real batches in the app" QC item is still unchecked** — this requires actually running the built app with the new seed data, which wasn't done as part of either the generation work or this review. Worth doing before calling this fully shipped.
+- **Existing-install re-seed mechanism is still just a flagged follow-up**, not built. Anyone with the app already installed won't see any of this new data until that's addressed.
