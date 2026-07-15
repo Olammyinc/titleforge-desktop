@@ -79,6 +79,19 @@ pub fn generate(
     if categories.is_empty() {
         return Ok(vec![]);
     }
+
+    // Load all word pools into memory (eliminates N+1 per-slot queries)
+    let mut pools: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+    if let Ok(mut stmt) = conn.prepare("SELECT pool_name, word FROM word_pools ORDER BY RANDOM()") {
+        if let Ok(rows) = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        }) {
+            for row in rows.flatten() {
+                pools.entry(row.0).or_default().push(row.1);
+            }
+        }
+    }
+
     let mut rng = rand::thread_rng();
     let mut results = Vec::new();
     let per_cat = (quantity.max(categories.len() as u32) / categories.len() as u32).max(3) + 3;
@@ -106,7 +119,7 @@ pub fn generate(
             if let Some((template, slots_json)) = templates.choose(&mut rng) {
                 let slots: Vec<Slot> =
                     serde_json::from_str(slots_json).unwrap_or_default();
-                let generated = fill_template(conn, template, &slots, keyword, &mut rng);
+                let generated = fill_template(&pools, template, &slots, keyword, &mut rng);
                 if generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
                     results.push(TitleResult {
@@ -152,7 +165,7 @@ pub fn generate(
             };
             for (template, slots_json) in &fallback_rows {
                 let slots: Vec<Slot> = serde_json::from_str(slots_json).unwrap_or_default();
-                let generated = fill_template(conn, template, &slots, keyword, &mut rng);
+                let generated = fill_template(&pools, template, &slots, keyword, &mut rng);
                 if generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
                     results.push(TitleResult {
@@ -179,7 +192,7 @@ struct Slot {
 }
 
 fn fill_template(
-    conn: &Connection,
+    pools: &std::collections::HashMap<String, Vec<String>>,
     template: &str,
     slots: &[Slot],
     keyword: &str,
@@ -197,20 +210,14 @@ fn fill_template(
                     .map(|p| slot_name_to_pool_name(p))
                     .unwrap_or_else(|| slot_name_to_pool_name(&slot.name));
 
-                let word: Option<String> = conn
-                    .query_row(
-                        "SELECT word FROM word_pools WHERE pool_name = ?1 ORDER BY RANDOM() LIMIT 1",
-                        rusqlite::params![pool_name],
-                        |row| row.get(0),
-                    )
-                    .ok();
+                let word = pools.get(pool_name).and_then(|w| {
+                    if w.is_empty() { None } else { Some(w[rng.gen_range(0..w.len())].clone()) }
+                });
 
                 word.unwrap_or_else(|| {
-                    conn.query_row(
-                        "SELECT word FROM word_pools WHERE pool_name = 'nouns' ORDER BY RANDOM() LIMIT 1",
-                        [],
-                        |row| row.get::<_, String>(0),
-                    ).unwrap_or_else(|_| keyword.to_string())
+                    pools.get("nouns").and_then(|w| {
+                        if w.is_empty() { None } else { Some(w[rng.gen_range(0..w.len())].clone()) }
+                    }).unwrap_or_else(|| keyword.to_string())
                 })
             }
         };

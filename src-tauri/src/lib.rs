@@ -262,11 +262,17 @@ fn create_project(name: String, state: tauri::State<AppState>) -> Result<Project
 
     let id = db.last_insert_rowid();
 
+    // Query the actual created_at value
+    let created_at: String = db
+        .query_row("SELECT COALESCE(created_at, '') FROM user_projects WHERE id = ?1",
+            rusqlite::params![id], |row| row.get(0))
+        .unwrap_or_default();
+
     Ok(ProjectEntry {
         id,
         name,
         titles: "[]".to_string(),
-        created_at: String::new(),
+        created_at,
     })
 }
 
