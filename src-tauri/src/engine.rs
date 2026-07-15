@@ -120,7 +120,11 @@ pub fn generate(
                 let slots: Vec<Slot> =
                     serde_json::from_str(slots_json).unwrap_or_default();
                 let generated = fill_template(&pools, template, &slots, keyword, &mut rng);
-                if generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
+                // Skip if title doesn't contain the keyword (produces unrelated results)
+                let kw_lower = keyword.to_lowercase();
+                let gen_lower = generated.to_lowercase();
+                let has_keyword = gen_lower.contains(&kw_lower) || kw_lower.split_whitespace().any(|w| gen_lower.contains(w));
+                if has_keyword && generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
                     results.push(TitleResult {
                         title: generated,
@@ -138,19 +142,47 @@ pub fn generate(
     results.dedup_by(|a, b| a.title == b.title);
     results.truncate(quantity as usize);
 
-    // Fallback: if still not enough, pull more random templates from all categories
+    // Fallback: if still not enough, pull more random templates from all categories,
+    // relaxing the genre/tone filter incrementally
+    if results.len() < quantity as usize {
+        let all_cats: Vec<&String> = categories.iter().collect();
+        // Pass 1: try same genre and style
+        for _ in 0..(quantity as usize) {
+            if results.len() >= quantity as usize { break; }
+            let cat = match all_cats.choose(&mut rng) { Some(c) => *c, None => break };
+            let fb_rows: Vec<(String, String)> = match conn.prepare(
+                "SELECT template, slots FROM patterns WHERE category = ?1 AND (genre = ?2 OR genre = 'any') AND (tone = ?3 OR tone = 'normal') ORDER BY RANDOM() LIMIT 1"
+            ) {
+                Ok(mut stmt) => {
+                    stmt.query_map(rusqlite::params![cat, genre, style], |row| {
+                        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                    })
+                    .ok()
+                    .map(|rows| rows.filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() }).collect())
+                    .unwrap_or_default()
+                }
+                Err(_) => continue,
+            };
+            for (template, slots_json) in &fb_rows {
+                let slots: Vec<Slot> = serde_json::from_str(slots_json).unwrap_or_default();
+                let generated = fill_template(&pools, template, &slots, keyword, &mut rng);
+                let kw_lower = keyword.to_lowercase();
+                let gen_lower = generated.to_lowercase();
+                let has_keyword = gen_lower.contains(&kw_lower) || kw_lower.split_whitespace().any(|w| gen_lower.contains(w));
+                if has_keyword && generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
+                    let (score, breakdown) = calculate_score(&generated, keyword, cat);
+                    results.push(TitleResult { title: generated, score, categories: vec![cat.to_string()], breakdown: Some(breakdown) });
+                }
+            }
+        }
+    }
+    // Pass 2: if still not enough, relax all filters — any category, any genre, any tone
     if results.len() < quantity as usize {
         let all_cats: Vec<&String> = categories.iter().collect();
         for _ in 0..(quantity as usize * 2) {
-            if results.len() >= quantity as usize {
-                break;
-            }
-            let cat = match all_cats.choose(&mut rng) {
-                Some(c) => *c,
-                None => break,
-            };
-            // Collect eagerly so the PreparedStatement can be dropped
-            let fallback_rows: Vec<(String, String)> = match conn.prepare(
+            if results.len() >= quantity as usize { break; }
+            let cat = match all_cats.choose(&mut rng) { Some(c) => *c, None => break };
+            let fb_rows: Vec<(String, String)> = match conn.prepare(
                 "SELECT template, slots FROM patterns WHERE category = ?1 ORDER BY RANDOM() LIMIT 1"
             ) {
                 Ok(mut stmt) => {
@@ -161,19 +193,17 @@ pub fn generate(
                     .map(|rows| rows.filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() }).collect())
                     .unwrap_or_default()
                 }
-                Err(_) => break,
+                Err(_) => continue,
             };
-            for (template, slots_json) in &fallback_rows {
+            for (template, slots_json) in &fb_rows {
                 let slots: Vec<Slot> = serde_json::from_str(slots_json).unwrap_or_default();
                 let generated = fill_template(&pools, template, &slots, keyword, &mut rng);
-                if generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
+                let kw_lower = keyword.to_lowercase();
+                let gen_lower = generated.to_lowercase();
+                let has_keyword = gen_lower.contains(&kw_lower) || kw_lower.split_whitespace().any(|w| gen_lower.contains(w));
+                if has_keyword && generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
-                    results.push(TitleResult {
-                        title: generated,
-                        score,
-                        categories: vec![cat.to_string()],
-                        breakdown: Some(breakdown),
-                    });
+                    results.push(TitleResult { title: generated, score, categories: vec![cat.to_string()], breakdown: Some(breakdown) });
                 }
             }
         }
@@ -261,6 +291,13 @@ fn calculate_score(title: &str, keyword: &str, _category: &str) -> (u32, serde_j
     if word_count >= 4 && word_count <= 14 { score += 10; }
     else if word_count >= 2 && word_count <= 18 { score += 5; }
     else { score = score.saturating_sub(8); }
+
+    // Penalize repeated words (common in template filler)
+    let words: Vec<&str> = lower.split_whitespace().collect();
+    let unique_count = words.iter().collect::<std::collections::HashSet<&&str>>().len();
+    if unique_count < words.len() && words.len() > 3 {
+        score = score.saturating_sub(5);
+    }
 
     score = score.min(100);
 

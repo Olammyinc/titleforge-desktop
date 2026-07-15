@@ -358,6 +358,7 @@ function initApp() {
   }).catch(function (err) { console.error('get_settings for AI provider failed:', err); });
 
   // Auto-update check on launch (with small delay so UI renders first)
+  setupUpdaterEvents();
   setTimeout(setupUpdaterAutoCheck, 800);
 }
 
@@ -1420,10 +1421,27 @@ function renderSettingsContent() {
 function setupUpdaterAutoCheck() {
   invoke('get_settings').then(function (settings) {
     if (settings.auto_update === 'true') {
-      // Silently check for updates — native dialog appears if update found
       checkAndInstallUpdate(true);
     }
   }).catch(function (err) { console.error('get_settings for auto-update check failed:', err); });
+}
+
+// Register updater event listeners once at startup
+function setupUpdaterEvents() {
+  if (window.__TAURI__ && window.__TAURI__.event) {
+    window.__TAURI__.event.listen('tauri://update-status', function (ev) {
+      var statusEl = document.getElementById('settingsUpdateStatus');
+      var payload = ev.payload || {};
+      dumpDebug('Update status: ' + (payload.status || 'unknown') + (payload.error ? ': ' + payload.error : ''));
+      if (payload.status === 'ERROR' && statusEl) {
+        statusEl.textContent = 'Update failed: ' + (payload.error || 'unknown error');
+        statusEl.style.color = '#b91c1c';
+      } else if (payload.status === 'DONE' && statusEl) {
+        statusEl.textContent = 'Update downloaded. Restart to apply.';
+        statusEl.style.color = '#16a34a';
+      }
+    }).catch(function (e) { dumpDebug('Update event listener setup failed: ' + e); });
+  }
 }
 
 function setupUpdaterControls() {
@@ -1431,17 +1449,14 @@ function setupUpdaterControls() {
   var autoToggle = document.getElementById('autoUpdateToggle');
   if (autoToggle && !autoToggle._wired) {
     autoToggle._wired = true;
-    // Load current setting
     invoke('get_settings').then(function (settings) {
       autoToggle.checked = settings.auto_update === 'true';
     }).catch(function (err) { console.error('get_settings for toggle load failed:', err); });
-    // Persist changes immediately
     autoToggle.addEventListener('change', function () {
       invoke('set_setting', { key: 'auto_update', value: autoToggle.checked ? 'true' : 'false' }).catch(function (err) { console.error('set_setting auto_update failed:', err); });
     });
   }
 
-  // "Check for Updates" button (idempotent)
   var checkBtn = document.getElementById('checkUpdateBtn');
   if (checkBtn && !checkBtn._wired) {
     checkBtn._wired = true;
@@ -1464,13 +1479,20 @@ function checkAndInstallUpdate(silent) {
     statusEl.style.color = 'var(--text-secondary)';
   }
 
+  // Use @tauri-apps/plugin-updater JS API if available (Tauri v2)
+  if (window.__TAURI__ && window.__TAURI__.updater) {
+    handleUpdateViaJSAPI(silent, statusEl, checkBtn);
+    return;
+  }
+
+  // Fallback: use raw invoke (works with dialog: true)
   invoke('plugin:updater|check').then(function (result) {
     if (result && result.version) {
       if (!silent && statusEl) {
         statusEl.textContent = 'Update v' + result.version + ' available.';
         statusEl.style.color = '#16a34a';
       }
-      // dialog: true in tauri.conf.json — Tauri shows native dialog automatically
+      // dialog: true — Tauri shows native update dialog automatically
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
       var currentVer = (verEl && verEl.textContent) || '0.5.0';
@@ -1484,6 +1506,42 @@ function checkAndInstallUpdate(silent) {
     dumpDebug('Update check failed: ' + msg);
     if (!silent && statusEl) {
       statusEl.textContent = 'Could not check for updates: ' + msg;
+      statusEl.style.color = '#b91c1c';
+    }
+  }).finally(function () {
+    if (!silent && checkBtn) {
+      checkBtn.disabled = false;
+      checkBtn.textContent = 'Check for Updates';
+    }
+  });
+}
+
+function handleUpdateViaJSAPI(silent, statusEl, checkBtn) {
+  window.__TAURI__.updater.check().then(function (update) {
+    if (update && update.version) {
+      if (!silent && statusEl) {
+        statusEl.textContent = 'Update v' + update.version + ' available. Downloading...';
+        statusEl.style.color = '#16a34a';
+      }
+      return update.downloadAndInstall().then(function () {
+        if (!silent && statusEl) {
+          statusEl.textContent = 'Update installed. Restart to apply.';
+          statusEl.style.color = '#16a34a';
+        }
+      });
+    } else {
+      var verEl = document.getElementById('settingsUpdateVersion');
+      var currentVer = (verEl && verEl.textContent) || '0.5.0';
+      if (!silent && statusEl) {
+        statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
+        statusEl.style.color = '#16a34a';
+      }
+    }
+  }).catch(function (err) {
+    var msg = typeof err === 'string' ? err : (err.message || 'Network error');
+    dumpDebug('Update check (JS API) failed: ' + msg);
+    if (!silent && statusEl) {
+      statusEl.textContent = 'Could not check: ' + msg;
       statusEl.style.color = '#b91c1c';
     }
   }).finally(function () {
