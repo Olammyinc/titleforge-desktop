@@ -1573,7 +1573,7 @@ function checkAndInstallUpdate(silent) {
       // dialog: true — Tauri shows native update dialog automatically
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
-      var currentVer = (verEl && verEl.textContent) || '0.6.0';
+      var currentVer = (verEl && verEl.textContent) || '0.7.0';
       if (!silent && statusEl) {
         statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
         statusEl.style.color = '#16a34a';
@@ -1609,7 +1609,7 @@ function handleUpdateViaJSAPI(silent, statusEl, checkBtn) {
       });
     } else {
       var verEl = document.getElementById('settingsUpdateVersion');
-      var currentVer = (verEl && verEl.textContent) || '0.6.0';
+      var currentVer = (verEl && verEl.textContent) || '0.7.0';
       if (!silent && statusEl) {
         statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
         statusEl.style.color = '#16a34a';

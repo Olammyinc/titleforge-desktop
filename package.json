@@ -1,6 +1,6 @@
 {
   "name": "titleforge-desktop",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "TitleForge Desktop — Offline title generator for Windows, Mac, and Linux",
   "private": true,
   "scripts": {

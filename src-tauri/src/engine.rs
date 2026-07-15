@@ -3,7 +3,47 @@ use rand::Rng;
 use rusqlite::Connection;
 use serde_json;
 
+use crate::markov::MarkovModel;
 use crate::TitleResult;
+
+/// Orchestrate title generation: try Markov first, fall back to template engine.
+pub fn generate(
+    conn: &Connection,
+    model: &MarkovModel,
+    keyword: &str,
+    categories: &[String],
+    style: &str,
+    genre: &str,
+    quantity: u32,
+) -> Result<Vec<TitleResult>, String> {
+    let mut rng = rand::thread_rng();
+    let mut results = Vec::new();
+
+    // Pass 1: Try Markov chain generation (only if model has data)
+    if !model.is_empty && keyword.len() > 2 {
+        let markov_results = model.generate(keyword, quantity, &mut rng);
+        results.extend(markov_results.into_iter().map(|mut r| {
+            r.categories = categories.to_vec();
+            r
+        }));
+    }
+
+    // Pass 2: Template engine fills remaining slots
+    let remaining = (quantity as usize).saturating_sub(results.len());
+    if remaining > 0 {
+        let template_results = generate_from_templates(
+            conn, keyword, categories, style, genre, remaining as u32,
+        )?;
+        results.extend(template_results);
+    }
+
+    // Finalize: deduplicate, sort by score, truncate
+    results.sort_by(|a, b| b.score.cmp(&a.score));
+    results.dedup_by(|a, b| a.title.eq_ignore_ascii_case(&b.title));
+    results.truncate(quantity as usize);
+
+    Ok(results)
+}
 
 /// Map 80+ specialized pool names to the 8 available SQLite word pools.
 fn slot_name_to_pool_name(slot_name: &str) -> &'static str {
@@ -68,7 +108,8 @@ fn slot_name_to_pool_name(slot_name: &str) -> &'static str {
     }
 }
 
-pub fn generate(
+/// Template-based title generation (fills remaining slots after Markov).
+fn generate_from_templates(
     conn: &Connection,
     keyword: &str,
     categories: &[String],
