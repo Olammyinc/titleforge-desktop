@@ -22,9 +22,6 @@ use crate::TitleResult;
 /// Minimum coherence score for a candidate slot filler.
 const MIN_COHERENCE: f64 = 0.05;
 
-/// Maximum retries per slot when no candidate passes the coherence gate.
-const MAX_RETRIES: usize = 6;
-
 /// Window size for pairwise co-occurrence in curated titles.
 const AFFINITY_WINDOW: usize = 5;
 
@@ -333,8 +330,8 @@ impl Generator {
         let kw_lower = keyword.to_lowercase().trim().to_string();
         let q = quantity as usize;
 
-        let mode_a_target = (q as f64 * 0.70).ceil() as usize;
-        let mode_b_target = (q as f64 * 0.20).ceil() as usize;
+        let mode_a_target = (q as f64 * 0.80).ceil() as usize;
+        let mode_b_target = (q as f64 * 0.10).ceil() as usize;
         let mode_c_target = q.saturating_sub(mode_a_target + mode_b_target);
 
         let mut results: Vec<TitleResult> = Vec::new();
@@ -409,13 +406,13 @@ impl Generator {
                     && lower.contains(&kw_lower)
                     && title.split_whitespace().count() >= 3
                 {
-                    let cat = "generated".to_string();
+                    let cat = categories.first().map(|s| s.as_str()).unwrap_or("generated").to_string();
                     let (score, breakdown) = self.score_title(&title, &kw_lower, &cat);
                     seen.insert(lower);
                     results.push(TitleResult {
                         title,
                         score,
-                        categories: vec![cat],
+                        categories: vec![cat.clone()],
                         breakdown: Some(breakdown),
                     });
                 }
@@ -459,24 +456,16 @@ impl Generator {
                         return None;
                     }
 
-                    // Try up to MAX_RETRIES to find a good fit
-                    let mut chosen: Option<String> = None;
-                    for _retry in 0..MAX_RETRIES {
-                        let scored = self.score_candidates(
-                            &candidates,
-                            &filled_words,
-                            keyword,
-                            category,
-                            rng,
-                        );
-                        if let Some((word, _score)) = scored {
-                            chosen = Some(word);
-                            break;
-                        }
-                    }
-
-                    match chosen {
-                        Some(word) => filled_words.push(word),
+                    // Score candidates and pick the best one above threshold
+                    let scored = self.score_candidates(
+                        &candidates,
+                        &filled_words,
+                        keyword,
+                        category,
+                        rng,
+                    );
+                    match scored {
+                        Some((word, _)) => filled_words.push(word),
                         None => {
                             // Fallback: pick randomly from candidates
                             if let Some(w) = candidates.choose(rng) {
