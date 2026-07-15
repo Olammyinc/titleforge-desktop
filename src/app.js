@@ -581,12 +581,6 @@ function setupEngineToggle() {
     if (status) status.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' — using your key';
   });
 }
-    activeEngine = 'ai';
-    aiBtn.classList.add('active');
-    dbBtn.classList.remove('active');
-    if (status) status.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' — using your key';
-  });
-}
 
 function handleGenerate() {
   var keyword = document.getElementById('keyword').value.trim();
