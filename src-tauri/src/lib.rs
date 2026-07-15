@@ -630,8 +630,7 @@ fn generate_with_ai(
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let err_text = resp.text().unwrap_or_default();
-            return Err(format!("API error ({}): {}", status, err_text));
+            return Err(format!("API error ({}): Provider returned an error", status));
         }
 
         let data: serde_json::Value = resp.json().map_err(|e| format!("Failed to parse response: {}", e))?;
@@ -656,8 +655,7 @@ fn generate_with_ai(
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let err_text = resp.text().unwrap_or_default();
-            return Err(format!("API error ({}): {}", status, err_text));
+            return Err(format!("API error ({}): Provider returned an error", status));
         }
 
         let data: serde_json::Value = resp.json().map_err(|e| format!("Failed to parse response: {}", e))?;

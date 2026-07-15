@@ -109,7 +109,8 @@ jobs:
           
           # Read signatures from .sig files
           SIG_WIN=""
-          SIG_MAC=""
+          SIG_MAC_X64=""
+          SIG_MAC_ARM=""
           SIG_LINUX=""
           for sigfile in dist/*.sig; do
             [ -f "$sigfile" ] || continue
@@ -118,8 +119,10 @@ jobs:
             echo "Found sig: $base"
             if echo "$base" | grep -qi "setup.exe"; then
               SIG_WIN="$sigcontent"
+            elif echo "$base" | grep -qi "aarch64.dmg"; then
+              SIG_MAC_ARM="$sigcontent"
             elif echo "$base" | grep -qi "x64.dmg"; then
-              SIG_MAC="$sigcontent"
+              SIG_MAC_X64="$sigcontent"
             elif echo "$base" | grep -qi "amd64.AppImage"; then
               SIG_LINUX="$sigcontent"
             fi
@@ -137,8 +140,12 @@ jobs:
                 "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64-setup.exe"
               },
               "darwin-x86_64": {
-                "signature": "${SIG_MAC}",
+                "signature": "${SIG_MAC_X64}",
                 "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64.dmg"
+              },
+              "darwin-aarch64": {
+                "signature": "${SIG_MAC_ARM}",
+                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_aarch64.dmg"
               },
               "linux-x86_64": {
                 "signature": "${SIG_LINUX}",
@@ -150,6 +157,13 @@ jobs:
           
           echo "=== updates.json ==="
           cat dist/updates.json
+          echo ""
+          
+          # Assert: all platform signatures are non-empty
+          if [ -z "$SIG_WIN" ]; then echo "ERROR: Windows signature is empty!"; exit 1; fi
+          if [ -z "$SIG_MAC_X64" ]; then echo "WARNING: macOS x64 signature is empty"; fi
+          if [ -z "$SIG_MAC_ARM" ]; then echo "WARNING: macOS ARM signature is empty"; fi
+          if [ -z "$SIG_LINUX" ]; then echo "WARNING: Linux signature is empty"; fi
           echo ""
           ls -la dist/
       - uses: softprops/action-gh-release@v2

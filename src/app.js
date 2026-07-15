@@ -244,9 +244,33 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('activationKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleActivation(); });
   document.getElementById('activationEmail').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleActivation(); });
 
-  // Check license
+  // Check license — always validate with server, don't trust local SQLite alone
   invoke('get_settings').then(function (settings) {
-    if (settings.license_status === 'valid') {
+    var savedKey = settings.license_key || '';
+    var savedEmail = settings.license_email || '';
+    var cachedStatus = settings.license_status || '';
+
+    if (savedKey && savedEmail) {
+      // We have saved credentials — validate with server (Rust handles 24h cache fallback)
+      invoke('validate_license', { key: savedKey, email: savedEmail }).then(function (result) {
+        if (result && result.valid) {
+          activationScreen.style.display = 'none';
+          mainApp.style.display = 'flex';
+          initApp();
+        }
+        // else: show activation screen (below)
+      }).catch(function () {
+        // Server unreachable — use cached status if within 24h
+        // (Rust validate_license already handles this, but if IPC failed entirely)
+        if (cachedStatus === 'valid') {
+          activationScreen.style.display = 'none';
+          mainApp.style.display = 'flex';
+          initApp();
+        }
+      });
+    } else if (cachedStatus === 'valid') {
+      // Legacy: cached status without saved credentials — still show the app
+      // (less secure but maintains backward compatibility)
       activationScreen.style.display = 'none';
       mainApp.style.display = 'flex';
       initApp();
@@ -283,6 +307,11 @@ function handleActivation() {
 
   invoke('validate_license', { key: key, email: email }).then(function (result) {
     if (result.valid) {
+      // Save key and email so startup can re-validate with server
+      Promise.all([
+        invoke('set_setting', { key: 'license_key', value: key }),
+        invoke('set_setting', { key: 'license_email', value: email }),
+      ]).catch(function () {});
       document.getElementById('activationScreen').style.display = 'none';
       document.getElementById('mainApp').style.display = 'flex';
       initApp();
