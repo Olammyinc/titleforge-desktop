@@ -35,11 +35,12 @@ impl MarkovModel {
             Err(_) => return Self { trigrams, bigrams, rev_bigrams, starts, training_set, is_empty: true },
         };
 
-        let rows: Vec<(String, String)> = stmt
+        let rows: Vec<(String, String)> = match stmt
             .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
-            .unwrap_or_else(|_| panic!("Failed to query curated_titles"))
-            .filter_map(|r| r.ok())
-            .collect();
+        {
+            Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+            Err(e) => { eprintln!("Warning: failed to query curated_titles: {}", e); vec![] }
+        };
 
         if rows.is_empty() {
             return Self { trigrams, bigrams, rev_bigrams, starts, training_set, is_empty: true };
@@ -54,8 +55,10 @@ impl MarkovModel {
                 continue;
             }
 
-            // Record start word
-            *starts.entry(tokens[0].clone()).or_insert(0) += 1;
+            // Record start word (first real word after <START>)
+            if tokens.len() > 2 {
+                *starts.entry(tokens[1].clone()).or_insert(0) += 1;
+            }
 
             // Build bigrams
             for i in 0..tokens.len().saturating_sub(1) {
@@ -98,11 +101,12 @@ impl MarkovModel {
             Err(_) => return cat_models,
         };
 
-        let categories: Vec<String> = stmt
+        let categories: Vec<String> = match stmt
             .query_map([], |row| row.get::<_, String>(0))
-            .unwrap_or_else(|_| panic!("Failed to query categories"))
-            .filter_map(|r| r.ok())
-            .collect();
+        {
+            Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+            Err(e) => { eprintln!("Warning: failed to query categories: {}", e); vec![] }
+        };
 
         // Build a global model
         let global = Self::build(conn);
@@ -132,11 +136,12 @@ impl MarkovModel {
             Err(_) => return Self { trigrams, bigrams, rev_bigrams, starts, training_set, is_empty: true },
         };
 
-        let titles: Vec<String> = stmt
+        let titles: Vec<String> = match stmt
             .query_map(rusqlite::params![category], |row| row.get::<_, String>(0))
-            .unwrap_or_else(|_| panic!("Failed to query curated_titles for category"))
-            .filter_map(|r| r.ok())
-            .collect();
+        {
+            Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+            Err(e) => { eprintln!("Warning: failed to query curated_titles for category: {}", e); vec![] }
+        };
 
         if titles.is_empty() {
             return Self { trigrams, bigrams, rev_bigrams, starts, training_set, is_empty: true };
@@ -149,7 +154,7 @@ impl MarkovModel {
             let tokens = tokenize(title);
             if tokens.len() < 3 { continue; }
 
-            *starts.entry(tokens[0].clone()).or_insert(0) += 1;
+            *starts.entry(tokens[1].clone()).or_insert(0) += 1;
 
             for i in 0..tokens.len().saturating_sub(1) {
                 bigrams.entry(tokens[i].clone())
@@ -301,9 +306,10 @@ impl MarkovModel {
         let mut title = parts.join(" ");
         // Fix punctuation spacing
         title = title.replace(" ,", ",").replace(" .", ".").replace(" !", "!").replace(" ?", "?");
-        // Title case
-        if let Some(c) = title.chars().next() {
-            title.replace_range(..1, &c.to_uppercase().to_string());
+        // Capitalize first letter (char-aware, handles multi-byte UTF-8)
+        let mut chars = title.chars();
+        if let Some(c) = chars.next() {
+            title = c.to_uppercase().collect::<String>() + chars.as_str();
         }
 
         Some(title)
@@ -525,9 +531,9 @@ impl MarkovModel {
     }
 }
 
-/// Tokenize a title into words, preserving punctuation as separate tokens.
+/// Tokenize a title into words, wrapping with sentence boundaries.
 fn tokenize(title: &str) -> Vec<String> {
-    let mut tokens = Vec::new();
+    let mut tokens = vec!["<START>".to_string()];
     for word in title.split_whitespace() {
         let w = word.trim_matches(|c: char| c.is_ascii_punctuation() && c != '\'' && c != '-');
         if w.is_empty() {
@@ -535,6 +541,7 @@ fn tokenize(title: &str) -> Vec<String> {
         }
         tokens.push(w.to_lowercase());
     }
+    tokens.push("<END>".to_string());
     tokens
 }
 
@@ -584,7 +591,7 @@ mod tests {
             training_set.insert(norm);
             let tokens = tokenize(title);
             if tokens.len() < 3 { continue; }
-            *starts.entry(tokens[0].clone()).or_insert(0) += 1;
+            *starts.entry(tokens[1].clone()).or_insert(0) += 1;
             for i in 0..tokens.len().saturating_sub(1) {
                 bigrams.entry(tokens[i].clone()).or_default().entry(tokens[i+1].clone()).and_modify(|c| *c += 1).or_insert(1);
             }
@@ -615,19 +622,20 @@ mod tests {
     #[test]
     fn test_tokenize_basic() {
         let tokens = tokenize("The Art of Productivity");
-        assert_eq!(tokens, vec!["the", "art", "of", "productivity"]);
+        assert_eq!(tokens, vec!["<START>", "the", "art", "of", "productivity", "<END>"]);
     }
 
     #[test]
     fn test_tokenize_lowercases() {
         let tokens = tokenize("HELLO WORLD");
-        assert_eq!(tokens, vec!["hello", "world"]);
+        assert_eq!(tokens, vec!["<START>", "hello", "world", "<END>"]);
     }
 
     #[test]
     fn test_tokenize_strips_punctuation() {
         let tokens = tokenize("What's in a name?");
         assert!(tokens.contains(&"name".to_string()));
+        assert_eq!(tokens.last(), Some(&"<END>".to_string()));
     }
 
     #[test]
