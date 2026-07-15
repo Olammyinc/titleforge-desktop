@@ -1452,10 +1452,8 @@ function setupUpdaterControls() {
 }
 
 function checkAndInstallUpdate(silent) {
-  var verEl = document.getElementById('settingsUpdateVersion');
   var statusEl = document.getElementById('settingsUpdateStatus');
   var checkBtn = document.getElementById('checkUpdateBtn');
-  var currentVer = (verEl && verEl.textContent) || '0.5.0';
 
   if (!silent && checkBtn) {
     checkBtn.disabled = true;
@@ -1467,34 +1465,27 @@ function checkAndInstallUpdate(silent) {
   }
 
   invoke('plugin:updater|check').then(function (result) {
-    if (result) {
-      // Update available
+    if (result && result.version) {
       if (!silent && statusEl) {
-        statusEl.textContent = 'Update found: v' + (result.version || '?') + ' — downloading...';
+        statusEl.textContent = 'Update v' + result.version + ' available.';
         statusEl.style.color = '#16a34a';
       }
-      // Trigger download & install — Tauri v2 updater expects the rid from the check result
-      if (result.rid !== undefined && result.rid !== null) {
-        return invoke('plugin:updater|download_and_install', { rid: result.rid });
-      } else if (result.version) {
-        return invoke('plugin:updater|download_and_install', result);
-      } else {
-        return invoke('plugin:updater|download_and_install', { update: result });
+      // dialog: true in tauri.conf.json — Tauri shows native dialog automatically
+    } else {
+      var verEl = document.getElementById('settingsUpdateVersion');
+      var currentVer = (verEl && verEl.textContent) || '0.5.0';
+      if (!silent && statusEl) {
+        statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
+        statusEl.style.color = '#16a34a';
       }
     }
-    // No update available
-    if (!silent && statusEl) {
-      statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
-      statusEl.style.color = '#16a34a';
-    }
-    return null;
   }).catch(function (err) {
     var msg = typeof err === 'string' ? err : (err.message || 'Network error');
+    dumpDebug('Update check failed: ' + msg);
     if (!silent && statusEl) {
       statusEl.textContent = 'Could not check for updates: ' + msg;
       statusEl.style.color = '#b91c1c';
     }
-    // Silent mode — don't bother the user on launch
   }).finally(function () {
     if (!silent && checkBtn) {
       checkBtn.disabled = false;
