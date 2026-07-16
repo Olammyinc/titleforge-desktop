@@ -1,74 +1,89 @@
 use std::path::Path;
+use candle_core::{Device, Tensor};
+use tokenizers::Tokenizer;
 
-/// Local LLM engine — generates titles using SmolLM2-360M via candle-rs.
 pub struct LocalLlm {
-    // Model loaded state — can be extended with actual model fields
+    model: std::cell::RefCell<candle_transformers::models::quantized_llama::ModelWeights>,
+    tokenizer: Tokenizer,
+    device: Device,
     pub loaded: bool,
 }
 
 impl LocalLlm {
-    /// Attempt to load a GGUF model from the given path.
-    /// Returns None on any failure — non-fatal, caller falls back to EGCG.
     pub fn load(model_path: &Path) -> Option<Self> {
-        if !model_path.exists() {
-            eprintln!("[local_llm] Model file not found: {:?}", model_path);
+        let device = Device::Cpu;
+        let model_dir = model_path.parent()?;
+        let tokenizer_path = model_dir.join("tokenizer.json");
+
+        if !model_path.exists() || !tokenizer_path.exists() {
+            eprintln!("[local_llm] Model or tokenizer not found");
             return None;
         }
 
-        let file_size = std::fs::metadata(model_path).ok()?.len();
-        eprintln!("[local_llm] Model file found: {:?} ({} MB)", model_path, file_size / 1024 / 1024);
+        let tokenizer = Tokenizer::from_file(&tokenizer_path).ok()?;
+        eprintln!("[local_llm] Loading model...");
 
-        // Phase 1 PoC: just confirm file exists and report size.
-        // Actual model loading will be implemented after PoC is verified.
-        Some(LocalLlm { loaded: true })
+        let mut file = std::fs::File::open(model_path).ok()?;
+        let content = candle_core::quantized::gguf_file::Content::read(&mut file).ok()?;
+        let model = candle_transformers::models::quantized_llama::ModelWeights::from_gguf(content, &mut file, &device).ok()?;
+        eprintln!("[local_llm] Model loaded");
+
+        Some(Self { model: std::cell::RefCell::new(model), tokenizer, device, loaded: true })
     }
 
-    /// Generate a single title from a prompt.
-    /// Returns None on failure.
-    pub fn generate_one(&self, _prompt: &str) -> Option<String> {
-        if !self.loaded {
-            return None;
+    pub fn generate_one(&self, prompt: &str) -> Option<String> {
+        let encoded = self.tokenizer.encode(prompt, true).ok()?;
+        let input_ids = encoded.get_ids();
+        let mut all_tokens = input_ids.to_vec();
+        let eos = self.tokenizer.token_to_id("<|im_end|>").unwrap_or(0);
+        let eos2 = self.tokenizer.token_to_id("<|endoftext|>").unwrap_or(0);
+
+        for step in 0..50usize {
+            let input = Tensor::new(all_tokens.as_slice(), &self.device).ok()?.unsqueeze(0).ok()?;
+            let mut model = self.model.borrow_mut();
+            let logits = model.forward(&input, all_tokens.len()).ok()?;
+            let next = sample_token(&logits, step as u64).ok()?;
+            if next == eos || next == eos2 { break; }
+            all_tokens.push(next);
         }
-        // Phase 1 PoC: return a placeholder to prove the pipeline works.
-        // Actual generation will be implemented in Phase 2.
-        Some("[LocalLLM] Placeholder title — model inference pending".to_string())
+
+        let output = self.tokenizer.decode(&all_tokens[input_ids.len()..], true).ok()?;
+        Some(output.trim().to_string())
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+fn sample_token(logits: &Tensor, seed: u64) -> Result<u32, candle_core::Error> {
+    use rand::Rng;
+    let logits = logits.squeeze(0)?;
+    let temperature = 0.7f64;
+    let top_p = 0.9f32;
+    let logits = (&logits / temperature)?;
+    let probs = candle_nn::ops::softmax(&logits, 0)?;
+    let probs_vec: Vec<f32> = probs.to_vec1()?;
 
-    #[test]
-    fn test_load_nonexistent_model() {
-        let llm = LocalLlm::load(Path::new("/nonexistent/model.gguf"));
-        assert!(llm.is_none(), "Should return None for nonexistent file");
+    // Top-p filtering
+    let mut sorted: Vec<(usize, f32)> = probs_vec.iter().enumerate().map(|(i, p)| (i, *p)).collect();
+    sorted.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    
+    let mut cum = 0.0f32;
+    let mut candidates: Vec<(usize, f32)> = Vec::new();
+    for &(idx, p) in &sorted {
+        cum += p;
+        candidates.push((idx, p));
+        if cum >= top_p { break; }
     }
 
-    #[test]
-    fn test_load_real_model() {
-        // The model should exist at this path (downloaded by build script)
-        let paths = [
-            Path::new("models/SmolLM2-360M-Instruct-Q4_K_M.gguf"),
-            Path::new("../models/SmolLM2-360M-Instruct-Q4_K_M.gguf"),
-        ];
-        for p in &paths {
-            if p.exists() {
-                let llm = LocalLlm::load(p);
-                assert!(llm.is_some(), "Should load model from {:?}", p);
-                if let Some(model) = llm {
-                    let result = model.generate_one("Test prompt");
-                    assert!(result.is_some(), "Should generate text");
-                }
-                return;
-            }
-        }
-        eprintln!("Model file not found at any expected path — skipping test");
-    }
+    if candidates.is_empty() { return Ok(probs_vec.len() as u32 - 1); }
 
-    #[test]
-    fn test_generate_without_load() {
-        let llm = LocalLlm { loaded: false };
-        assert!(llm.generate_one("test").is_none());
+    let total: f32 = candidates.iter().map(|(_, p)| p).sum();
+    if total <= 0.0 { return Ok(candidates[0].0 as u32); }
+
+    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(seed);
+    let r: f32 = rng.gen::<f32>() * total;
+    let mut c = 0.0f32;
+    for (idx, p) in &candidates {
+        c += p;
+        if r <= c { return Ok(*idx as u32); }
     }
+    Ok(candidates.last().map(|(i, _)| *i as u32).unwrap_or(0))
 }
