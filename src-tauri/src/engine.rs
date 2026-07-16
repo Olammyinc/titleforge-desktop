@@ -11,7 +11,7 @@ use crate::TitleResult;
 pub fn generate(
     conn: &Connection,
     generator: &Generator,
-    local_llm: Option<&LocalLlm>,
+    local_llm: Option<&mut LocalLlm>,
     keyword: &str,
     categories: &[String],
     style: &str,

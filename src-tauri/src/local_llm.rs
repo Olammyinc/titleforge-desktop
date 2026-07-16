@@ -1,9 +1,9 @@
 use std::path::Path;
-use candle_core::{Device, Tensor};
+use candle_core::{Device, Tensor, IndexOp};
 use tokenizers::Tokenizer;
 
 pub struct LocalLlm {
-    model: std::cell::RefCell<candle_transformers::models::quantized_llama::ModelWeights>,
+    model: candle_transformers::models::quantized_llama::ModelWeights,
     tokenizer: Tokenizer,
     device: Device,
     pub loaded: bool,
@@ -15,48 +15,78 @@ impl LocalLlm {
         let model_dir = model_path.parent()?;
         let tokenizer_path = model_dir.join("tokenizer.json");
 
-        if !model_path.exists() || !tokenizer_path.exists() {
-            eprintln!("[local_llm] Model or tokenizer not found");
+        if !model_path.exists() {
+            eprintln!("[local_llm] Model file not found: {:?}", model_path);
+            return None;
+        }
+        if !tokenizer_path.exists() {
+            eprintln!("[local_llm] Tokenizer not found: {:?}", tokenizer_path);
             return None;
         }
 
-        let tokenizer = Tokenizer::from_file(&tokenizer_path).ok()?;
-        eprintln!("[local_llm] Loading model...");
+        let tokenizer = match Tokenizer::from_file(&tokenizer_path) {
+            Ok(t) => t,
+            Err(e) => { eprintln!("[local_llm] Tokenizer load failed: {}", e); return None; }
+        };
 
-        let mut file = std::fs::File::open(model_path).ok()?;
-        let content = candle_core::quantized::gguf_file::Content::read(&mut file).ok()?;
-        let model = candle_transformers::models::quantized_llama::ModelWeights::from_gguf(content, &mut file, &device).ok()?;
-        eprintln!("[local_llm] Model loaded");
+        eprintln!("[local_llm] Loading model from {:?}...", model_path);
+        let mut file = match std::fs::File::open(model_path) {
+            Ok(f) => f,
+            Err(e) => { eprintln!("[local_llm] Failed to open model file: {}", e); return None; }
+        };
 
-        Some(Self { model: std::cell::RefCell::new(model), tokenizer, device, loaded: true })
+        let content = match candle_core::quantized::gguf_file::Content::read(&mut file) {
+            Ok(c) => c,
+            Err(e) => { eprintln!("[local_llm] Failed to read GGUF content: {}", e); return None; }
+        };
+
+        let model = match candle_transformers::models::quantized_llama::ModelWeights::from_gguf(content, &mut file, &device) {
+            Ok(m) => m,
+            Err(e) => { eprintln!("[local_llm] Failed to load model weights: {}", e); return None; }
+        };
+
+        eprintln!("[local_llm] Model loaded successfully");
+        Some(Self { model, tokenizer, device, loaded: true })
     }
 
-    pub fn generate_one(&self, prompt: &str) -> Option<String> {
-        let encoded = self.tokenizer.encode(prompt, true).ok()?;
-        let input_ids = encoded.get_ids();
-        let mut all_tokens = input_ids.to_vec();
-        let eos = self.tokenizer.token_to_id("<|im_end|>").unwrap_or(0);
-        let eos2 = self.tokenizer.token_to_id("<|endoftext|>").unwrap_or(0);
+    /// Generate one title from a prompt.
+    /// Uses separate prefill and decode steps for correct KV cache usage.
+    pub fn generate_one(&mut self, prompt: &str) -> Option<String> {
+        // Build chat-formatted prompt matching SmolLM2-Instruct template
+        let full_prompt = format!(
+            "<|im_start|>system\nYou are TitleForge, an elite title generator. Generate exactly one title — no explanation, no preamble.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
+            prompt
+        );
 
-        for step in 0..50usize {
-            let input = Tensor::new(all_tokens.as_slice(), &self.device).ok()?.unsqueeze(0).ok()?;
-            let mut model = self.model.borrow_mut();
-            let logits = model.forward(&input, all_tokens.len()).ok()?;
-            let next = sample_token(&logits, step as u64).ok()?;
+        let encoded = self.tokenizer.encode(full_prompt.as_str(), true).ok()?;
+        let prompt_ids = encoded.get_ids().to_vec();
+        let prompt_len = prompt_ids.len();
+        let eos = self.tokenizer.token_to_id("<|im_end|>").unwrap_or(u32::MAX);
+        let eos2 = self.tokenizer.token_to_id("<|endoftext|>").unwrap_or(u32::MAX);
+        let mut all_tokens = prompt_ids.clone();
+
+        // Prefill: feed the full prompt at position 0
+        let input = Tensor::from_vec(prompt_ids, (1, prompt_len), &self.device).ok()?;
+        let logits = self.model.forward(&input, 0).ok()?;
+        let next = sample_token(&logits).ok()?;
+        if next == eos || next == eos2 { return None; }
+        all_tokens.push(next);
+
+        // Decode: feed one token at a time
+        for _step in 0..49usize {
+            let input = Tensor::from_vec(vec![next], (1, 1), &self.device).ok()?;
+            let logits = self.model.forward(&input, all_tokens.len() as usize - 1).ok()?;
+            let next = sample_token(&logits).ok()?;
             if next == eos || next == eos2 { break; }
             all_tokens.push(next);
         }
 
-        let output = self.tokenizer.decode(&all_tokens[input_ids.len()..], true).ok()?;
+        // Decode only the newly generated tokens
+        let output = self.tokenizer.decode(&all_tokens[prompt_len..], true).ok()?;
         let trimmed = output.trim().to_string();
 
-        // QC gate: reject empty, too short, or verbatim prompt echo
+        // QC gate
         if trimmed.len() < 5 || trimmed.split_whitespace().count() < 3 {
-            return None;
-        }
-        // Check if model just echoed the prompt
-        let prompt_stripped = prompt.trim_end_matches(|c: char| !c.is_alphanumeric());
-        if trimmed.to_lowercase() == prompt_stripped.to_lowercase() {
             return None;
         }
 
@@ -64,19 +94,20 @@ impl LocalLlm {
     }
 }
 
-fn sample_token(logits: &Tensor, seed: u64) -> Result<u32, candle_core::Error> {
-    use rand::Rng;
-    let logits = logits.squeeze(0)?;
+fn sample_token(logits: &Tensor) -> Result<u32, candle_core::Error> {
+    // logits shape: [1, seq_len, vocab] — take the last position
+    let seq_len = logits.dim(1)?;
+    let logits = logits.i((0, seq_len - 1))?; // [vocab]
     let temperature = 0.7f64;
     let top_p = 0.9f32;
     let logits = (&logits / temperature)?;
-    let probs = candle_nn::ops::softmax(&logits, 0)?;
+    let probs = candle_nn::ops::softmax(&logits, 0)?; // softmax over vocab
     let probs_vec: Vec<f32> = probs.to_vec1()?;
 
-    // Top-p filtering
+    // Top-p (nucleus) sampling
     let mut sorted: Vec<(usize, f32)> = probs_vec.iter().enumerate().map(|(i, p)| (i, *p)).collect();
     sorted.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    
+
     let mut cum = 0.0f32;
     let mut candidates: Vec<(usize, f32)> = Vec::new();
     for &(idx, p) in &sorted {
@@ -90,7 +121,8 @@ fn sample_token(logits: &Tensor, seed: u64) -> Result<u32, candle_core::Error> {
     let total: f32 = candidates.iter().map(|(_, p)| p).sum();
     if total <= 0.0 { return Ok(candidates[0].0 as u32); }
 
-    let mut rng: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(seed);
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
     let r: f32 = rng.gen::<f32>() * total;
     let mut c = 0.0f32;
     for (idx, p) in &candidates {

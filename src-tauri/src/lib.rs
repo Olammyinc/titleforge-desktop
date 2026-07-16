@@ -72,8 +72,8 @@ fn generate_titles(
 ) -> Result<Vec<TitleResult>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
-    let llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
-    engine::generate(&db, &generator, llm_guard.as_ref(), &keyword, &categories, &style, &genre, quantity)
+    let mut llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
+    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
 }
 
 #[tauri::command]
