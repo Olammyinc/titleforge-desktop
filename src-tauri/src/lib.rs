@@ -735,17 +735,39 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("titleforge-desktop");
 
-    let model_paths = vec![
+    let mut model_paths = vec![
         // Development: CWD-relative (npm run dev from titleforge-desktop/)
         std::path::PathBuf::from("../models").join(model_name),
-        // Production Tauri: alongside the binary (resource extraction)
+        // Tauri bundles resources relative to the binary
         std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|d| d.join("models").join(model_name)))
             .unwrap_or_default(),
-        // App data dir (manual copy)
+        // Tauri v2 resource extraction — app data dir
+        dirs::data_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("com.titleforge.desktop")
+            .join("models")
+            .join(model_name),
+        // Tauri v2 resource extraction — with resources subfolder
+        dirs::data_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("com.titleforge.desktop")
+            .join("resources")
+            .join("models")
+            .join(model_name),
+        // Tauri v2 resource extraction — via app-dir + resources
+        dirs::data_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("titleforge-desktop")
+            .join("resources")
+            .join("models")
+            .join(model_name),
+        // App data dir (manual copy from CI/script)
         app_dir.join("models").join(model_name),
     ];
+    // Remove any empty paths (from failed .ok()/.unwrap_or_default() calls)
+    model_paths.retain(|p| !p.as_os_str().is_empty());
 
     for p in &model_paths {
         if p.exists() {
