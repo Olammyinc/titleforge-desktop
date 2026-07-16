@@ -73,6 +73,11 @@ fn generate_titles(
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
     let mut llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
+    // Lazy-load LLM on first generation call (runs after Tauri app is initialized,
+    // so resource dir is available)
+    if llm_guard.is_none() {
+        *llm_guard = lazy_load_llm();
+    }
     engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
 }
 
@@ -722,6 +727,40 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
     }))
 }
 
+/// Lazy-load the local LLM model on first generation call.
+/// Checks multiple paths so it works in dev, production, and CI.
+fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
+    let model_name = "SmolLM2-360M-Instruct-Q4_K_M.gguf";
+    let app_dir = dirs::data_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("titleforge-desktop");
+
+    let model_paths = vec![
+        // Development: CWD-relative (npm run dev from titleforge-desktop/)
+        std::path::PathBuf::from("../models").join(model_name),
+        // Production Tauri: alongside the binary (resource extraction)
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("models").join(model_name)))
+            .unwrap_or_default(),
+        // App data dir (manual copy)
+        app_dir.join("models").join(model_name),
+    ];
+
+    for p in &model_paths {
+        if p.exists() {
+            let llm = local_llm::LocalLlm::load(p);
+            if llm.is_some() {
+                println!("[local_llm] Loaded from {:?}", p);
+                return llm;
+            }
+        }
+    }
+
+    eprintln!("[local_llm] Model not found at any path. LLM inference disabled.");
+    None
+}
+
 pub fn run() {
     let app_dir = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
@@ -772,25 +811,8 @@ pub fn run() {
     let generator = title_gen::Generator::build(&conn);
     println!("EGCG generator built successfully ({} words in vocabulary)", generator.word_count());
 
-    // Build local LLM engine (non-fatal — falls back to EGCG if unavailable)
-    let local_llm = {
-        let model_paths = [
-            std::path::PathBuf::from("../models/SmolLM2-360M-Instruct-Q4_K_M.gguf"),
-            app_dir.join("models").join("SmolLM2-360M-Instruct-Q4_K_M.gguf"),
-        ];
-        let mut llm = None;
-        for p in &model_paths {
-            llm = local_llm::LocalLlm::load(p);
-            if llm.is_some() {
-                println!("Local LLM loaded from {:?}", p);
-                break;
-            }
-        }
-        llm
-    };
-    if local_llm.is_none() {
-        eprintln!("Warning: Local LLM not available — falling back to EGCG/template engine");
-    }
+    // Local LLM is loaded lazily on first generation call (so resource_dir is available)
+    println!("Local LLM will be loaded on first use (lazy init)");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -798,7 +820,7 @@ pub fn run() {
         .manage(AppState {
             db: Mutex::new(conn),
             generator: std::sync::Mutex::new(generator),
-            local_llm: std::sync::Mutex::new(local_llm),
+            local_llm: std::sync::Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             generate_titles,
