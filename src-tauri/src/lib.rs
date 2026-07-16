@@ -11,6 +11,7 @@ mod title_gen;
 pub struct AppState {
     pub db: Mutex<rusqlite::Connection>,
     pub generator: std::sync::Mutex<title_gen::Generator>,
+    pub local_llm: std::sync::Mutex<Option<local_llm::LocalLlm>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -71,7 +72,8 @@ fn generate_titles(
 ) -> Result<Vec<TitleResult>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
-    engine::generate(&db, &generator, &keyword, &categories, &style, &genre, quantity)
+    let llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
+    engine::generate(&db, &generator, llm_guard.as_ref(), &keyword, &categories, &style, &genre, quantity)
 }
 
 #[tauri::command]
@@ -710,11 +712,13 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
     let count: i64 = db
         .query_row("SELECT COUNT(*) FROM patterns", [], |row| row.get(0))
         .unwrap_or(0);
+    let llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
     Ok(serde_json::json!({
         "app": "titleforge-desktop",
         "version": env!("CARGO_PKG_VERSION"),
         "seeded": count > 0,
         "templateCount": count,
+        "localLlmLoaded": llm_guard.is_some(),
     }))
 }
 
@@ -768,12 +772,33 @@ pub fn run() {
     let generator = title_gen::Generator::build(&conn);
     println!("EGCG generator built successfully ({} words in vocabulary)", generator.word_count());
 
+    // Build local LLM engine (non-fatal — falls back to EGCG if unavailable)
+    let local_llm = {
+        let model_paths = [
+            std::path::PathBuf::from("../models/SmolLM2-360M-Instruct-Q4_K_M.gguf"),
+            app_dir.join("models").join("SmolLM2-360M-Instruct-Q4_K_M.gguf"),
+        ];
+        let mut llm = None;
+        for p in &model_paths {
+            llm = local_llm::LocalLlm::load(p);
+            if llm.is_some() {
+                println!("Local LLM loaded from {:?}", p);
+                break;
+            }
+        }
+        llm
+    };
+    if local_llm.is_none() {
+        eprintln!("Warning: Local LLM not available — falling back to EGCG/template engine");
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             db: Mutex::new(conn),
             generator: std::sync::Mutex::new(generator),
+            local_llm: std::sync::Mutex::new(local_llm),
         })
         .invoke_handler(tauri::generate_handler![
             generate_titles,

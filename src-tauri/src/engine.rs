@@ -3,13 +3,15 @@ use rand::Rng;
 use rusqlite::Connection;
 use serde_json;
 
+use crate::local_llm::LocalLlm;
 use crate::title_gen::Generator;
 use crate::TitleResult;
 
-/// Orchestrate title generation: try EGCG first, fall back to template engine.
+/// Orchestrate title generation: try local LLM first, then EGCG, then template engine.
 pub fn generate(
     conn: &Connection,
     generator: &Generator,
+    local_llm: Option<&LocalLlm>,
     keyword: &str,
     categories: &[String],
     style: &str,
@@ -18,13 +20,35 @@ pub fn generate(
 ) -> Result<Vec<TitleResult>, String> {
     let mut results = Vec::new();
 
-    // Pass 1: Try EGCG generation
-    if keyword.len() > 2 {
-        let egcg_results = generator.generate(keyword, categories, style, genre, quantity);
+    // Pass 1: Try local LLM (if loaded)
+    if let Some(llm) = local_llm {
+        let prompt = format!(
+            "Write ONE {} title about \"{}\" in a {} tone. Reply with only the title, nothing else.",
+            categories.first().map(|s| s.as_str()).unwrap_or(""),
+            keyword,
+            style
+        );
+        for _ in 0..quantity {
+            if let Some(title) = llm.generate_one(&prompt) {
+                let score = crate::title_gen::calculate_heuristic_score(&title, keyword);
+                results.push(TitleResult {
+                    title,
+                    score,
+                    categories: categories.to_vec(),
+                    breakdown: None,
+                });
+            }
+        }
+    }
+
+    // Pass 2: Try EGCG generation for remaining slots
+    let remaining = (quantity as usize).saturating_sub(results.len());
+    if remaining > 0 && keyword.len() > 2 {
+        let egcg_results = generator.generate(keyword, categories, style, genre, remaining as u32);
         results.extend(egcg_results);
     }
 
-    // Pass 2: Template engine fills remaining slots
+    // Pass 3: Template engine fills remaining slots
     let remaining = (quantity as usize).saturating_sub(results.len());
     if remaining > 0 {
         let template_results = generate_from_templates(

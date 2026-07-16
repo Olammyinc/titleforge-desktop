@@ -48,7 +48,19 @@ impl LocalLlm {
         }
 
         let output = self.tokenizer.decode(&all_tokens[input_ids.len()..], true).ok()?;
-        Some(output.trim().to_string())
+        let trimmed = output.trim().to_string();
+
+        // QC gate: reject empty, too short, or verbatim prompt echo
+        if trimmed.len() < 5 || trimmed.split_whitespace().count() < 3 {
+            return None;
+        }
+        // Check if model just echoed the prompt
+        let prompt_stripped = prompt.trim_end_matches(|c: char| !c.is_alphanumeric());
+        if trimmed.to_lowercase() == prompt_stripped.to_lowercase() {
+            return None;
+        }
+
+        Some(trimmed)
     }
 }
 

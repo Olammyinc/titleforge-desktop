@@ -1353,6 +1353,33 @@ pub fn resolve_pool_name(slot_name: &str) -> &'static str {
     }
 }
 
+/// Calculate a heuristic score for any title string (used for LLM-generated titles).
+/// Uses keyword presence, numbers, curiosity markers, emotional/power words, word count.
+pub fn calculate_heuristic_score(title: &str, keyword: &str) -> u32 {
+    let lower = title.to_lowercase();
+    let kw = keyword.to_lowercase();
+    let word_count = title.split_whitespace().count();
+    let mut score = 45u32;
+
+    if lower.contains(&kw) { score += 15; }
+    if title.chars().any(|c| c.is_ascii_digit()) { score += 10; }
+    if title.contains('?') || title.contains(':') || title.contains("...") { score += 10; }
+
+    let emotional = ["secret","hidden","truth","never","wrong","best","worst",
+        "ultimate","essential","proven","easy","fast","simple"];
+    if emotional.iter().any(|w| lower.contains(w)) { score += 8; }
+
+    let power = ["why","how","what","when","stop","start","transform","unlock",
+        "master","hack","build","create"];
+    if power.iter().any(|w| lower.contains(w)) { score += 5; }
+
+    if word_count >= 4 && word_count <= 12 { score += 10; }
+    else if word_count >= 2 && word_count <= 16 { score += 5; }
+    else { score = score.saturating_sub(8); }
+
+    score.min(100)
+}
+
 // ── Tests ──
 
 #[cfg(test)]
