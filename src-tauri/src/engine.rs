@@ -258,6 +258,35 @@ struct Slot {
     pos: Option<String>,
 }
 
+/// Slot name aliases that expect an "-ing" gerund form rather than the bare
+/// verb stored in the action_verbs pool (e.g. template text like "The Art of
+/// {gerund_verb} {topic}" needs "Navigating", not "Navigate").
+fn wants_gerund(slot_name: &str) -> bool {
+    matches!(
+        slot_name,
+        "gerund_verb" | "gerund_verbs" | "gerund_verb_2" | "gerund" | "gerunds"
+            | "verb_ing" | "verbing" | "verb_ing2" | "gerund2" | "action_verbs_ing"
+    )
+}
+
+/// Roughly convert a base-form verb to its "-ing" (gerund) form. Heuristic,
+/// not linguistically perfect (doesn't handle consonant-doubling like
+/// run -> running), but far better than leaving a bare verb where a gerund
+/// is grammatically required.
+fn to_gerund(word: &str) -> String {
+    if word.is_empty() {
+        return word.to_string();
+    }
+    let lower = word.to_lowercase();
+    if lower.ends_with("ing") {
+        return word.to_string();
+    }
+    if lower.ends_with('e') && !lower.ends_with("ee") && !lower.ends_with("oe") {
+        return format!("{}ing", &word[..word.len() - 1]);
+    }
+    format!("{}ing", word)
+}
+
 fn fill_template(
     pools: &std::collections::HashMap<String, Vec<String>>,
     template: &str,
@@ -265,11 +294,33 @@ fn fill_template(
     keyword: &str,
     rng: &mut impl Rng,
 ) -> String {
+    /// Small words that should remain lowercase in title-case when not leading.
+    const SMALL_WORDS: &[&str] = &[
+        "a", "an", "the", "in", "of", "to", "for", "and", "or", "but",
+        "by", "with", "at", "from", "on", "as", "is", "it",
+    ];
+
+    fn title_case_word(word: &str, is_first: bool) -> String {
+        if word.is_empty() {
+            return word.to_string();
+        }
+        let lower = word.to_lowercase();
+        if !is_first && SMALL_WORDS.contains(&lower.as_str()) {
+            return lower;
+        }
+        let mut chars = word.chars();
+        match chars.next() {
+            Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+            None => word.to_string(),
+        }
+    }
+
     let mut result = template.to_string();
+    let mut filled_words: Vec<String> = Vec::new();
 
     for slot in slots {
         let placeholder = format!("{{{}}}", slot.name);
-        let replacement = match slot.name.as_str() {
+        let mut raw = match slot.name.as_str() {
             "keyword" | "topic" => keyword.to_string(),
             "number" => format!("{}", rng.gen_range(3..=12)),
             _ => {
@@ -277,22 +328,38 @@ fn fill_template(
                     .map(|p| slot_name_to_pool_name(p))
                     .unwrap_or_else(|| slot_name_to_pool_name(&slot.name));
 
-                let word = pools.get(pool_name).and_then(|w| {
-                    if w.is_empty() { None } else { Some(w[rng.gen_range(0..w.len())].clone()) }
-                });
+                let base_pool: Vec<String> = pools.get(pool_name)
+                    .filter(|w| !w.is_empty())
+                    .or_else(|| pools.get("nouns"))
+                    .cloned()
+                    .unwrap_or_default();
 
-                word.unwrap_or_else(|| {
-                    pools.get("nouns").and_then(|w| {
-                        if w.is_empty() { None } else { Some(w[rng.gen_range(0..w.len())].clone()) }
-                    }).unwrap_or_else(|| keyword.to_string())
-                })
+                // Prefer a word not already used elsewhere in this title
+                // (avoids "The hidden and hidden Sides of X" repeats).
+                let lower_filled: Vec<String> = filled_words.iter().map(|w| w.to_lowercase()).collect();
+                let unused: Vec<String> = base_pool.iter()
+                    .filter(|w| !lower_filled.contains(&w.to_lowercase()))
+                    .cloned()
+                    .collect();
+
+                if !unused.is_empty() {
+                    unused[rng.gen_range(0..unused.len())].clone()
+                } else if !base_pool.is_empty() {
+                    base_pool[rng.gen_range(0..base_pool.len())].clone()
+                } else {
+                    keyword.to_string()
+                }
             }
         };
-        result = result.replace(&placeholder, &replacement);
-    }
 
-    if let Some(c) = result.chars().next() {
-        result.replace_range(..1, &c.to_uppercase().to_string());
+        if wants_gerund(&slot.name) {
+            raw = to_gerund(&raw);
+        }
+
+        filled_words.push(raw.clone());
+        let is_first_word = result.starts_with(&placeholder);
+        let replacement = title_case_word(&raw, is_first_word);
+        result = result.replace(&placeholder, &replacement);
     }
 
     result

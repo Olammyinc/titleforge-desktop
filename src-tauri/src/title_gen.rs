@@ -19,7 +19,11 @@ use crate::TitleResult;
 
 // ── Constants ──
 
-/// Minimum coherence score for a candidate slot filler.
+/// Formerly a hard cutoff below which a candidate was discarded entirely
+/// (falling back to uniform-random selection when nothing cleared it — see
+/// `score_candidates`). No longer used as a filter; kept as documentation of
+/// the scale `candidate_coherence` scores are on.
+#[allow(dead_code)]
 const MIN_COHERENCE: f64 = 0.05;
 
 /// Window size for pairwise co-occurrence in curated titles.
@@ -596,14 +600,21 @@ impl Generator {
         category: &str,
         rng: &mut impl Rng,
     ) -> Option<(String, f64)> {
-        let mut scored: Vec<(String, f64)> = Vec::new();
-
-        for cand in candidates {
-            let score = self.candidate_coherence(cand, filled_words, keyword, category);
-            if score >= MIN_COHERENCE {
-                scored.push((cand.clone(), score));
-            }
-        }
+        // Score every candidate. Previously this dropped anything below
+        // MIN_COHERENCE and fell back to a fully uniform-random pick from
+        // the whole pool when nothing cleared it — which is exactly what
+        // happens for a mundane keyword like "shirt" that has little or no
+        // representation in the (literary/business-skewed) curated corpus:
+        // everything scores near zero, so the "smart" scoring silently gave
+        // way to randomness and produced picks like "Algorithm" or "Map".
+        // Ranking by whatever score exists — even a low one — and softmax
+        // sampling from the top K is still meaningfully better than uniform
+        // random, and degrades gracefully to near-random only in the
+        // genuine worst case (every candidate equally unknown).
+        let mut scored: Vec<(String, f64)> = candidates
+            .iter()
+            .map(|cand| (cand.clone(), self.candidate_coherence(cand, filled_words, keyword, category)))
+            .collect();
 
         if scored.is_empty() {
             return None;
@@ -707,10 +718,13 @@ impl Generator {
         for (i, slot) in slots.iter().enumerate() {
             if i < filled.len() {
                 let placeholder = format!("{{{}}}", slot.name);
-                let word = &filled[i];
+                let mut word = filled[i].clone();
+                if wants_gerund(&slot.name) {
+                    word = to_gerund(&word);
+                }
                 // Capitalize every filled word using title-case rules
                 let is_first_word = result.starts_with(&placeholder);
-                let replacement = title_case_word(word, is_first_word);
+                let replacement = title_case_word(&word, is_first_word);
                 result = result.replace(&placeholder, &replacement);
             }
         }
@@ -757,14 +771,10 @@ impl Generator {
             return None;
         }
 
-        // Capitalize first letter
-        let mut chars = title.chars();
-        let capitalized = match chars.next() {
-            Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
-            None => title,
-        };
-
-        Some(capitalized)
+        // Title-case every word — the keyword always lands mid-string here
+        // (intro + keyword + closer), so capitalizing only the first
+        // character left it lowercase in every Mode B result.
+        Some(title_case_string(&title))
     }
 }
 
@@ -904,7 +914,11 @@ impl Generator {
             }
         }
 
-        best_variant.map(|v| (v, exemplar_category))
+        // Title-case the result — the swapped-in keyword is inserted raw
+        // (lowercase) and everything else keeps the source curated title's
+        // original casing verbatim, so without this the keyword sits
+        // lowercase wherever it lands except position 0.
+        best_variant.map(|v| (title_case_string(&v), exemplar_category))
     }
 
     fn variant_affinity(&self, title: &str, kw_id: &usize) -> f64 {
@@ -1140,6 +1154,62 @@ impl Generator {
 }
 
 // ── Utility Functions ──
+
+/// Title-case an entire string, word by word, keeping small words lowercase
+/// unless they're the first word. Used by Modes B and C, which assemble a
+/// title from fragments/curated-title text where only the very first
+/// character was previously capitalized (leaving the keyword lowercase
+/// whenever it landed mid-title, which is always the case for Mode B).
+fn title_case_string(s: &str) -> String {
+    const SMALL_WORDS: &[&str] = &[
+        "a", "an", "the", "in", "of", "to", "for", "and", "or", "but",
+        "by", "with", "at", "from", "on", "as", "is", "it",
+    ];
+    s.split_whitespace()
+        .enumerate()
+        .map(|(i, w)| {
+            let lower = w.to_lowercase();
+            if i != 0 && SMALL_WORDS.contains(&lower.as_str()) {
+                lower
+            } else {
+                let mut chars = w.chars();
+                match chars.next() {
+                    Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+                    None => w.to_string(),
+                }
+            }
+        })
+        .collect::<Vec<String>>()
+        .join(" ")
+}
+
+/// Slot name aliases that expect an "-ing" gerund form rather than the bare
+/// verb stored in the action_verbs pool (e.g. template text like "The Art of
+/// {gerund_verb} {topic}" needs "Navigating", not "Navigate").
+fn wants_gerund(slot_name: &str) -> bool {
+    matches!(
+        slot_name,
+        "gerund_verb" | "gerund_verbs" | "gerund_verb_2" | "gerund" | "gerunds"
+            | "verb_ing" | "verbing" | "verb_ing2" | "gerund2" | "action_verbs_ing"
+    )
+}
+
+/// Roughly convert a base-form verb to its "-ing" (gerund) form. Heuristic,
+/// not linguistically perfect, but far better than leaving a bare verb where
+/// a gerund is grammatically required.
+fn to_gerund(word: &str) -> String {
+    if word.is_empty() {
+        return word.to_string();
+    }
+    let lower = word.to_lowercase();
+    if lower.ends_with("ing") {
+        return word.to_string();
+    }
+    if lower.ends_with('e') && !lower.ends_with("ee") && !lower.ends_with("oe") {
+        return format!("{}ing", &word[..word.len() - 1]);
+    }
+    format!("{}ing", word)
+}
 
 /// Tokenize a title into lowercase words, stripping most punctuation.
 pub fn tokenize(title: &str) -> Vec<String> {

@@ -24,3 +24,14 @@ dirs = "5"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
 chrono = "0.4"
 hostname = "0.4"
+
+# Local LLM inference via candle-rs
+candle-core = "0.9"
+candle-transformers = "0.9"
+candle-nn = "0.9"
+tokenizers = "0.21"
+hf-hub = "0.4"
+
+[features]
+default = []
+cuda = ["candle-core/cuda", "candle-transformers/cuda"]

@@ -5,6 +5,7 @@ use std::sync::Mutex;
 
 mod db;
 mod engine;
+mod local_llm;
 mod title_gen;
 
 pub struct AppState {
