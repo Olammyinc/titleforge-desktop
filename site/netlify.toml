@@ -1,0 +1,7 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/api/waitlist"
+  to = "/.netlify/functions/waitlist"
+  status = 200

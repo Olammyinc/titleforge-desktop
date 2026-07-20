@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TitleSmith — Forge Better Titles. Offline.</title>
+  <meta name="description" content="TitleSmith is a desktop title generator for Windows, Mac, and Linux. One payment, no subscription, no internet required. Built for creators who publish." />
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-logo">
+      <img src="logo.svg" alt="TitleSmith" class="nav-logo-icon" />
+      TitleSmith
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#waitlist" class="btn btn-small btn-primary">Join Waitlist</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-inner">
+    <h1 class="hero-title">Forge better titles.<br/>No internet. No subscription.</h1>
+    <p class="hero-sub">TitleSmith runs entirely on your machine — powered by a curated database of thousands of title patterns, templates, and a built-in language model. You own it. It works anywhere. It never expires.</p>
+    <div class="hero-cta-row">
+      <a href="#waitlist" class="btn btn-primary btn-large">Join the Waitlist →</a>
+      <span class="hero-note">Windows, Mac, and Linux. $29–$49. One-time.</span>
+    </div>
+    <div class="hero-badge-row">
+      <span>🔒 Offline-first</span>
+      <span>⚡ Local LLM included</span>
+      <span>🎯 16 categories</span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <h2 class="section-heading">Why TitleSmith?</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📡</div>
+      <h3>No internet. No problem.</h3>
+      <p>Generate titles on a plane, in a coffee shop with bad Wi-Fi, or in the middle of nowhere. TitleSmith works entirely offline — the engine and database live on your machine.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>Pay once. Own it forever.</h3>
+      <p>$29 for the full offline engine. $49 if you want to bring your own AI key for cloud-powered titles too. No monthly bills, no surprise charges. You buy it, you own it.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>A real language model. On your device.</h3>
+      <p>TitleSmith bundles a small but capable local LLM (SmolLM2-360M) that generates contextually relevant, grammatically coherent titles for any keyword — even ones the template engine has never seen. No API key required for the offline engine.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔑</div>
+      <h3>Bring your own AI. Or don't.</h3>
+      <p>Want even better titles? Plug in your own OpenAI, DeepSeek, Claude, or Gemini API key. TitleSmith never sees your key — it stays on your device, encrypted.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Full dashboard. Zero cloud.</h3>
+      <p>Every title you generate is saved locally. Search your history, star favorites, organize projects, and export to CSV — all from a fast, single-window desktop app.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <h3>16 categories. 9 styles. One tool.</h3>
+      <p>Books, articles, YouTube videos, songs, podcasts, product names, character names — whatever you're naming, TitleSmith has you covered across every content format.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section section-dark" id="pricing">
+  <h2 class="section-heading-inverse">Simple, one-time pricing</h2>
+  <p class="section-sub-inverse">No subscriptions. No recurring charges. Buy once, own forever.</p>
+  <div class="pricing-cards">
+    <div class="pricing-card">
+      <h3>Basic</h3>
+      <p class="price">$29<span class="price-period">/one-time</span></p>
+      <ul class="feature-list">
+        <li>Full offline title generator</li>
+        <li>All 16 categories</li>
+        <li>9 communication styles</li>
+        <li>Local LLM engine</li>
+        <li>Up to 25 titles per generation</li>
+        <li>Full dashboard with export</li>
+        <li>Lifetime updates</li>
+        <li>Windows, Mac, Linux</li>
+      </ul>
+      <a href="#waitlist" class="btn btn-outline btn-full">Join Waitlist →</a>
+    </div>
+    <div class="pricing-card pricing-card-featured">
+      <div class="featured-badge">Best Value</div>
+      <h3>Pro</h3>
+      <p class="price">$49<span class="price-period">/one-time</span></p>
+      <ul class="feature-list">
+        <li>Everything in Basic</li>
+        <li>Up to 100 titles per generation</li>
+        <li>Bring your own AI key</li>
+        <li>Cross-medium adaptation</li>
+        <li>Subtitles & translation</li>
+        <li>Priority updates</li>
+        <li>Lifetime updates</li>
+        <li>Windows, Mac, Linux</li>
+      </ul>
+      <a href="#waitlist" class="btn btn-primary btn-full">Join Waitlist →</a>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="section" id="waitlist">
+  <h2 class="section-heading">Get early access and launch pricing</h2>
+  <p class="section-sub">Be the first to know when TitleSmith launches. Waitlist members get exclusive launch pricing.</p>
+  <form class="waitlist-form" id="waitlistForm" netlify>
+    <input type="email" name="email" placeholder="your@email.com" required class="waitlist-input" />
+    <button type="submit" class="btn btn-primary btn-large">Join the Waitlist →</button>
+  </form>
+  <p class="waitlist-note">No spam. One email when we launch, that's it.</p>
+</section>
+
+<!-- FAQ -->
+<section class="section section-faq" id="faq">
+  <h2 class="section-heading">Questions</h2>
+  <div class="faq-item">
+    <h4>When does TitleSmith launch?</h4>
+    <p>We're in active development. Join the waitlist above — we'll send one email when the beta is ready to download.</p>
+  </div>
+  <div class="faq-item">
+    <h4>What's the difference between Basic and Pro?</h4>
+    <p>Basic has the full offline engine, all 16 categories, and up to 25 titles per generation. Pro adds up to 100 titles per generation and the ability to bring your own AI key (OpenAI, DeepSeek, Claude, Gemini) for cloud-powered titles when you want them.</p>
+  </div>
+  <div class="faq-item">
+    <h4>Do I need an internet connection to use TitleSmith?</h4>
+    <p>No. The core engine — title generation, dashboard, history, projects — works completely offline. You only need internet if you choose to use the optional AI key feature in the Pro version.</p>
+  </div>
+  <div class="faq-item">
+    <h4>Which platforms does it run on?</h4>
+    <p>Windows, macOS, and Linux. One purchase works on all three.</p>
+  </div>
+  <div class="faq-item">
+    <h4>Is this a subscription?</h4>
+    <p>No. You pay once — $29 or $49 — and you own TitleSmith forever. Free updates for the lifetime of the product.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="logo.svg" alt="TitleSmith" class="footer-logo" />
+      <span>TitleSmith</span>
+    </div>
+    <p>Forge better titles. Offline. Forever.</p>
+    <p class="footer-sub">© 2026 TitleSmith. Built for creators who publish.</p>
+  </div>
+</footer>
+
+</body>
+</html>

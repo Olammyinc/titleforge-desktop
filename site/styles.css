@@ -1,0 +1,127 @@
+/* ============================================
+   TitleSmith — Marketing Site Stylesheet
+   Editorial Industrial brand: warm/dark, typography-first
+   ============================================ */
+
+:root {
+  --ink:          #0B0A0A;
+  --ink-card:     #1A1817;
+  --ink-border:   #2D2A28;
+  --paper:        #F9F7F2;
+  --paper-card:   #FFFFFF;
+  --paper-border: #E8E3D9;
+  --text-primary: #1A1817;
+  --text-secondary:#4A4540;
+  --text-inverse: #F0EDE8;
+  --forge:        #E8782B;
+  --forge-glow:   #FF9147;
+  --forge-cool:   #5B7B8A;
+  --success:      #5C8A67;
+  --font-display: 'Clash Display', Georgia, 'Times New Roman', serif;
+  --font-body:    'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --radius:       14px;
+  --radius-lg:    20px;
+  --shadow:       0 4px 20px rgba(11,10,10,0.06);
+  --shadow-dark:  0 4px 24px rgba(0,0,0,0.20);
+  --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--paper);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+}
+
+/* Nav */
+.nav { position: sticky; top: 0; z-index: 100; background: rgba(11,10,10,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--ink-border); }
+.nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; }
+.nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--text-inverse); letter-spacing: -0.3px; }
+.nav-logo-icon { width: 28px; height: 28px; }
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links a { font-family: var(--font-body); font-size: 14px; font-weight: 500; color: rgba(240,237,232,0.65); text-decoration: none; transition: color 0.15s; }
+.nav-links a:hover { color: var(--text-inverse); }
+
+/* Buttons */
+.btn { display: inline-block; font-family: var(--font-body); font-weight: 600; cursor: pointer; border: none; border-radius: 10px; transition: all 0.2s var(--ease-out); text-decoration: none; }
+.btn-primary { background: var(--forge); color: #fff; }
+.btn-primary:hover { background: var(--forge-glow); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,120,43,0.25); }
+.btn-outline { background: transparent; color: var(--forge); border: 1.5px solid var(--forge); }
+.btn-outline:hover { background: var(--forge); color: #fff; }
+.btn-large { padding: 14px 32px; font-size: 16px; border-radius: 12px; }
+.btn-small { padding: 8px 18px; font-size: 13px; }
+.btn-full { width: 100%; text-align: center; }
+
+/* Hero */
+.hero { padding: 100px 24px 80px; text-align: center; background: linear-gradient(180deg, var(--ink) 0%, var(--ink-card) 100%); color: var(--text-inverse); }
+.hero-inner { max-width: 720px; margin: 0 auto; }
+.hero-title { font-family: var(--font-display); font-weight: 600; font-size: 48px; line-height: 1.15; letter-spacing: -1px; margin-bottom: 20px; }
+.hero-sub { font-size: 18px; color: rgba(240,237,232,0.65); line-height: 1.7; margin-bottom: 32px; }
+.hero-cta-row { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 32px; flex-wrap: wrap; }
+.hero-note { font-size: 14px; color: rgba(240,237,232,0.35); }
+.hero-badge-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.hero-badge-row span { font-family: var(--font-body); font-size: 13px; color: rgba(240,237,232,0.4); background: rgba(255,255,255,0.05); padding: 6px 14px; border-radius: 20px; }
+
+/* Sections */
+.section { padding: 100px 24px; }
+.section-dark { background: var(--ink); color: var(--text-inverse); }
+.section-faq { padding-top: 60px; }
+.section-heading { font-family: var(--font-display); font-weight: 600; font-size: 36px; text-align: center; letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-heading-inverse { font-family: var(--font-display); font-weight: 600; font-size: 36px; text-align: center; letter-spacing: -0.5px; margin-bottom: 12px; color: var(--text-inverse); }
+.section-sub { font-size: 16px; color: var(--text-secondary); text-align: center; margin-bottom: 48px; max-width: 560px; margin-left: auto; margin-right: auto; }
+.section-sub-inverse { font-size: 16px; color: rgba(240,237,232,0.5); text-align: center; margin-bottom: 48px; max-width: 560px; margin-left: auto; margin-right: auto; }
+
+/* Features */
+.features-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.feature-card { background: var(--paper-card); border: 1px solid var(--paper-border); border-radius: var(--radius); padding: 32px 24px; box-shadow: var(--shadow); transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out); }
+.feature-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(11,10,10,0.10); }
+.feature-icon { font-size: 28px; margin-bottom: 12px; }
+.feature-card h3 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin-bottom: 8px; color: var(--ink); }
+.feature-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+/* Pricing */
+.pricing-cards { max-width: 700px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.pricing-card { background: var(--paper-card); border: 1px solid var(--paper-border); border-radius: var(--radius); padding: 36px 28px; text-align: center; box-shadow: var(--shadow); }
+.pricing-card-featured { border-color: var(--forge); position: relative; }
+.featured-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--forge); color: #fff; font-family: var(--font-body); font-weight: 700; font-size: 11px; padding: 4px 16px; border-radius: 12px; letter-spacing: 0.3px; }
+.pricing-card h3 { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin-bottom: 8px; }
+.price { font-family: var(--font-display); font-weight: 700; font-size: 40px; color: var(--forge); margin-bottom: 4px; }
+.price-period { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--text-secondary); }
+.feature-list { list-style: none; text-align: left; margin: 20px 0; }
+.feature-list li { padding: 6px 0; font-size: 14px; color: var(--text-secondary); border-bottom: 1px solid var(--paper-border); }
+.feature-list li:last-child { border-bottom: none; }
+
+/* Waitlist form */
+.waitlist-form { max-width: 440px; margin: 0 auto; display: flex; gap: 12px; }
+.waitlist-input { flex: 1; height: 52px; padding: 0 16px; border: 1.5px solid var(--paper-border); border-radius: 10px; font-family: var(--font-body); font-size: 15px; outline: none; }
+.waitlist-input:focus { border-color: var(--forge); }
+.waitlist-note { text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 12px; }
+
+/* FAQ */
+.faq-item { max-width: 640px; margin: 0 auto 20px; }
+.faq-item h4 { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin-bottom: 6px; color: var(--ink); }
+.faq-item p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+/* Footer */
+.footer { background: var(--ink); color: rgba(240,237,232,0.5); padding: 48px 24px; text-align: center; }
+.footer-inner { max-width: 600px; margin: 0 auto; }
+.footer-brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+.footer-logo { width: 24px; height: 24px; }
+.footer-brand span { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--text-inverse); }
+.footer p { font-size: 14px; margin-bottom: 4px; }
+.footer-sub { font-size: 12px; color: rgba(240,237,232,0.25); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-title { font-size: 32px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .pricing-cards { grid-template-columns: 1fr; }
+  .hero-badge-row { gap: 8px; }
+  .waitlist-form { flex-direction: column; }
+  .nav-links { gap: 12px; }
+  .nav-links a { font-size: 12px; }
+}
