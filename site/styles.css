@@ -484,3 +484,50 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
   .nav-links a { font-size: 10px; }
   .nav-logo { font-size: 16px; }
 }
+
+/* App Mockups */
+.demo-section { background: var(--cream); padding: 100px 24px; }
+.mockup-card { max-width: 800px; margin: 0 auto 40px; }
+.mockup-label { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--copper); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.mockup { border-radius: 12px; overflow: hidden; border: 1px solid var(--cast-iron); box-shadow: 0 8px 40px rgba(0,0,0,0.15); background: var(--charcoal); }
+.activation-mockup { display: flex; height: 280px; }
+.mock-activation-left { flex: 0 0 38%; background: var(--charcoal); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 32px; }
+.mock-logo-big { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--copper), var(--ember)); }
+.mock-brand { font-family: var(--font-display); font-weight: 600; font-size: 22px; color: var(--cream); letter-spacing: -0.3px; }
+.mock-tagline { font-family: var(--font-display); font-size: 14px; color: rgba(250,248,245,0.45); }
+.mock-activation-right { flex: 0 0 62%; background: var(--cream); display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 48px; }
+.mock-heading { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--charcoal); letter-spacing: 1px; }
+.mock-input { height: 38px; border-radius: 8px; background: var(--charcoal); opacity: 0.06; }
+.mock-btn { height: 42px; border-radius: 10px; background: linear-gradient(135deg, var(--ember), var(--copper)); width: 60%; }
+.generator-mockup { display: flex; height: 400px; }
+.mock-sidebar { flex: 0 0 140px; background: var(--charcoal); display: flex; flex-direction: column; gap: 14px; padding: 20px 14px; }
+.mock-logo-small { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--copper), var(--ember)); align-self: center; margin-bottom: 8px; }
+.mock-nav-item { height: 8px; border-radius: 4px; background: rgba(250,248,245,0.15); }
+.mock-nav-item.active { background: var(--ember); width: 80%; }
+.mock-content { flex: 1; background: var(--cream); display: flex; flex-direction: column; padding: 20px; }
+.mock-header { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--charcoal); margin-bottom: 14px; }
+.mock-gen-grid { display: flex; gap: 16px; margin-bottom: 14px; }
+.mock-col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.mock-field { height: 32px; border-radius: 6px; background: var(--charcoal); opacity: 0.05; }
+.mock-field.small { height: 24px; width: 60%; }
+.mock-gen-btn { height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--ember), var(--copper)); margin-top: 4px; }
+.mock-chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.mock-chip { height: 22px; width: 55px; border-radius: 11px; background: rgba(28,28,28,0.06); }
+.mock-chip.active { background: rgba(255,107,53,0.12); border: 1px solid rgba(255,107,53,0.3); }
+.mock-toggle-row { display: flex; gap: 8px; margin-top: 8px; }
+.mock-toggle { height: 28px; flex: 1; border-radius: 6px; background: rgba(28,28,28,0.06); }
+.mock-toggle.active { background: rgba(255,107,53,0.15); }
+.mock-results { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow: hidden; margin-top: 10px; }
+.mock-result { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(28,28,28,0.06); }
+.mock-score { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--success); min-width: 28px; text-align: center; }
+.mock-title-text { font-size: 11px; color: var(--charcoal); opacity: 0.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 768px) {
+  .activation-mockup { flex-direction: column; height: auto; }
+  .mock-activation-left { flex: 0 0 auto; padding: 24px; }
+  .mock-activation-right { padding: 24px; }
+  .generator-mockup { flex-direction: column; height: auto; }
+  .mock-sidebar { flex-direction: row; flex: 0 0 auto; gap: 10px; padding: 12px; align-items: center; }
+  .mock-logo-small { margin-bottom: 0; }
+  .mock-nav-item { flex: 1; height: 6px; }
+}
