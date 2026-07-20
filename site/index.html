@@ -143,66 +143,211 @@
   </div>
 </section>
 
-<!-- DEMO MOCKUP -->
+<!-- PRODUCT WALKTHROUGH -->
 <section class="section demo-section">
   <div class="section-inner">
-    <span class="section-label">Preview</span>
-    <h2 class="display-lg" style="margin-bottom:16px;">How it looks</h2>
-    <p class="pricing-sub" style="margin-bottom:48px;">A clean, distraction-free desktop app that works offline.</p>
-    
-    <!-- Mockup 1: Activation Screen -->
-    <div class="mockup-card">
-      <div class="mockup-label">Activation Screen</div>
-      <div class="mockup activation-mockup">
-        <div class="mock-activation-left">
-          <div class="mock-logo-big"></div>
-          <div class="mock-brand">TitleSmith</div>
-          <div class="mock-tagline">Your titles, forged offline.</div>
+    <span class="section-label">How it works</span>
+    <h2 class="display-lg" style="margin-bottom:16px;">One tool. Every feature you need.</h2>
+    <p class="pricing-sub" style="margin-bottom:56px;">A single-window desktop app that handles everything — from generating titles with appeal scores to organizing them into projects with notes and exporting to CSV.</p>
+
+    <!-- Walkthrough Step 1: Keyword + Categories + Styles -->
+    <div class="walk-card">
+      <div class="walk-label">Step 1 &mdash; Choose your keyword, category &amp; style</div>
+      <div class="walk-mockup walk-step1">
+        <div class="walk-sidebar">
+          <div class="walk-logo-sm"></div>
+          <div class="walk-nav active"></div>
+          <div class="walk-nav"></div>
+          <div class="walk-nav"></div>
         </div>
-        <div class="mock-activation-right">
-          <div class="mock-heading">ACTIVATE TITLESMITH</div>
-          <div class="mock-input"></div>
-          <div class="mock-input"></div>
-          <div class="mock-btn"></div>
+        <div class="walk-body">
+          <div class="walk-header">Generator</div>
+          <div class="walk-row">
+            <div class="walk-col">
+              <div class="walk-field-label">Keyword</div>
+              <div class="walk-field filled"><span style="font-size:12px;color:var(--text-primary);opacity:0.7;">How to build a second brain</span></div>
+              <div class="walk-field-label" style="margin-top:16px;">Fine-tune (optional)</div>
+              <div class="walk-field small"></div>
+              <div class="walk-slider">
+                <div class="walk-slider-bar"><div class="walk-slider-fill"></div></div>
+                <span class="walk-slider-label">10 titles</span>
+              </div>
+            </div>
+            <div class="walk-col">
+              <div class="walk-field-label">Categories</div>
+              <div class="walk-cats">
+                <span class="walk-cat active">Book</span>
+                <span class="walk-cat active">Article</span>
+                <span class="walk-cat">Blog</span>
+                <span class="walk-cat">YouTube</span>
+                <span class="walk-cat">Podcast</span>
+                <span class="walk-cat">Song</span>
+                <span class="walk-cat">Movie</span>
+                <span class="walk-cat">Product</span>
+              </div>
+              <div class="walk-field-label" style="margin-top:16px;">Communication style</div>
+              <div class="walk-styles">
+                <span class="walk-style active">Normal</span>
+                <span class="walk-style">Provocative</span>
+                <span class="walk-style">Minimalist</span>
+                <span class="walk-style">Storytelling</span>
+                <span class="walk-style">Question</span>
+                <span class="walk-style">Playful</span>
+              </div>
+            </div>
+          </div>
+          <div class="walk-gen-btn">Generate Titles</div>
         </div>
       </div>
     </div>
 
-    <!-- Mockup 2: Generator -->
-    <div class="mockup-card">
-      <div class="mockup-label">Generator — Real Results</div>
-      <div class="mockup generator-mockup">
-        <div class="mock-sidebar">
-          <div class="mock-logo-small"></div>
-          <div class="mock-nav-item active"></div>
-          <div class="mock-nav-item"></div>
-          <div class="mock-nav-item"></div>
+    <!-- Walkthrough Step 2: Results with Scores + Favorites + Folders -->
+    <div class="walk-card">
+      <div class="walk-label">Step 2 &mdash; Review titles with scores, save favorites, add to projects</div>
+      <div class="walk-mockup walk-step2">
+        <div class="walk-sidebar">
+          <div class="walk-logo-sm"></div>
+          <div class="walk-nav active"></div>
+          <div class="walk-nav"></div>
+          <div class="walk-nav"></div>
         </div>
-        <div class="mock-content">
-          <div class="mock-header">Generator</div>
-          <div class="mock-gen-grid">
-            <div class="mock-col">
-              <div class="mock-field"></div>
-              <div class="mock-field small"></div>
-              <div class="mock-gen-btn"></div>
-            </div>
-            <div class="mock-col">
-              <div class="mock-chip-row">
-                <div class="mock-chip active"></div><div class="mock-chip"></div><div class="mock-chip"></div><div class="mock-chip"></div>
+        <div class="walk-body">
+          <div class="walk-header">Generator</div>
+          <div class="walk-keyword-badge">Results for "<strong>second brain</strong>"</div>
+          <div class="walk-results">
+            <div class="walk-result">
+              <div class="walk-score"><span class="walk-score-num">89</span><div class="walk-score-bar"><div class="walk-score-fill g"></div></div><span class="walk-score-label">appeal</span></div>
+              <div class="walk-result-body">
+                <div class="walk-result-title">The Surprising Science of Building a Second Brain That Will Actually Change Your Morning</div>
+                <div class="walk-result-meta">Best for: <span class="walk-tag">Books</span> <span class="walk-tag">Articles</span></div>
+                <div class="walk-result-actions">
+                  <button class="walk-btn-icon star active">★</button>
+                  <button class="walk-btn-icon folder">📁</button>
+                  <button class="walk-btn-why">Why this works</button>
+                </div>
               </div>
-              <div class="mock-toggle-row">
-                <div class="mock-toggle active"></div><div class="mock-toggle"></div><div class="mock-toggle"></div>
+            </div>
+            <div class="walk-result">
+              <div class="walk-score"><span class="walk-score-num">82</span><div class="walk-score-bar"><div class="walk-score-fill g"></div></div><span class="walk-score-label">appeal</span></div>
+              <div class="walk-result-body">
+                <div class="walk-result-title">How to Master Your Second Brain Without Burning Out: A Silent Guide for Deep Thinkers</div>
+                <div class="walk-result-meta">Best for: <span class="walk-tag">Books</span> <span class="walk-tag">Podcasts</span></div>
+                <div class="walk-result-actions">
+                  <button class="walk-btn-icon star">☆</button>
+                  <button class="walk-btn-icon folder">📁</button>
+                  <button class="walk-btn-why">Why this works</button>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="mock-results">
-            <div class="mock-result"><span class="mock-score">84</span><span class="mock-title-text">The Surprising Science of Productivity That Will Actually Change Your Morning</span></div>
-            <div class="mock-result"><span class="mock-score">79</span><span class="mock-title-text">How to Master Your Craft Without Burning Out: A Guide for Creators</span></div>
-            <div class="mock-result"><span class="mock-score">72</span><span class="mock-title-text">7 Productivity Habits That Work Better Than Any To-Do List</span></div>
+            <div class="walk-result">
+              <div class="walk-score"><span class="walk-score-num">76</span><div class="walk-score-bar"><div class="walk-score-fill a"></div></div><span class="walk-score-label">appeal</span></div>
+              <div class="walk-result-body">
+                <div class="walk-result-title">7 Second Brain Habits That Actually Scale Across Years of Creative Work</div>
+                <div class="walk-result-meta">Best for: <span class="walk-tag">Articles</span> <span class="walk-tag">Blogs</span></div>
+                <div class="walk-result-actions">
+                  <button class="walk-btn-icon star">☆</button>
+                  <button class="walk-btn-icon folder">📁</button>
+                  <button class="walk-btn-why">Why this works</button>
+                </div>
+              </div>
+            </div>
+            <div class="walk-result">
+              <div class="walk-score"><span class="walk-score-num">71</span><div class="walk-score-bar"><div class="walk-score-fill a"></div></div><span class="walk-score-label">appeal</span></div>
+              <div class="walk-result-body">
+                <div class="walk-result-title">The Counterintuitive Guide to Building a Second Brain on a Single Weekend</div>
+                <div class="walk-result-meta">Best for: <span class="walk-tag">Blogs</span> <span class="walk-tag">YouTube</span></div>
+                <div class="walk-result-actions">
+                  <button class="walk-btn-icon star">☆</button>
+                  <button class="walk-btn-icon folder">📁</button>
+                  <button class="walk-btn-why">Why this works</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Walkthrough Step 3: Subtitles & Translation -->
+    <div class="walk-card">
+      <div class="walk-label">Step 3 &mdash; Subtitles and translation</div>
+      <div class="walk-mockup walk-step3">
+        <div class="walk-sidebar">
+          <div class="walk-logo-sm"></div>
+          <div class="walk-nav active"></div>
+          <div class="walk-nav"></div>
+          <div class="walk-nav"></div>
+        </div>
+        <div class="walk-body">
+          <div class="walk-header">Generator</div>
+          <div class="walk-toggles">
+            <label class="walk-toggle-row"><span class="walk-toggle-check on"></span><span class="walk-toggle-label">Subtitles</span></label>
+            <label class="walk-toggle-row"><span class="walk-toggle-check on"></span><span class="walk-toggle-label">Translate <span class="walk-toggle-hint">(Spanish)</span></span></label>
+          </div>
+          <div class="walk-subtitle-demo">
+            <div class="walk-subtitle-item">
+              <div class="walk-subtitle-title">The Surprising Science of Building a Second Brain That Will Actually Change Your Morning</div>
+              <div class="walk-subtitle-sub">A proven framework for organized thinking</div>
+              <div class="walk-subtitle-trans">La sorprendente ciencia de construir un segundo cerebro que realmente cambiará tu mañana</div>
+            </div>
+            <div class="walk-subtitle-item">
+              <div class="walk-subtitle-title">How to Master Your Second Brain Without Burning Out</div>
+              <div class="walk-subtitle-sub">A silent guide for deep thinkers</div>
+              <div class="walk-subtitle-trans">Cómo dominar tu segundo cerebro sin agotarte</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Walkthrough Step 4: Dashboard -->
+    <div class="walk-card">
+      <div class="walk-label">Step 4 &mdash; Dashboard, favorites &amp; projects</div>
+      <div class="walk-mockup walk-step4">
+        <div class="walk-sidebar">
+          <div class="walk-logo-sm"></div>
+          <div class="walk-nav active"></div>
+          <div class="walk-nav"></div>
+          <div class="walk-nav"></div>
+        </div>
+        <div class="walk-body">
+          <div class="walk-header">Dashboard</div>
+          <div class="walk-dash-stats">
+            <div class="walk-stat"><span class="walk-stat-num">1,247</span><span>Titles generated</span></div>
+            <div class="walk-stat"><span class="walk-stat-num">42</span><span>Favorites</span></div>
+            <div class="walk-stat"><span class="walk-stat-num">8</span><span>Projects</span></div>
+          </div>
+          <div class="walk-dash-tabs">
+            <span class="walk-dash-tab active">Overview</span>
+            <span class="walk-dash-tab">History</span>
+            <span class="walk-dash-tab">Favorites</span>
+            <span class="walk-dash-tab">Projects</span>
+            <span class="walk-dash-tab">Export</span>
+          </div>
+          <div class="walk-dash-project-list">
+            <div class="walk-project-card">
+              <div class="walk-project-name">📁 Book Launch Campaign <span class="walk-project-count">12 titles</span></div>
+              <div class="walk-project-titles">
+                <div class="walk-project-title">The Art of Deep Work <span class="walk-project-note-toggle">💬</span></div>
+                <div class="walk-project-title">How to Build Atomic Habits <span class="walk-project-note-toggle">✏️</span></div>
+                <div class="walk-project-title">Why Great Ideas Come From Solitude</div>
+              </div>
+            </div>
+            <div class="walk-project-card">
+              <div class="walk-project-name">📁 YouTube Channel <span class="walk-project-count">8 titles</span></div>
+              <div class="walk-project-titles">
+                <div class="walk-project-title">I Tried Building a Second Brain for 30 Days</div>
+                <div class="walk-project-title">Why Your Note-Taking System Is Broken</div>
+              </div>
+            </div>
+            <div class="walk-projects-export">
+              <div class="walk-export-csv">Export All Titles (CSV) ↓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
