@@ -54,7 +54,7 @@ impl LocalLlm {
     pub fn generate_one(&mut self, prompt: &str) -> Option<String> {
         // Build chat-formatted prompt matching SmolLM2-Instruct template
         let full_prompt = format!(
-            "<|im_start|>system\nYou are TitleForge, an elite title generator. Generate exactly one title — no explanation, no preamble.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
+            "<|im_start|>system\nYou are TitleSmith, an elite title generator. Generate exactly one title — no explanation, no preamble.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
             prompt
         );
 
@@ -68,15 +68,20 @@ impl LocalLlm {
         // Prefill: feed the full prompt at position 0
         let input = Tensor::from_vec(prompt_ids, (1, prompt_len), &self.device).ok()?;
         let logits = self.model.forward(&input, 0).ok()?;
-        let next = sample_token(&logits).ok()?;
+        let mut next = sample_token(&logits).ok()?;
         if next == eos || next == eos2 { return None; }
         all_tokens.push(next);
 
-        // Decode: feed one token at a time
+        // Decode: feed one token at a time. `next` must be reassigned (not
+        // shadowed with `let`) each iteration — a `let next = ...` here would
+        // only live for that single loop iteration, silently leaving every
+        // decode step after the first feeding the same first-generated token
+        // back into the model instead of the token it just produced, which
+        // breaks autoregressive generation entirely.
         for _step in 0..49usize {
             let input = Tensor::from_vec(vec![next], (1, 1), &self.device).ok()?;
             let logits = self.model.forward(&input, all_tokens.len() as usize - 1).ok()?;
-            let next = sample_token(&logits).ok()?;
+            next = sample_token(&logits).ok()?;
             if next == eos || next == eos2 { break; }
             all_tokens.push(next);
         }

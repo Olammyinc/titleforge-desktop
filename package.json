@@ -1,7 +1,7 @@
 {
-  "name": "titleforge-desktop",
-  "version": "0.8.0",
-  "description": "TitleForge Desktop — Offline title generator for Windows, Mac, and Linux",
+  "name": "titlesmith-desktop",
+  "version": "1.0.0-beta.1",
+  "description": "TitleSmith — Offline title generator for Windows, Mac, and Linux",
   "private": true,
   "scripts": {
     "dev": "tauri dev",

@@ -1,5 +1,5 @@
 /* ============================================
-   TitleForge Desktop — Application Logic
+   TitleSmith — Application Logic
    Uses Tauri invoke() for all data operations.
    Local SQLite — no Supabase, no Netlify, no auth.
    ============================================ */
@@ -37,7 +37,7 @@ function invoke(cmd, args) {
 
     // Dev mode fallback
     if (!_invoke) {
-      console.warn('[TitleForge] No Tauri IPC bridge found — using dev mode mock.');
+      console.warn('[TitleSmith] No Tauri IPC bridge found — using dev mode mock.');
       dumpDebug('invoke setup: NO Tauri IPC found — falling back to DEV MODE MOCK');
       window.__TF_DEV_MODE = true;
       // Show a visible indicator in the app
@@ -53,7 +53,8 @@ function invoke(cmd, args) {
         if (cmd === 'get_history' || cmd === 'get_favorites' || cmd === 'get_projects') return Promise.resolve([]);
         if (cmd === 'get_usage_stats') return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0 });
         if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') return Promise.resolve();
-        if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null }]);
+        if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null, source: 'template' }]);
+        if (cmd === 'get_app_info') return Promise.resolve({ version: '0.0.0-devmock', seeded: false, templateCount: 0, localLlmLoaded: false });
         return Promise.reject(new Error('Tauri API not available in dev mode for: ' + cmd));
       };
     }
@@ -134,6 +135,19 @@ function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// Maps the backend's TitleResult.source value to a short, user-facing label.
+// Lets people (and us, when debugging) tell which generator actually
+// produced a given result instead of guessing from its shape.
+function engineSourceLabel(source) {
+  switch (source) {
+    case 'local-llm': return 'AI · offline';
+    case 'ai': return 'AI · cloud';
+    case 'egcg-a': case 'egcg-b': case 'egcg-c': return 'Database';
+    case 'template': return 'Database (basic)';
+    default: return source;
+  }
 }
 
 function createTipBtn(tipText) {
@@ -279,7 +293,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function openBuyLink() {
-  var url = 'https://titleforge-tool.netlify.app/dashboard';
+  var url = 'https://titlesmith.io/pricing';
+  // Fallback until domain is live: use GitHub releases page
   // Try Tauri shell open — check __TAURI_INTERNALS__ first (earliest available), then __TAURI__
   var ipc = (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
     || (window.__TAURI__ && window.__TAURI__.invoke);
@@ -776,6 +791,13 @@ function displayResults(titles, currentKeyword) {
         tag.textContent = cat;
         tagsDiv.appendChild(tag);
       });
+      if (item.source) {
+        var engineTag = document.createElement('span');
+        engineTag.className = 'result-engine-badge';
+        engineTag.textContent = engineSourceLabel(item.source);
+        engineTag.title = 'Which generator produced this title (source: "' + item.source + '")';
+        tagsDiv.appendChild(engineTag);
+      }
       body.appendChild(tagsDiv);
     }
 
@@ -1455,6 +1477,19 @@ function renderSettingsContent() {
     if (verEl && info.version) verEl.textContent = info.version;
     var updateVerEl = document.getElementById('settingsUpdateVersion');
     if (updateVerEl && info.version) updateVerEl.textContent = 'v' + info.version;
+
+    // The local LLM lazy-loads on the first title generation, not at app
+    // startup, so `localLlmLoaded` being false here can mean either "hasn't
+    // tried yet" or "tried and failed to find/load the model file." We can't
+    // fully disambiguate those from this flag alone, so word it accordingly
+    // rather than implying a hard failure before generation has even run.
+    var llmEl = document.getElementById('settingsLlmStatus');
+    if (llmEl) {
+      llmEl.textContent = info.localLlmLoaded
+        ? 'Active'
+        : 'Not loaded yet (generate a title to trigger load; check console for [local_llm] errors if it stays off)';
+      llmEl.style.color = info.localLlmLoaded ? '#16a34a' : '';
+    }
   }).catch(function (err) { console.error('get_app_info failed:', err); });
 
   invoke('get_settings').then(function (settings) {

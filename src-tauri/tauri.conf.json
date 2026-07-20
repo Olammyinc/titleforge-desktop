@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/nicegui/main/src-tauri/tauri.conf.json",
-  "productName": "TitleForge",
-  "version": "0.8.0",
-  "identifier": "com.titleforge.desktop",
+  "productName": "TitleSmith",
+  "version": "1.0.0-beta.1",
+  "identifier": "com.titlesmith.desktop",
   "build": {
     "frontendDist": "../src",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "TitleForge",
+        "title": "TitleSmith",
         "width": 1100,
         "height": 750,
         "resizable": true,
@@ -59,7 +59,7 @@
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ3MjZBMTBGN0M5NEQyOTYKUldTVzBwUjhENkVtMXdITSt3eGNrOGMybkZtOVFvZHlrcTF4bnVPZnhjNzVsY1hDbG1BWkgxbGcK",
       "endpoints": [
-        "https://titleforge-tool.netlify.app/updates.json"
+        "https://github.com/Olammyinc/titlesmith-desktop/releases/latest/download/updates.json"
       ]
     }
   }

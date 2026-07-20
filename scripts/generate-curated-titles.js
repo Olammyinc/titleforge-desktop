@@ -1,6 +1,19 @@
 #!/usr/bin/env node
 /**
  * generate-curated-titles.js
+ *
+ * DEPRECATED (2026-07-16): superseded by scripts/generate-curated-titles.py.
+ * This v1 script hardcodes `genre: 'any', tone: 'normal'` for every title it
+ * generates, which is exactly the "0% tone diversity" problem the July 2026
+ * curated-titles expansion (see CURATED_TITLES_EXPANSION_PLAN.md) fixed.
+ * Running this script would silently overwrite/dilute the tone-diverse
+ * corpus with flat "normal"-tone titles again.
+ *
+ * Use scripts/generate-curated-titles.py (or scripts/resume-curated-titles.py
+ * for topping up shortfalls) instead — both support the tone/genre-aware
+ * TONE_GUIDANCE prompting this project now relies on.
+ *
+ * This file is kept only for reference and is intentionally disabled below.
  * Regenerates ~800 curated titles across 16 categories via DeepSeek V4 Flash.
  * Outputs JSON that can be merged into seed-data.json.
  *
@@ -9,6 +22,15 @@
  *
  * Cost estimate: ~$0.50-$1.00 (50 titles x 16 categories = 800 titles)
  */
+
+console.error(
+  'ERROR: generate-curated-titles.js is deprecated and disabled.\n' +
+  'It only generates flat tone="normal" titles and will dilute the tone-diverse\n' +
+  'curated corpus. Use scripts/generate-curated-titles.py or\n' +
+  'scripts/resume-curated-titles.py instead. See the deprecation note at the\n' +
+  'top of this file for details.'
+);
+process.exit(1);
 
 const https = require('https');
 const fs = require('fs');

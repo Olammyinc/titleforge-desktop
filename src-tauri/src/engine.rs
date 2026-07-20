@@ -20,23 +20,56 @@ pub fn generate(
 ) -> Result<Vec<TitleResult>, String> {
     let mut results = Vec::new();
 
-    // Pass 1: Try local LLM (if loaded)
+    // Pass 1: Try local LLM (if loaded). Grounded with a handful of matching
+    // curated titles as few-shot examples (same relax-tone-then-genre
+    // fallback ladder EGCG's Mode C already uses) — the tone-tagged curated
+    // corpus is what teaches the model TitleSmith's actual voice per
+    // category/style rather than generating in a vacuum.
     if let Some(llm) = local_llm {
-        let prompt = format!(
-            "Write ONE {} title about \"{}\" in a {} tone. Reply with only the title, nothing else.",
-            categories.first().map(|s| s.as_str()).unwrap_or(""),
-            keyword,
-            style
-        );
-        for _ in 0..quantity {
-            if let Some(title) = llm.generate_one(&prompt) {
-                let score = crate::title_gen::calculate_heuristic_score(&title, keyword);
-                results.push(TitleResult {
-                    title,
-                    score,
-                    categories: categories.to_vec(),
-                    breakdown: None,
-                });
+        let target_per_cat = (quantity as usize / categories.len().max(1)).max(1);
+        for cat in categories {
+            let examples = fetch_curated_examples(conn, cat, genre, style, 4);
+            let mut attempts = 0usize;
+            let mut got = 0usize;
+            let max_attempts = target_per_cat * 3;
+            let kw_lower = keyword.to_lowercase();
+
+            while got < target_per_cat && attempts < max_attempts {
+                attempts += 1;
+                let prompt = build_llm_prompt(cat, keyword, style, &examples);
+                let title = match llm.generate_one(&prompt) {
+                    Some(t) => t,
+                    None => continue,
+                };
+
+                // Hard QC gate — reject rather than accept a bad result to
+                // hit the count. A title that doesn't relate to the keyword,
+                // or that's just the model echoing back one of its own
+                // few-shot examples verbatim, is worse than showing fewer
+                // titles than requested.
+                let lower = title.to_lowercase();
+                let has_keyword = lower.contains(&kw_lower)
+                    || kw_lower.split_whitespace().any(|w| lower.contains(w));
+                let is_echo = examples.iter().any(|e| e.eq_ignore_ascii_case(&title));
+                let long_enough = title.split_whitespace().count() >= 3;
+                let already_seen = results.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
+
+                if has_keyword && !is_echo && long_enough && !already_seen {
+                    // Use the same scorer that produces the breakdown so the
+                    // displayed score and its breakdown never disagree (using
+                    // calculate_heuristic_score for the number and leaving
+                    // breakdown: None here previously meant the LLM path was
+                    // the only one in the UI without a score explanation).
+                    let (score, breakdown) = calculate_score(&title, keyword, cat);
+                    results.push(TitleResult {
+                        title,
+                        score,
+                        categories: vec![cat.clone()],
+                        breakdown: Some(breakdown),
+                        source: Some("local-llm".to_string()),
+                    });
+                    got += 1;
+                }
             }
         }
     }
@@ -63,6 +96,56 @@ pub fn generate(
     results.truncate(quantity as usize);
 
     Ok(results)
+}
+
+/// Pull a handful of matching curated titles to ground the local LLM in
+/// TitleSmith's actual voice for this category/genre/style. Same relax
+/// ladder as EGCG's Mode C: exact genre+tone match first, then fall back to
+/// any curated title in the category so there are always some examples to
+/// work with even for sparsely-tagged combinations.
+fn fetch_curated_examples(conn: &Connection, category: &str, genre: &str, style: &str, limit: i64) -> Vec<String> {
+    let exact: Vec<String> = match conn.prepare(
+        "SELECT title FROM curated_titles WHERE category = ?1 AND (genre = ?2 OR genre = 'any') AND (tone = ?3 OR tone = 'normal') ORDER BY RANDOM() LIMIT ?4"
+    ) {
+        Ok(mut stmt) => stmt
+            .query_map(rusqlite::params![category, genre, style, limit], |row| row.get::<_, String>(0))
+            .ok()
+            .map(|rows| rows.filter_map(|r| r.ok()).collect())
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    if !exact.is_empty() {
+        return exact;
+    }
+
+    match conn.prepare("SELECT title FROM curated_titles WHERE category = ?1 ORDER BY RANDOM() LIMIT ?2") {
+        Ok(mut stmt) => stmt
+            .query_map(rusqlite::params![category, limit], |row| row.get::<_, String>(0))
+            .ok()
+            .map(|rows| rows.filter_map(|r| r.ok()).collect())
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// Build the few-shot prompt for one local-LLM generation call. Kept to
+/// plain text, one title per call — a 360M model won't reliably follow
+/// complex formatting instructions or batch requests.
+fn build_llm_prompt(category: &str, keyword: &str, style: &str, examples: &[String]) -> String {
+    let style_label = if style.is_empty() || style == "any" { "normal" } else { style };
+    let mut prompt = String::new();
+    if !examples.is_empty() {
+        prompt.push_str(&format!("Examples of {} {} titles:\n", style_label, category));
+        for ex in examples {
+            prompt.push_str(&format!("- \"{}\"\n", ex));
+        }
+        prompt.push('\n');
+    }
+    prompt.push_str(&format!(
+        "Write ONE new {} {} title about \"{}\". Reply with only the title, nothing else.",
+        style_label, category, keyword
+    ));
+    prompt
 }
 
 /// Map 80+ specialized pool names to the 8 available SQLite word pools.
@@ -192,6 +275,7 @@ fn generate_from_templates(
                         score,
                         categories: vec![cat.clone()],
                         breakdown: Some(breakdown),
+                        source: Some("template".to_string()),
                     });
                 }
             }
@@ -232,7 +316,7 @@ fn generate_from_templates(
                 let has_keyword = gen_lower.contains(&kw_lower) || kw_lower.split_whitespace().any(|w| gen_lower.contains(w));
                 if has_keyword && generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
-                    results.push(TitleResult { title: generated, score, categories: vec![cat.to_string()], breakdown: Some(breakdown) });
+                    results.push(TitleResult { title: generated, score, categories: vec![cat.to_string()], breakdown: Some(breakdown), source: Some("template".to_string()) });
                 }
             }
         }
@@ -264,7 +348,7 @@ fn generate_from_templates(
                 let has_keyword = gen_lower.contains(&kw_lower) || kw_lower.split_whitespace().any(|w| gen_lower.contains(w));
                 if has_keyword && generated.len() > 5 && !results.iter().any(|r: &TitleResult| r.title == generated) {
                     let (score, breakdown) = calculate_score(&generated, keyword, cat);
-                    results.push(TitleResult { title: generated, score, categories: vec![cat.to_string()], breakdown: Some(breakdown) });
+                    results.push(TitleResult { title: generated, score, categories: vec![cat.to_string()], breakdown: Some(breakdown), source: Some("template".to_string()) });
                 }
             }
         }
@@ -383,7 +467,14 @@ fn fill_template(
         filled_words.push(raw.clone());
         let is_first_word = result.starts_with(&placeholder);
         let replacement = title_case_word(&raw, is_first_word);
-        result = result.replace(&placeholder, &replacement);
+        // Same reasoning as title_gen.rs::assemble_title: templates can
+        // reuse one slot name for two distinct placeholders (e.g.
+        // "{adjective} vs {adjective}"), and a plain `.replace()` here would
+        // overwrite every occurrence with this single fill, silently
+        // discarding whatever the next slot fills in with. `replacen(.., 1)`
+        // only consumes the next remaining occurrence, keeping each slot's
+        // fill in its own placeholder regardless of duplicate names.
+        result = result.replacen(&placeholder, &replacement, 1);
     }
 
     result

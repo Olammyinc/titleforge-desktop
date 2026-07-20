@@ -175,3 +175,54 @@ Use the same reproducible test that surfaced the original problem — don't cons
 - Whether Gemma 3 270M ends up preferred over SmolLM2-360M after quality testing — don't assume the primary pick sticks, that's exactly why Phase 2 exists before integration work.
 - Whether the engine-toggle UI copy should change (§7) — flag for a decision, don't just rename things.
 - Whether CI needs a pinned download URL + checksum for the model file, and where that URL should live (a repo secret isn't needed since the model is public, but a version-pinned URL avoids silent drift if the upstream HF repo changes).
+
+---
+
+## 11. Review findings (2026-07-16, independently verified)
+
+No completion report was written for this pass, so this review worked entirely from reading the code. Overall: the structural work is genuinely solid — model choice, candle integration, bundling, CI, fallback ordering, and `AppState`/`get_app_info` wiring all match the plan closely, in some places exceeding it (the model-path resolution in `lazy_load_llm()` checks more candidate locations than this plan specified, and lazy-loading on first generation rather than at startup is a reasonable, unflagged improvement on the plan's suggestion). But there was one critical bug and two meaningful gaps versus what this plan asked for, all now fixed.
+
+### Critical bug (fixed)
+**The decode loop in `local_llm.rs::generate_one()` never actually used its own generated tokens.** The token sampled after prefill was bound with plain `let next = ...` (immutable, outer scope). Inside the decode `for` loop, `let next = sample_token(&logits).ok()?;` *shadowed* that variable — but a `let` inside a loop body only lives for that one iteration. Every iteration after the first fed the model the exact same first-generated token as input again, while the position index kept advancing. This breaks autoregressive generation outright — the model would never actually be conditioned on what it had just written. Given this is the single most load-bearing piece of code in the whole feature (nothing works if decoding is broken), this had to be fixed before anything else mattered. Fix: made the outer binding `mut` and reassigned in place (`next = sample_token(...)`, no `let`) instead of shadowing.
+
+### Real gaps versus the plan (fixed)
+- **§4.1 (few-shot grounding from the curated corpus) was skipped entirely.** The LLM prompt in `engine.rs` was a bare instruction with no examples, and the database connection wasn't even used in that code path. This was the specific, named reason for reusing the 2,623-title tone-tagged corpus rather than treating the LLM as a blank slate — without it, the model has no grounding in TitleForge's actual per-category/tone voice. Fixed: added `fetch_curated_examples()` (same relax-tone-then-genre fallback ladder as EGCG's Mode C) and wired 3-4 matching curated titles into every prompt.
+- **§4.3 (hard QC gate) wasn't implemented as a gate.** `calculate_heuristic_score()` existed and was called, but only to compute a *display* score — nothing rejected a result for lacking the keyword, echoing a few-shot example back verbatim, or duplicating another result already in the batch. The plan was explicit that this needed to be a hard reject-and-retry gate, not a soft scoring bonus. Fixed: added keyword-presence, echo-detection, duplicate-detection, and length checks as hard gates, with a capped retry loop (3x the per-category target) rather than accepting a bad result to hit the count.
+- **Bonus finding while fixing the above: LLM generation was hardcoded to `categories.first()` only.** If a user selected Article + Blog + YouTube, the LLM pass only ever generated (and only ever prompted for) "article" titles, while every result was still labeled as fitting all three requested categories in the `categories` field. Fixed as part of the same change — now loops per requested category with its own examples and its own share of the quantity, matching how EGCG's Mode A already splits work across categories.
+
+### Minor, not fixed (flagging only)
+~~`scripts/download-model.sh`'s comment claims "uses a pinned checksum to prevent silent model drift," but `EXPECTED_HASH` is declared and never used — checksum verification isn't actually implemented, just scaffolded.~~ **Fixed 2026-07-16, see §12.**
+~~LLM-generated results have `breakdown: None`, so they won't show a "Why this works" popup the way EGCG results do.~~ **Fixed 2026-07-16, see §12.**
+
+### Outstanding — could not verify from this session
+- **No `cargo build`/`cargo test` was run.** Bash access was unavailable in this session (same environment limitation as every prior pass — confirmed to be a known Cowork/Windows bug with `wsl.localhost` UNC-path workspace folders, not something fixable via permissions). All fixes above were verified by manual type-tracing against patterns already proven to compile elsewhere in these same files, but the KV-cache fix in particular needs to be validated against a real model file and real output — this is not optional given how central that bug was.
+- **The reproducible "shirt" test from §8 has not been run.** This is the actual proof the feature works; nothing in this review substitutes for it.
+- **Latency at high quantities is unverified and likely worth attention.** The quantity slider goes up to 100. Each local-LLM title can take up to ~50 decode steps of CPU inference, and the retry-on-reject logic (correctly, per the QC gate) can attempt up to 3x the per-category target. A request for 100 titles across 3 categories could mean several hundred real inference calls. This may be fine, or it may need a lower quantity cap for the local-LLM path, a per-request time budget, or a "generating..." progress indicator — worth timing before shipping.
+
+## §12. Follow-up fix pass (2026-07-16, same-day)
+
+Closed out both minor gaps flagged in §11. Still no shell access this session (same UNC-path bug), so these are file edits verified by re-reading, not compiled.
+
+**1. `scripts/download-model.sh` checksum verification — implemented, not just scaffolded.**
+Fetched the real SHA256 from HuggingFace's LFS pointer for this exact file (`bartowski/SmolLM2-360M-Instruct-GGUF`, `SmolLM2-360M-Instruct-Q4_K_M.gguf`, main branch — retrieved via the raw LFS pointer endpoint, which returns `oid sha256:...` and `size` directly rather than the binary): hash `2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2`, size `270590880` bytes. Pinned both as `EXPECTED_HASH`/`EXPECTED_SIZE` in the script. Added a `verify_hash()` function (tries `sha256sum`, falls back to `shasum -a 256`, warns and skips if neither exists rather than failing the build). The script now: checks the cached file's size against the expected size before trusting a cache hit (previously it only checked "> 100MB"); verifies the checksum on a cache hit; checks the downloaded file's size and checksum after a fresh download; deletes and hard-fails on any mismatch so CI doesn't silently bundle a corrupted or drifted model.
+
+**2. LLM-generated titles now get a real `breakdown`, not `None`.**
+The LLM pass in `engine.rs` was scoring titles with `calculate_heuristic_score()` (title_gen.rs) but hardcoding `breakdown: None` — meaning the "why this works" score explanation the EGCG and legacy-engine paths already show was silently missing for LLM results, and worse, the *score itself* came from a different heuristic function than the one that would have produced the breakdown, so even a future "just add breakdown" patch risked showing a score/breakdown pair that didn't agree with each other. Fixed by switching the LLM pass to call `engine::calculate_score()` — the same function the legacy template path already uses — which returns `(score, breakdown)` together from one heuristic pass. `calculate_heuristic_score()` in `title_gen.rs` is no longer called anywhere; left in place with `#[allow(dead_code)]` and an explanatory doc comment rather than deleted, in case it's useful standalone later.
+
+**Still true after this pass:** nothing has been compiled. Once shell/build access is available, `cargo build` should be the very first check — it will immediately confirm whether `calculate_score`'s deref-coercion call signature (`&String` → `&str` for the category argument) and the checksum script's shell syntax are actually correct, not just plausible on inspection.
+
+## §13. Engine-source visibility added (2026-07-17)
+
+Prompted by a live test: a "television" keyword run (Auto engine) was shared for review, and every single result matched a literal EGCG/legacy-template pattern in `seed-data.json` word-for-word (see `EGCG_Audit_Report.md` §7) — meaning the local LLM almost certainly never ran for that test, but there was no way to actually confirm that from the app. Two structural gaps made this undiagnosable:
+
+1. `TitleResult` had no field recording which engine produced a given title — EGCG, the legacy template filler, the local LLM, and the cloud AI-key path all returned the exact same shape, so there was no way to tell them apart after the fact.
+2. `get_app_info` already returned `localLlmLoaded`, but the frontend (`app.js`) never read or displayed it anywhere — it silently went unused since the field was added.
+
+Both fixed:
+
+- Added `TitleResult.source` (`Option<String>`, `#[serde(default)]` so old history/favorites JSON still deserializes) and set it at all 8 places a `TitleResult` gets constructed: `"local-llm"` (engine.rs LLM pass), `"template"` (engine.rs legacy filler, all 3 call sites), `"egcg-a"`/`"egcg-b"`/`"egcg-c"` (title_gen.rs Modes A/B/C), `"ai"` (lib.rs cloud API-key path).
+- `app.js` now renders a small "Database" / "AI · offline" / "AI · cloud" badge next to each result's category tags (new `engineSourceLabel()` helper + `.result-engine-badge` CSS class), and Settings now has an "Offline AI engine" row wired to `get_app_info().localLlmLoaded` (Active / not-yet-loaded, with a hint to check `[local_llm]` console output if it never turns on).
+
+This doesn't fix why the LLM wasn't active in the test that prompted it — that still needs to be diagnosed once this is compiled (see the reply given directly in-conversation: most likely causes are (a) the tested build predates the LLM code being compiled in, or (b) the model `.gguf` file wasn't present at any of the 6 candidate paths `lazy_load_llm()` checks for that particular install, so it silently fell through to EGCG). What this change does is make that diagnosis possible from inside the running app next time, instead of requiring line-by-line template matching against `seed-data.json` to infer it after the fact.
+
+Not compiled — same environment limitation as everything else this session.

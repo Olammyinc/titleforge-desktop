@@ -1,6 +1,6 @@
 //! EGCG: Exemplar-Guided Coherence Generator
 //!
-//! A new offline title generation algorithm for TitleForge Desktop.
+//! A new offline title generation algorithm for TitleSmith.
 //! Replaces the sparse Markov chain model with a coherence-scored
 //! constraint-based generator that degrades gracefully on sparse data.
 //!
@@ -390,6 +390,7 @@ impl Generator {
                             score,
                             categories: vec![category.clone()],
                             breakdown: Some(breakdown),
+                            source: Some("egcg-a".to_string()),
                         });
                     }
                 }
@@ -418,6 +419,7 @@ impl Generator {
                         score,
                         categories: vec![cat],
                         breakdown: Some(breakdown),
+                        source: Some("egcg-b".to_string()),
                     });
                 }
             }
@@ -443,6 +445,7 @@ impl Generator {
                         score,
                         categories: vec![exemplar_cat.clone()],
                         breakdown: Some(breakdown),
+                        source: Some("egcg-c".to_string()),
                     });
                 }
             }
@@ -725,7 +728,20 @@ impl Generator {
                 // Capitalize every filled word using title-case rules
                 let is_first_word = result.starts_with(&placeholder);
                 let replacement = title_case_word(&word, is_first_word);
-                result = result.replace(&placeholder, &replacement);
+                // Some templates reuse the same slot name for two distinct
+                // placeholders (e.g. "{adjective} vs {adjective}: ..." has two
+                // separate "adjective" slots, each filled with a different
+                // word so they don't repeat). `String::replace` replaces
+                // EVERY occurrence of the pattern in one call, so with a
+                // plain `.replace()` here the first slot's fill would
+                // overwrite BOTH placeholders and the second slot's distinct
+                // word would never make it into the title, silently
+                // collapsing "Bold vs Groundbreaking" into "Bold vs Bold".
+                // `replacen(.., 1)` consumes only the next (leftmost
+                // remaining) occurrence, so each slot fills its own
+                // placeholder in template order — correct whether or not the
+                // slot name is reused.
+                result = result.replacen(&placeholder, &replacement, 1);
             }
         }
         // Fix spacing around punctuation
@@ -1353,8 +1369,15 @@ pub fn resolve_pool_name(slot_name: &str) -> &'static str {
     }
 }
 
-/// Calculate a heuristic score for any title string (used for LLM-generated titles).
-/// Uses keyword presence, numbers, curiosity markers, emotional/power words, word count.
+/// Calculate a heuristic score for any title string (originally used for
+/// LLM-generated titles). Superseded by `engine::calculate_score`, which
+/// returns the same kind of score *plus* the breakdown JSON the UI expects —
+/// using two different scorers meant the LLM path could show a score that
+/// didn't match its own breakdown. Kept for now as a simpler standalone
+/// scorer in case it's useful elsewhere (e.g. quick internal comparisons);
+/// not currently called anywhere, hence `dead_code` allowed rather than
+/// deleted.
+#[allow(dead_code)]
 pub fn calculate_heuristic_score(title: &str, keyword: &str) -> u32 {
     let lower = title.to_lowercase();
     let kw = keyword.to_lowercase();

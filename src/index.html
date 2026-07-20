@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TitleForge Desktop — Generate titles that get clicked</title>
-  <meta name="description" content="TitleForge Desktop — Offline title generator for books, articles, YouTube videos, songs, podcasts, and more." />
+  <title>TitleSmith Desktop — Generate titles that get clicked</title>
+  <meta name="description" content="TitleSmith Desktop — Offline title generator for books, articles, YouTube videos, songs, podcasts, and more." />
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="stylesheet" href="styles.css" />
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet" />
@@ -15,8 +15,8 @@
 <div id="activationScreen" class="activation-screen">
   <div class="activation-left">
     <div class="activation-left-content">
-      <img src="logo.svg" alt="TitleForge" class="activation-logo" />
-      <h1 class="activation-wordmark">TitleForge</h1>
+      <img src="logo.svg" alt="TitleSmith" class="activation-logo" />
+      <h1 class="activation-wordmark">TitleSmith</h1>
       <p class="activation-tagline">Your titles, forged offline.</p>
       <p class="activation-subtitle">A warm, typographic title generator for creators who publish.</p>
       <a href="#" class="activation-buy-link" id="activationBuyLink">Get a License →</a>
@@ -48,8 +48,8 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <img src="logo.svg" alt="TitleForge" class="sidebar-logo" />
-      <span class="sidebar-wordmark">TitleForge</span>
+      <img src="logo.svg" alt="TitleSmith" class="sidebar-logo" />
+      <span class="sidebar-wordmark">TitleSmith</span>
     </div>
     <nav class="sidebar-nav">
       <a class="sidebar-item active" data-view="generator">
@@ -320,6 +320,7 @@
           <div class="settings-row"><span class="settings-label">Current plan</span><span class="settings-value" style="color:#16a34a;font-weight:700;">Desktop Pro</span></div>
           <div class="settings-row"><span class="settings-label">Version</span><span class="settings-value" id="settingsVersion">0.5.0</span></div>
           <div class="settings-row"><span class="settings-label">Generations today</span><span class="settings-value" id="settingsUsage">0</span></div>
+          <div class="settings-row"><span class="settings-label">Offline AI engine</span><span class="settings-value" id="settingsLlmStatus">Checking&hellip;</span></div>
         </div>
         <div class="settings-card">
           <h3 class="settings-card-title">Updates</h3>
@@ -333,7 +334,7 @@
             <input type="checkbox" id="autoUpdateToggle" />
             <span>Auto-check for updates on launch</span>
           </label>
-          <p class="toggle-hint">When enabled, TitleForge will check for new versions each time you open the app.</p>
+          <p class="toggle-hint">When enabled, TitleSmith will check for new versions each time you open the app.</p>
         </div>
         <div class="settings-card">
           <h3 class="settings-card-title">AI Integration</h3>

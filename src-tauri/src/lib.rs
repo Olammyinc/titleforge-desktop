@@ -21,6 +21,14 @@ pub struct TitleResult {
     pub categories: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub breakdown: Option<serde_json::Value>,
+    /// Which engine actually produced this title: "local-llm", "egcg",
+    /// "template" (legacy fallback filler), or "ai" (cloud API-key path).
+    /// Added so the app — and anyone debugging output quality — can tell
+    /// which generator a given result came from instead of guessing from
+    /// its shape. `#[serde(default)]` keeps older history/favorites rows
+    /// (saved before this field existed) deserializing cleanly as `None`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -351,7 +359,7 @@ fn update_title_notes(
 /// when Tauri has a stable keystore plugin.
 fn xor_obfuscate(input: &str) -> String {
     let hostkey = hostname::get()
-        .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
+        .unwrap_or_else(|_| std::ffi::OsString::from("titlesmith-fallback"))
         .to_string_lossy()
         .into_owned();
     let key_bytes = hostkey.as_bytes();
@@ -374,7 +382,7 @@ fn xor_deobfuscate(stored: &str) -> String {
         None => return stored.to_string(), // corrupt data, return raw
     };
     let hostkey = hostname::get()
-        .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
+        .unwrap_or_else(|_| std::ffi::OsString::from("titlesmith-fallback"))
         .to_string_lossy()
         .into_owned();
     let key_bytes = hostkey.as_bytes();
@@ -632,7 +640,7 @@ fn generate_with_ai(
             "model": model,
             "max_tokens": 4096,
             "temperature": 0.85,
-            "system": "You are TitleForge, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON.",
+            "system": "You are TitleSmith, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON.",
             "messages": [
                 {"role": "user", "content": prompt}
             ]
@@ -656,7 +664,7 @@ fn generate_with_ai(
         let body = serde_json::json!({
             "model": model,
             "messages": [
-                {"role": "system", "content": "You are TitleForge, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."},
+                {"role": "system", "content": "You are TitleSmith, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.85,
@@ -698,7 +706,7 @@ fn generate_with_ai(
             let title = item["title"].as_str()?.trim().to_string();
             if title.is_empty() { return None; }
             let score = item["score"].as_u64().unwrap_or(50).min(100) as u32;
-            Some(TitleResult { title, score, categories: categories.clone(), breakdown: item.get("breakdown").cloned() })
+            Some(TitleResult { title, score, categories: categories.clone(), breakdown: item.get("breakdown").cloned(), source: Some("ai".to_string()) })
         })
         .collect();
 
@@ -719,7 +727,7 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
         .unwrap_or(0);
     let llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
     Ok(serde_json::json!({
-        "app": "titleforge-desktop",
+        "app": "titlesmith-desktop",
         "version": env!("CARGO_PKG_VERSION"),
         "seeded": count > 0,
         "templateCount": count,
@@ -733,7 +741,7 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
     let model_name = "SmolLM2-360M-Instruct-Q4_K_M.gguf";
     let app_dir = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("titleforge-desktop");
+        .join("titlesmith-desktop");
 
     let mut model_paths = vec![
         // Development: CWD-relative (npm run dev from titleforge-desktop/)
@@ -746,20 +754,20 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
         // Tauri v2 resource extraction — app data dir
         dirs::data_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("com.titleforge.desktop")
+            .join("com.titlesmith.desktop")
             .join("models")
             .join(model_name),
         // Tauri v2 resource extraction — with resources subfolder
         dirs::data_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("com.titleforge.desktop")
+            .join("com.titlesmith.desktop")
             .join("resources")
             .join("models")
             .join(model_name),
         // Tauri v2 resource extraction — via app-dir + resources
         dirs::data_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("titleforge-desktop")
+            .join("titlesmith-desktop")
             .join("resources")
             .join("models")
             .join(model_name),
@@ -786,7 +794,7 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
 pub fn run() {
     let app_dir = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("titleforge-desktop");
+        .join("titlesmith-desktop");
     std::fs::create_dir_all(&app_dir).ok();
 
     let db_path = app_dir.join("titles.db");
@@ -865,5 +873,5 @@ pub fn run() {
             deactivate_license,
         ])
         .run(tauri::generate_context!())
-        .expect("Error running TitleForge Desktop");
+        .expect("Error running TitleSmith");
 }

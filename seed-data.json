@@ -2172,10 +2172,10 @@
         "quality_score": 0.86
       },
       {
-        "template": "Why You Should Stop {verb} {topic} Right Now",
+        "template": "Why You Should Stop {verb_ing} {topic} Right Now",
         "slots": [
           {
-            "name": "verb",
+            "name": "verb_ing",
             "pool": "action_verbs",
             "pos": "verb"
           },
