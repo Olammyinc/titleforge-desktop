@@ -6,11 +6,9 @@ use std::sync::Mutex;
 mod db;
 mod engine;
 mod local_llm;
-mod title_gen;
 
 pub struct AppState {
     pub db: Mutex<rusqlite::Connection>,
-    pub generator: std::sync::Mutex<title_gen::Generator>,
     pub local_llm: std::sync::Mutex<Option<local_llm::LocalLlm>>,
 }
 
@@ -79,14 +77,22 @@ fn generate_titles(
     state: tauri::State<AppState>,
 ) -> Result<Vec<TitleResult>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
+
+    // Tier-based quantity cap. Basic = 25, Pro/Studio = 100.
+    let tier = get_tier(&db);
+    let cap: u32 = match tier.as_str() {
+        "pro" | "studio" => 100,
+        _ => 25,
+    };
+    let quantity = quantity.min(cap);
+
     let mut llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
     // Lazy-load LLM on first generation call (runs after Tauri app is initialized,
     // so resource dir is available)
     if llm_guard.is_none() {
         *llm_guard = lazy_load_llm();
     }
-    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
+    engine::generate(&db, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
 }
 
 #[tauri::command]
@@ -120,11 +126,14 @@ fn get_usage_stats(state: tauri::State<AppState>) -> Result<serde_json::Value, S
         .query_row("SELECT COUNT(*) FROM user_favorites", [], |row| row.get(0))
         .unwrap_or(0);
 
+    let tier = get_tier(&db);
+
     Ok(serde_json::json!({
         "totalGenerations": total_gens,
         "todayGenerations": today_gens,
         "totalFavorites": total_titles,
-        "isPro": true,
+        "isPro": tier != "basic",
+        "tier": tier,
     }))
 }
 
@@ -244,6 +253,9 @@ fn toggle_favorite(
 #[tauri::command]
 fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "basic" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
     let mut stmt = db
         .prepare(
             "SELECT p.id, p.name, COALESCE(p.created_at,''), 
@@ -272,6 +284,9 @@ fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, Stri
 #[tauri::command]
 fn create_project(name: String, state: tauri::State<AppState>) -> Result<ProjectEntry, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "basic" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
 
     db.execute(
         "INSERT INTO user_projects (name) VALUES (?1)",
@@ -320,6 +335,9 @@ fn add_to_project(
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "basic" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
     db.execute(
         "INSERT INTO project_titles (project_id, title, keyword, score) VALUES (?1, ?2, ?3, ?4)",
         rusqlite::params![project_id, title, keyword, score],
@@ -336,6 +354,9 @@ fn update_title_notes(
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "basic" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
     db.execute(
         "UPDATE project_titles SET notes = ?1 WHERE project_id = ?2 AND title = ?3",
         rusqlite::params![notes, project_id, title],
@@ -462,6 +483,20 @@ fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Res
 
 // ── License Validation ──
 
+/// Shared upgrade prompt returned by every tier-gated command.
+const PRO_REQUIRED_MSG: &str = "This feature requires a Pro or Studio license. Upgrade at titleforge-tool.netlify.app/desktop";
+
+/// Read the locally-cached license tier from `user_settings`.
+/// Returns "basic" when no tier row exists — fail-closed.
+fn get_tier(db: &rusqlite::Connection) -> String {
+    db.query_row(
+        "SELECT value FROM user_settings WHERE key = 'license_tier'",
+        [],
+        |row| row.get::<_, String>(0),
+    )
+    .unwrap_or_else(|_| "basic".to_string())
+}
+
 #[tauri::command]
 fn validate_license(key: String, email: String, state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
     let url = format!(
@@ -530,6 +565,47 @@ fn deactivate_license(state: tauri::State<AppState>) -> Result<(), String> {
     Ok(())
 }
 
+/// Silently re-validate the license in the background.
+/// On any network/parse/panic failure returns Ok(()) silently — leaves cache untouched.
+/// On valid response: overwrites license_tier/license_status/license_validated_at.
+/// On server `valid: false`: revokes locally (DELETE license_% rows).
+#[tauri::command]
+fn background_verify(key: String, email: String, state: tauri::State<AppState>) -> Result<(), String> {
+    let url = format!(
+        "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}",
+        urlencoding(&key),
+        urlencoding(&email)
+    );
+
+    let result = match std::thread::spawn(move || -> Option<(bool, String)> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(5))
+            .build().ok()?;
+        let resp = client.get(&url).send().ok()?;
+        let data: serde_json::Value = resp.json().ok()?;
+        let valid = data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false);
+        let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic").to_string();
+        Some((valid, tier))
+    }).join() {
+        Ok(opt) => opt,
+        Err(_) => return Ok(()),
+    };
+
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+
+    if let Some((is_valid, tier)) = result {
+        if is_valid {
+            let now = chrono::Utc::now().to_rfc3339();
+            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')", []).ok();
+            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)", rusqlite::params![&tier]).ok();
+            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_validated_at', ?1)", rusqlite::params![&now]).ok();
+        } else {
+            db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
+        }
+    }
+    Ok(())
+}
+
 fn urlencoding(s: &str) -> String {
     s.chars().map(|c| match c {
         'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
@@ -561,7 +637,16 @@ fn generate_with_ai(
     translate_lang: Option<String>,
     gender: Option<String>,
     finetune: Option<serde_json::Value>,
+    state: tauri::State<AppState>,
 ) -> Result<Vec<TitleResult>, String> {
+    // Tier gate: cloud AI is Pro/Studio only. DB lock scoped before HTTP call.
+    {
+        let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+        if get_tier(&db) == "basic" {
+            return Err(PRO_REQUIRED_MSG.to_string());
+        }
+    }
+
     let provider_info = AI_PROVIDERS.iter().find(|p| p.0 == provider)
         .ok_or_else(|| format!("Unsupported provider: {}", provider))?;
 
@@ -640,7 +725,7 @@ fn generate_with_ai(
             "model": model,
             "max_tokens": 4096,
             "temperature": 0.85,
-            "system": "You are TitleSmith, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON.",
+            "system": "You are TitleForge, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON.",
             "messages": [
                 {"role": "user", "content": prompt}
             ]
@@ -837,10 +922,6 @@ pub fn run() {
         }
     }
 
-    // Build EGCG generator from curated titles (after seeding is complete)
-    let generator = title_gen::Generator::build(&conn);
-    println!("EGCG generator built successfully ({} words in vocabulary)", generator.word_count());
-
     // Local LLM is loaded lazily on first generation call (so resource_dir is available)
     println!("Local LLM will be loaded on first use (lazy init)");
 
@@ -849,7 +930,6 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             db: Mutex::new(conn),
-            generator: std::sync::Mutex::new(generator),
             local_llm: std::sync::Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
@@ -871,7 +951,8 @@ pub fn run() {
             get_app_info,
             validate_license,
             deactivate_license,
+            background_verify,
         ])
         .run(tauri::generate_context!())
-        .expect("Error running TitleSmith");
+        .expect("Error running TitleForge");
 }

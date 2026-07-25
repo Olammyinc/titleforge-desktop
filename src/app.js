@@ -1,5 +1,5 @@
 /* ============================================
-   TitleSmith — Application Logic
+   TitleForge Desktop — Application Logic
    Uses Tauri invoke() for all data operations.
    Local SQLite — no Supabase, no Netlify, no auth.
    ============================================ */
@@ -37,7 +37,7 @@ function invoke(cmd, args) {
 
     // Dev mode fallback
     if (!_invoke) {
-      console.warn('[TitleSmith] No Tauri IPC bridge found — using dev mode mock.');
+      console.warn('[TitleForge] No Tauri IPC bridge found — using dev mode mock.');
       dumpDebug('invoke setup: NO Tauri IPC found — falling back to DEV MODE MOCK');
       window.__TF_DEV_MODE = true;
       // Show a visible indicator in the app
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function openBuyLink() {
-  var url = 'https://titlesmith.io/pricing';
+  var url = 'https://titleforge-tool.netlify.app/desktop';
   // Fallback until domain is live: use GitHub releases page
   // Try Tauri shell open — check __TAURI_INTERNALS__ first (earliest available), then __TAURI__
   var ipc = (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
@@ -337,6 +337,8 @@ function handleActivation() {
         invoke('set_setting', { key: 'license_key', value: key }),
         invoke('set_setting', { key: 'license_email', value: email }),
       ]).catch(function () {});
+      _bgLicenseKey = key;
+      _bgLicenseEmail = email;
       document.getElementById('activationScreen').style.display = 'none';
       document.getElementById('mainApp').style.display = 'flex';
       initApp();
@@ -387,6 +389,28 @@ function initApp() {
   // Auto-update check on launch (with small delay so UI renders first)
   setupUpdaterEvents();
   setTimeout(setupUpdaterAutoCheck, 800);
+
+  // Start background license verification + update checking (every 30 min)
+  startBackgroundTasks();
+}
+
+// ---- BACKGROUND TASKS ----
+var _bgLicenseKey = '';
+var _bgLicenseEmail = '';
+
+function startBackgroundTasks() {
+  invoke('get_settings').then(function (settings) {
+    _bgLicenseKey = settings.license_key || '';
+    _bgLicenseEmail = settings.license_email || '';
+  }).catch(function () {});
+
+  setInterval(function () {
+    if (!_bgLicenseKey || !_bgLicenseEmail) return;
+    // Quick connectivity check before trying background operations
+    invoke('background_verify', { key: _bgLicenseKey, email: _bgLicenseEmail })
+      .catch(function () {}); // Silent — never show errors to user
+    checkAndInstallUpdate(true); // Silent update check
+  }, 30 * 60 * 1000); // Every 30 minutes
 }
 
 // Show API key setup prompt on first launch (no key configured)

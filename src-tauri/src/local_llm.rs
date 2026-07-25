@@ -54,7 +54,7 @@ impl LocalLlm {
     pub fn generate_one(&mut self, prompt: &str) -> Option<String> {
         // Build chat-formatted prompt matching SmolLM2-Instruct template
         let full_prompt = format!(
-            "<|im_start|>system\nYou are TitleSmith, an elite title generator. Generate exactly one title — no explanation, no preamble.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
+            "<|im_start|>system\nYou are TitleForge, an elite title generator. Generate exactly one title — no explanation, no preamble.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
             prompt
         );
 
