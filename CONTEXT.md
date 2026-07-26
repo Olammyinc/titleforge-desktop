@@ -1,6 +1,6 @@
 ﻿# TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-24
+> **Last updated:** 2026-07-25
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 
 ---
@@ -442,15 +442,15 @@ All tables have Row Level Security enabled with per-user policies.
 
 ### 6.4 Implementation Order
 
-| Phase | Tasks | Stream |
-|-------|-------|--------|
-| **Phase 1** (Week 1) | `cargo build` on local_llm.rs, benchmark quality, remove EGCG generation, add background_verify | A |
-| **Phase 2** (Week 1-2) | Background polling UI, tier gating in UI + Rust, branding updates in app | B |
-| **Phase 3** (Week 1-2) | Create desktop.html, desktop-download.html, desktop.css, update index.html nav + pricing | C |
-| **Phase 4** (Week 2) | License system overhaul: email-based validation, Stripe desktop webhook, upgrade flow | D |
-| **Phase 5** (Week 2-3) | Integration testing, deploy to Netlify, verify download links, cross-browser test | All |
+| Phase | Tasks | Stream | Status |
+|-------|-------|--------|--------|
+| **Phase 1** (Week 1) | `cargo build` on local_llm.rs, benchmark quality, remove EGCG generation, add background_verify | A | **completed** (code written; cargo build pending) |
+| **Phase 2** (Week 1-2) | Background polling UI, tier gating in UI + Rust, branding updates in app | B | **completed** |
+| **Phase 3** (Week 1-2) | Create desktop.html, desktop-download.html, desktop.css, update index.html nav + pricing | C | **completed** |
+| **Phase 4** (Week 2) | License system overhaul: email-based validation, Stripe desktop webhook, upgrade flow | D | **completed** |
+| **Phase 5** (Week 2-3) | Integration testing, deploy to Netlify, verify download links, cross-browser test | All | **next** |
 
-A, B, C can run in parallel. D depends on Phase 4 for Netlify function changes.
+All code changes committed and pushed July 25, 2026. Phases 1-4 are done — Phase 5 (cargo build + deploy + testing) is the remaining work.
 
 ---
 
