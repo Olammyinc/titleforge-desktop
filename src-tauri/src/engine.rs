@@ -2,6 +2,7 @@ use rusqlite::Connection;
 use serde_json;
 
 use crate::local_llm::LocalLlm;
+use crate::seo;
 use crate::title_gen::Generator;
 use crate::TitleResult;
 
@@ -20,6 +21,10 @@ pub fn generate(
     let mut results = Vec::new();
 
     // ── Pass 1: Local LLM (if loaded) ──
+    // Build SEO scorer once from curated titles for batch efficiency
+    let curated_for_seo = fetch_curated_sample(conn, categories);
+    let seo_scorer = seo::SeoScorer::from_curated(&curated_for_seo);
+
     if let Some(llm) = local_llm {
         let target_per_cat = (quantity as usize / categories.len().max(1)).max(1);
         for cat in categories {
@@ -56,12 +61,16 @@ pub fn generate(
                     // breakdown: None here previously meant the LLM path was
                     // the only one in the UI without a score explanation).
                     let (score, breakdown) = calculate_score(&title, keyword, cat);
+                    let platform = seo::platform_for_category(cat);
+                    let (seo_score, seo_breakdown) = seo_scorer.score_seo(&title, keyword, cat, platform);
                     results.push(TitleResult {
                         title,
                         score,
                         categories: vec![cat.clone()],
                         breakdown: Some(breakdown),
                         source: Some("local-llm".to_string()),
+                        seo_score: Some(seo_score),
+                        seo_breakdown: Some(serde_json::to_value(&seo_breakdown).unwrap_or(serde_json::Value::Null)),
                     });
                     got += 1;
                 }
@@ -83,6 +92,17 @@ pub fn generate(
             conn, keyword, categories, style, genre, remaining, &results,
         );
         results.extend(curated_results);
+    }
+
+    // ── SEO scoring sweep for EGCG + curated results ──
+    // LLM-pass titles were scored inline above; this fills remaining.
+    for r in results.iter_mut() {
+        if r.seo_score.is_some() { continue; }
+        let cat = r.categories.first().map(|s| s.as_str()).unwrap_or("");
+        let platform = seo::platform_for_category(cat);
+        let (ss, sb) = seo_scorer.score_seo(&r.title, keyword, cat, platform);
+        r.seo_score = Some(ss);
+        r.seo_breakdown = Some(serde_json::to_value(&sb).unwrap_or(serde_json::Value::Null));
     }
 
     // Finalize: deduplicate, sort by score, truncate
@@ -175,6 +195,8 @@ fn retrieve_curated_fallback(
                 categories: vec![cat.clone()],
                 breakdown: Some(breakdown),
                 source: Some("curated".to_string()),
+                seo_score: None,
+                seo_breakdown: None,
             });
             if out.len() >= limit { break; }
         }
@@ -257,4 +279,16 @@ fn calculate_score(title: &str, keyword: &str, _category: &str) -> (u32, serde_j
     });
 
     (score, breakdown)
+}
+
+/// Pull a bounded random sample of curated titles for the given categories.
+/// Used by the SEO scorer to build its n-gram reference corpus for uniqueness.
+fn fetch_curated_sample(conn: &Connection, categories: &[String]) -> Vec<String> {
+    if categories.is_empty() { return Vec::new(); }
+    let placeholders = categories.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let sql = format!("SELECT title FROM curated_titles WHERE category IN ({}) ORDER BY RANDOM() LIMIT 800", placeholders);
+    let mut stmt = match conn.prepare(&sql) { Ok(s) => s, Err(_) => return Vec::new() };
+    let params: Vec<&dyn rusqlite::types::ToSql> = categories.iter().map(|c| c as &dyn rusqlite::types::ToSql).collect();
+    stmt.query_map(params.as_slice(), |row| row.get::<_, String>(0))
+        .ok().map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }

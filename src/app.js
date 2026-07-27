@@ -53,7 +53,7 @@ function invoke(cmd, args) {
         if (cmd === 'get_history' || cmd === 'get_favorites' || cmd === 'get_projects') return Promise.resolve([]);
         if (cmd === 'get_usage_stats') return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0 });
         if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') return Promise.resolve();
-        if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null, source: 'template' }]);
+        if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null, source: 'template', seo_score: 82, seo_breakdown: { platform: 'amazon', length_fit: { score: 90, weight: 20, value: '24 chars', detail: '24 chars — acceptable for amazon' }, keyword_presence: { score: 100, weight: 20, value: 'front-loaded', detail: 'keyword leads the title' }, keyword_density: { score: 100, weight: 10, value: '20%', detail: 'density in sweet spot' }, search_pattern: { score: 60, weight: 15, value: '1 match(es)', detail: 'matched: guide to' }, question_format: { score: 0, weight: 5, value: 'no', detail: 'not a question' }, number_year: { score: 0, weight: 10, value: 'none', detail: 'no numbers present' }, reading_level: { score: 60, weight: 5, value: 'n/a', detail: 'too short' }, power_words: { score: 60, weight: 5, value: '1 power word(s)', detail: '1 power word' }, uniqueness: { score: 85, weight: 10, value: '82% novel', detail: 'low overlap — mostly novel' } } }]);
         if (cmd === 'get_app_info') return Promise.resolve({ version: '0.0.0-devmock', seeded: false, templateCount: 0, localLlmLoaded: false });
         return Promise.reject(new Error('Tauri API not available in dev mode for: ' + cmd));
       };
@@ -107,6 +107,57 @@ const BREAKDOWN_FIELDS = [
   { key: 'pronunciationEase',label: 'Pronunciation',   tip: 'How easy the name is to say aloud.' },
   { key: 'originVibe',       label: 'Origin / vibe',   tip: 'Cultural origin or overall feel.' },
 ];
+
+// ---- SEO SCORING HELPERS ----
+const SEO_SIGNALS = [
+  { key: 'length_fit',        label: 'Length fit' },
+  { key: 'keyword_presence',  label: 'Keyword presence' },
+  { key: 'keyword_density',   label: 'Keyword density' },
+  { key: 'search_pattern',    label: 'Search patterns' },
+  { key: 'question_format',   label: 'Question format' },
+  { key: 'number_year',       label: 'Numbers & year' },
+  { key: 'reading_level',     label: 'Reading level' },
+  { key: 'power_words',       label: 'Power words' },
+  { key: 'uniqueness',        label: 'Uniqueness' },
+];
+
+function seoTier(score) {
+  if (score >= 80) return 'seo-high';
+  if (score >= 50) return 'seo-mid';
+  return 'seo-low';
+}
+
+function renderSeoBreakdownHtml(bd) {
+  if (!bd) return '';
+  var html = '';
+  if (bd.platform) {
+    html += '<div class="seo-platform">Target platform: <strong>' + escapeHtml(String(bd.platform)) + '</strong></div>';
+  }
+  SEO_SIGNALS.forEach(function (sig) {
+    var s = bd[sig.key];
+    if (!s) return;
+    var cls = s.score >= 75 ? 'high' : (s.score >= 50 ? 'medium' : 'low');
+    html += '<div class="seo-signal-row">';
+    html += '<span class="seo-signal-label">' + sig.label + '</span>';
+    html += '<span class="seo-signal-value">' + (s.value ? escapeHtml(String(s.value)) : '—') + '</span>';
+    html += '<span class="seo-signal-score ' + cls + '">' + s.score + '</span>';
+    html += '</div>';
+    if (s.detail) { html += '<div class="seo-signal-detail">' + escapeHtml(String(s.detail)) + '</div>'; }
+  });
+  return html;
+}
+
+function toggleSeoPanel(hostDiv, bd) {
+  var body = hostDiv.querySelector('.result-body');
+  if (!body) return;
+  var existing = body.querySelector('.seo-panel');
+  if (existing) { existing.classList.toggle('show'); return; }
+  if (!bd) return;
+  var panel = document.createElement('div');
+  panel.className = 'seo-panel show';
+  panel.innerHTML = renderSeoBreakdownHtml(bd);
+  body.appendChild(panel);
+}
 
 // ---- STATE ----
 var isPro = true;
@@ -764,6 +815,9 @@ function displayResults(titles, currentKeyword) {
       return;
     }
 
+    var seoLegend = document.getElementById('seoLegend');
+    if (seoLegend) seoLegend.style.display = (titles && titles.length) ? 'flex' : 'none';
+
   titles.forEach(function (item, idx) {
     var div = document.createElement('div');
     div.className = 'result-item';
@@ -791,6 +845,17 @@ function displayResults(titles, currentKeyword) {
       leftCol.appendChild(scoreNum);
       leftCol.appendChild(bar);
       leftCol.appendChild(scoreLabel);
+      if (item.seo_score !== undefined && item.seo_score !== null) {
+        var seoPill = document.createElement('div');
+        seoPill.className = 'seo-badge ' + seoTier(item.seo_score);
+        seoPill.textContent = 'SEO ' + item.seo_score;
+        seoPill.title = 'SEO score — click for breakdown';
+        seoPill.style.cursor = 'pointer';
+        (function (pill, host, bdRef) {
+          pill.addEventListener('click', function () { toggleSeoPanel(host, bdRef); });
+        })(seoPill, div, item.seo_breakdown);
+        leftCol.appendChild(seoPill);
+      }
       div.appendChild(leftCol);
     }
 
@@ -883,6 +948,16 @@ function displayResults(titles, currentKeyword) {
         div.appendChild(panel);
       });
       body.appendChild(bdBtn);
+    }
+
+    if (item.seo_score !== undefined && item.seo_score !== null && item.seo_breakdown) {
+      var seoBtn = document.createElement('button');
+      seoBtn.className = 'breakdown-toggle seo-toggle';
+      seoBtn.textContent = 'SEO details';
+      (function (btn, host, bdRef) {
+        btn.addEventListener('click', function () { toggleSeoPanel(host, bdRef); });
+      })(seoBtn, div, item.seo_breakdown);
+      body.appendChild(seoBtn);
     }
 
     div.appendChild(body);
@@ -1131,6 +1206,13 @@ function renderHistoryTab() {
         scoreBadge.style.background = scoreColor;
         scoreBadge.textContent = score;
         itemDiv.appendChild(scoreBadge);
+      }
+      if (typeof t === 'object' && t.seo_score !== undefined && t.seo_score !== null) {
+        var seoMini = document.createElement('span');
+        seoMini.className = 'dash-seo-badge ' + seoTier(t.seo_score);
+        seoMini.textContent = 'SEO ' + t.seo_score;
+        seoMini.title = 'SEO score';
+        itemDiv.appendChild(seoMini);
       }
       var hStar = document.createElement('button');
       var isFav = isFavorited(titleText);

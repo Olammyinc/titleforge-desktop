@@ -391,6 +391,8 @@ impl Generator {
                             categories: vec![category.clone()],
                             breakdown: Some(breakdown),
                             source: Some("egcg-a".to_string()),
+                            seo_score: None,
+                            seo_breakdown: None,
                         });
                     }
                 }
@@ -420,6 +422,8 @@ impl Generator {
                         categories: vec![cat],
                         breakdown: Some(breakdown),
                         source: Some("egcg-b".to_string()),
+                        seo_score: None,
+                        seo_breakdown: None,
                     });
                 }
             }
@@ -446,6 +450,8 @@ impl Generator {
                         categories: vec![exemplar_cat.clone()],
                         breakdown: Some(breakdown),
                         source: Some("egcg-c".to_string()),
+                        seo_score: None,
+                        seo_breakdown: None,
                     });
                 }
             }

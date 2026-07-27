@@ -6,6 +6,7 @@ use std::sync::Mutex;
 mod db;
 mod engine;
 mod local_llm;
+mod seo;
 mod title_gen;
 
 pub struct AppState {
@@ -21,14 +22,14 @@ pub struct TitleResult {
     pub categories: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub breakdown: Option<serde_json::Value>,
-    /// Which engine actually produced this title: "local-llm", "egcg",
-    /// "template" (legacy fallback filler), or "ai" (cloud API-key path).
-    /// Added so the app — and anyone debugging output quality — can tell
-    /// which generator a given result came from instead of guessing from
-    /// its shape. `#[serde(default)]` keeps older history/favorites rows
-    /// (saved before this field existed) deserializing cleanly as `None`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    /// 0–100 SEO score from seo::score_seo. None for pre-feature or cloud-AI results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seo_score: Option<u8>,
+    /// Per-signal SEO breakdown, serialized from seo::SeoBreakdown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seo_breakdown: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -842,7 +843,7 @@ fn generate_with_ai(
             let title = item["title"].as_str()?.trim().to_string();
             if title.is_empty() { return None; }
             let score = item["score"].as_u64().unwrap_or(50).min(100) as u32;
-            Some(TitleResult { title, score, categories: categories.clone(), breakdown: item.get("breakdown").cloned(), source: Some("ai".to_string()) })
+            Some(TitleResult { title, score, categories: categories.clone(), breakdown: item.get("breakdown").cloned(), source: Some("ai".to_string()), seo_score: None, seo_breakdown: None })
         })
         .collect();
 
