@@ -6,9 +6,11 @@ use std::sync::Mutex;
 mod db;
 mod engine;
 mod local_llm;
+mod title_gen;
 
 pub struct AppState {
     pub db: Mutex<rusqlite::Connection>,
+    pub generator: std::sync::Mutex<title_gen::Generator>,
     pub local_llm: std::sync::Mutex<Option<local_llm::LocalLlm>>,
 }
 
@@ -86,13 +88,12 @@ fn generate_titles(
     };
     let quantity = quantity.min(cap);
 
+    let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
     let mut llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
-    // Lazy-load LLM on first generation call (runs after Tauri app is initialized,
-    // so resource dir is available)
     if llm_guard.is_none() {
         *llm_guard = lazy_load_llm();
     }
-    engine::generate(&db, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
+    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
 }
 
 #[tauri::command]
@@ -922,6 +923,10 @@ pub fn run() {
         }
     }
 
+    // Build EGCG generator from curated titles (available for benchmarking as fallback)
+    let generator = title_gen::Generator::build(&conn);
+    println!("EGCG generator built ({} words in vocabulary)", generator.word_count());
+
     // Local LLM is loaded lazily on first generation call (so resource_dir is available)
     println!("Local LLM will be loaded on first use (lazy init)");
 
@@ -930,6 +935,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             db: Mutex::new(conn),
+            generator: std::sync::Mutex::new(generator),
             local_llm: std::sync::Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![

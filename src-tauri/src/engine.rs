@@ -2,13 +2,14 @@ use rusqlite::Connection;
 use serde_json;
 
 use crate::local_llm::LocalLlm;
+use crate::title_gen::Generator;
 use crate::TitleResult;
 
-/// Orchestrate title generation: local LLM first, then instant curated-title
-/// retrieval as fallback. The old three-pass pipeline (LLM → EGCG → template
-/// engine) is removed — EGCG and template-based generation are retired.
+/// Orchestrate title generation: local LLM first, then EGCG fallback,
+/// then curated-title retrieval as last resort.
 pub fn generate(
     conn: &Connection,
+    generator: &Generator,
     local_llm: Option<&mut LocalLlm>,
     keyword: &str,
     categories: &[String],
@@ -68,7 +69,14 @@ pub fn generate(
         }
     }
 
-    // ── Pass 2: Instant curated-title retrieval fallback ──
+    // ── Pass 2: EGCG generation for remaining slots ──
+    let remaining = (quantity as usize).saturating_sub(results.len());
+    if remaining > 0 && keyword.len() > 2 {
+        let egcg_results = generator.generate(keyword, categories, style, genre, remaining as u32);
+        results.extend(egcg_results);
+    }
+
+    // ── Pass 3: Instant curated-title retrieval fallback ──
     let remaining = (quantity as usize).saturating_sub(results.len());
     if remaining > 0 {
         let curated_results = retrieve_curated_fallback(

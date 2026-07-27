@@ -12,7 +12,7 @@
 | | Web App | Desktop App |
 |---|---|---|
 | **Deployment** | Netlify (free tier) | Tauri v2 native binary |
-| **Pricing** | Free tier + $15.83/mo annual Pro ($19/mo monthly) | $29 Basic / $49 Pro one-time |
+| **Pricing** | Free tier + $15.83/mo annual Pro ($19/mo monthly) | $29 Core / $59 Pro / $89 Studio one-time |
 | **AI** | Serverless via Netlify Functions (DeepSeek V4 Flash default, configurable) | Bring-your-own-key (OpenAI, DeepSeek, Claude, Gemini) + offline engine |
 | **Database** | Supabase Postgres (6 tables) | Local SQLite (`titles.db`) |
 | **Auth** | Supabase Auth (CDN + localStorage fallback) | License key activation (24h offline cache) |

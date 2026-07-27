@@ -11,7 +11,7 @@
 **Primary pick: SmolLM2-360M-Instruct, GGUF, Q4_K_M quantization.**
 
 - Repo: `HuggingFaceTB/SmolLM2-360M-Instruct-GGUF` (official) — quantized mirrors also exist from `unsloth`, `QuantFactory`, `Mungert` if the official repo doesn't have the exact quant level needed.
-- License: Apache 2.0 — clean commercial redistribution, no attribution-notice complexity beyond standard Apache terms. This matters: TitleForge Desktop is a paid product ($29/$49 one-time), so license simplicity is a real factor, not just a checkbox.
+- License: Apache 2.0 — clean commercial redistribution, no attribution-notice complexity beyond standard Apache terms. This matters: TitleForge Desktop is a paid product ($29/$59/$89 one-time), so license simplicity is a real factor, not just a checkbox.
 - Architecture: Llama-family. `candle-transformers` has mature, well-exercised support for Llama-architecture quantized GGUF inference (`candle_transformers::models::quantized_llama`) — this is the most battle-tested path in candle, lower integration risk than a newer/less common architecture.
 - Approximate size: Q4_K_M quantization of a 360M model should land roughly 200-260MB. Verify exact size once downloaded — don't assume, confirm.
 - Approximate RAM during inference: model size + a few hundred MB for context/KV cache, so budget ~500MB-800MB free RAM. Fine on any machine from the last decade.
