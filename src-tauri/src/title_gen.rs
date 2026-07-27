@@ -1,6 +1,6 @@
 //! EGCG: Exemplar-Guided Coherence Generator
 //!
-//! A new offline title generation algorithm for TitleSmith.
+//! A new offline title generation algorithm for TitleForge.
 //! Replaces the sparse Markov chain model with a coherence-scored
 //! constraint-based generator that degrades gracefully on sparse data.
 //!

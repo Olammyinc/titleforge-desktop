@@ -750,7 +750,7 @@ fn generate_with_ai(
         let body = serde_json::json!({
             "model": model,
             "messages": [
-                {"role": "system", "content": "You are TitleSmith, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."},
+                {"role": "system", "content": "You are TitleForge, an elite title generator. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.85,

@@ -1,12 +1,12 @@
 [package]
-name = "titlesmith-desktop"
+name = "titleforge-desktop"
 version = "1.0.0-beta.1"
 description = "TitleForge Desktop — Offline title generator for Windows, Mac, and Linux"
 authors = ["Olammyinc"]
 edition = "2021"
 
 [lib]
-name = "titlesmith_lib"
+name = "titleforge_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -30,7 +30,6 @@ candle-core = "0.11"
 candle-transformers = "0.11"
 candle-nn = "0.11"
 tokenizers = "0.21"
-hf-hub = "0.4"
 
 [features]
 default = []
