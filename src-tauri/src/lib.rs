@@ -381,7 +381,7 @@ fn update_title_notes(
 /// when Tauri has a stable keystore plugin.
 fn xor_obfuscate(input: &str) -> String {
     let hostkey = hostname::get()
-        .unwrap_or_else(|_| std::ffi::OsString::from("titlesmith-fallback"))
+        .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
         .to_string_lossy()
         .into_owned();
     let key_bytes = hostkey.as_bytes();
@@ -404,7 +404,7 @@ fn xor_deobfuscate(stored: &str) -> String {
         None => return stored.to_string(), // corrupt data, return raw
     };
     let hostkey = hostname::get()
-        .unwrap_or_else(|_| std::ffi::OsString::from("titlesmith-fallback"))
+        .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
         .to_string_lossy()
         .into_owned();
     let key_bytes = hostkey.as_bytes();
