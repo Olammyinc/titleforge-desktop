@@ -379,6 +379,43 @@ fn update_title_notes(
 /// migrated to OS-level credential storage (keychain on macOS,
 /// DPAPI/Windows Credential Manager on Windows, libsecret on Linux)
 /// when Tauri has a stable keystore plugin.
+/// Store a sensitive value in the OS keyring (macOS Keychain, Windows Credential
+/// Manager, Linux libsecret). Falls back to XOR-obfuscated SQLite storage if the
+/// keyring is unavailable (headless Linux, restricted environments).
+fn store_secret(key: &str, value: &str) {
+    let entry = keyring::Entry::new("titleforge-desktop", key);
+    match entry {
+        Ok(e) => {
+            if let Err(e) = e.set_password(value) {
+                eprintln!("[keyring] store failed for '{}': {} — falling back to XOR", key, e);
+                // Don't store in SQLite as fallback here — caller handles that
+            }
+        }
+        Err(e) => {
+            eprintln!("[keyring] entry creation failed for '{}': {} — falling back to XOR", key, e);
+        }
+    }
+}
+
+/// Retrieve a sensitive value from the OS keyring. Returns None if the keyring
+/// is unavailable or the entry doesn't exist. The caller should fall back to
+/// XOR-obfuscated SQLite.
+fn retrieve_secret(key: &str) -> Option<String> {
+    let entry = keyring::Entry::new("titleforge-desktop", key).ok()?;
+    entry.get_password().ok()
+}
+
+/// Delete a sensitive value from the OS keyring.
+fn delete_secret(key: &str) {
+    if let Ok(entry) = keyring::Entry::new("titleforge-desktop", key) {
+        let _ = entry.delete_credential();
+    }
+}
+
+/// Legacy XOR obfuscation — kept as a fallback for environments where the OS
+/// keyring is unavailable (headless Linux without libsecret, restricted
+/// sandboxed environments, etc.). Also provides backward compatibility for
+/// any existing API keys stored before the keyring migration.
 fn xor_obfuscate(input: &str) -> String {
     let hostkey = hostname::get()
         .unwrap_or_else(|_| std::ffi::OsString::from("titleforge-fallback"))
@@ -450,9 +487,9 @@ fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashM
         .map_err(|e| e.to_string())?
         .filter_map(|r| { if let Err(ref e) = r { eprintln!("Row skipped: {}", e); } r.ok() })
         .map(|(k, v)| {
-            // Deobfuscate sensitive values on read
+            // Prefer OS keyring for sensitive values, fall back to XOR-deobfuscated SQLite
             let value = if is_sensitive_key(&k) {
-                xor_deobfuscate(&v)
+                retrieve_secret(&k).unwrap_or_else(|| xor_deobfuscate(&v))
             } else {
                 v
             };
@@ -467,18 +504,31 @@ fn get_settings(state: tauri::State<AppState>) -> Result<std::collections::HashM
 fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Result<(), String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
-    // Obfuscate sensitive values (API keys, tokens, etc.) before storing
-    let stored_value = if is_sensitive_key(&key) {
-        xor_obfuscate(&value)
+    // Store sensitive values in OS keyring (preferred) with XOR-obfuscated
+    // SQLite as fallback for environments where the keyring is unavailable.
+    if is_sensitive_key(&key) {
+        if value.is_empty() {
+            // Clearing: remove from keyring and SQLite
+            delete_secret(&key);
+            db.execute("DELETE FROM user_settings WHERE key = ?1", rusqlite::params![&key])
+                .map_err(|e| e.to_string())?;
+        } else {
+            store_secret(&key, &value);
+            // Also store XOR-obfuscated in SQLite as fallback
+            let xor_val = xor_obfuscate(&value);
+            db.execute(
+                "INSERT OR REPLACE INTO user_settings (key, value) VALUES (?1, ?2)",
+                rusqlite::params![&key, xor_val],
+            )
+            .map_err(|e| e.to_string())?;
+        }
     } else {
-        value
-    };
-
-    db.execute(
-        "INSERT OR REPLACE INTO user_settings (key, value) VALUES (?1, ?2)",
-        rusqlite::params![key, stored_value],
-    )
-    .map_err(|e| e.to_string())?;
+        db.execute(
+            "INSERT OR REPLACE INTO user_settings (key, value) VALUES (?1, ?2)",
+            rusqlite::params![&key, &value],
+        )
+        .map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 
