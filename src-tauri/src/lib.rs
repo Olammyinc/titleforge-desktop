@@ -134,7 +134,7 @@ fn get_usage_stats(state: tauri::State<AppState>) -> Result<serde_json::Value, S
         "totalGenerations": total_gens,
         "todayGenerations": today_gens,
         "totalFavorites": total_titles,
-        "isPro": tier != "basic",
+        "isPro": tier != "core",
         "tier": tier,
     }))
 }
@@ -255,7 +255,7 @@ fn toggle_favorite(
 #[tauri::command]
 fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    if get_tier(&db) == "basic" {
+    if get_tier(&db) == "core" {
         return Err(PRO_REQUIRED_MSG.to_string());
     }
     let mut stmt = db
@@ -286,7 +286,7 @@ fn get_projects(state: tauri::State<AppState>) -> Result<Vec<ProjectEntry>, Stri
 #[tauri::command]
 fn create_project(name: String, state: tauri::State<AppState>) -> Result<ProjectEntry, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    if get_tier(&db) == "basic" {
+    if get_tier(&db) == "core" {
         return Err(PRO_REQUIRED_MSG.to_string());
     }
 
@@ -337,7 +337,7 @@ fn add_to_project(
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    if get_tier(&db) == "basic" {
+    if get_tier(&db) == "core" {
         return Err(PRO_REQUIRED_MSG.to_string());
     }
     db.execute(
@@ -356,7 +356,7 @@ fn update_title_notes(
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    if get_tier(&db) == "basic" {
+    if get_tier(&db) == "core" {
         return Err(PRO_REQUIRED_MSG.to_string());
     }
     db.execute(
@@ -539,22 +539,27 @@ fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Res
 const PRO_REQUIRED_MSG: &str = "This feature requires a Pro or Studio license. Upgrade at titleforge-tool.netlify.app/desktop";
 
 /// Read the locally-cached license tier from `user_settings`.
-/// Returns "basic" when no tier row exists — fail-closed.
+/// Returns "core" when no tier row exists — fail-closed.
 fn get_tier(db: &rusqlite::Connection) -> String {
     db.query_row(
         "SELECT value FROM user_settings WHERE key = 'license_tier'",
         [],
         |row| row.get::<_, String>(0),
     )
-    .unwrap_or_else(|_| "basic".to_string())
+    .unwrap_or_else(|_| "core".to_string())
 }
 
 #[tauri::command]
 fn validate_license(key: String, email: String, state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let machine = hostname::get()
+        .unwrap_or_else(|_| std::ffi::OsString::from("unknown"))
+        .to_string_lossy()
+        .into_owned();
     let url = format!(
-        "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}",
+        "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}&machine={}",
         urlencoding(&key),
-        urlencoding(&email)
+        urlencoding(&email),
+        urlencoding(&machine)
     );
 
     // Run HTTP call on a background thread to avoid blocking the UI
@@ -565,7 +570,7 @@ fn validate_license(key: String, email: String, state: tauri::State<AppState>) -
         let resp = client.get(&url).send().ok()?;
         let data: serde_json::Value = resp.json().ok()?;
         let valid = data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false);
-        let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic").to_string();
+        let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("core").to_string();
         Some((valid, tier))
     }).join().map_err(|_| "Thread panicked".to_string())?;
 
@@ -618,15 +623,22 @@ fn deactivate_license(state: tauri::State<AppState>) -> Result<(), String> {
 }
 
 /// Silently re-validate the license in the background.
-/// On any network/parse/panic failure returns Ok(()) silently — leaves cache untouched.
-/// On valid response: overwrites license_tier/license_status/license_validated_at.
-/// On server `valid: false`: revokes locally (DELETE license_% rows).
+/// On server reachable + valid: overwrites local cache.
+/// On ANY failure (network error, server unreachable, invalid response,
+/// server says invalid): does NOTHING — leaves existing cache untouched.
+/// The foreground `validate_license` is the authority for revocation.
+/// This is a refresh-only command to keep cache fresh, not to revoke.
 #[tauri::command]
 fn background_verify(key: String, email: String, state: tauri::State<AppState>) -> Result<(), String> {
+    let machine = hostname::get()
+        .unwrap_or_else(|_| std::ffi::OsString::from("unknown"))
+        .to_string_lossy()
+        .into_owned();
     let url = format!(
-        "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}",
+        "https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key={}&email={}&machine={}",
         urlencoding(&key),
-        urlencoding(&email)
+        urlencoding(&email),
+        urlencoding(&machine)
     );
 
     let result = match std::thread::spawn(move || -> Option<(bool, String)> {
@@ -636,7 +648,7 @@ fn background_verify(key: String, email: String, state: tauri::State<AppState>) 
         let resp = client.get(&url).send().ok()?;
         let data: serde_json::Value = resp.json().ok()?;
         let valid = data.get("valid").and_then(|v| v.as_bool()).unwrap_or(false);
-        let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("basic").to_string();
+        let tier = data.get("tier").and_then(|v| v.as_str()).unwrap_or("core").to_string();
         Some((valid, tier))
     }).join() {
         Ok(opt) => opt,
@@ -645,16 +657,14 @@ fn background_verify(key: String, email: String, state: tauri::State<AppState>) 
 
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
-    if let Some((is_valid, tier)) = result {
-        if is_valid {
-            let now = chrono::Utc::now().to_rfc3339();
-            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')", []).ok();
-            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)", rusqlite::params![&tier]).ok();
-            db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_validated_at', ?1)", rusqlite::params![&now]).ok();
-        } else {
-            db.execute("DELETE FROM user_settings WHERE key LIKE 'license_%'", []).ok();
-        }
+    if let Some((true, tier)) = result {
+        let now = chrono::Utc::now().to_rfc3339();
+        db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_status', 'valid')", []).ok();
+        db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_tier', ?1)", rusqlite::params![&tier]).ok();
+        db.execute("INSERT OR REPLACE INTO user_settings (key, value) VALUES ('license_validated_at', ?1)", rusqlite::params![&now]).ok();
     }
+    // background_verify NEVER revokes — it only refreshes on success.
+    // Revocation is handled by the foreground validate_license command.
     Ok(())
 }
 
@@ -694,7 +704,7 @@ fn generate_with_ai(
     // Tier gate: cloud AI is Pro/Studio only. DB lock scoped before HTTP call.
     {
         let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-        if get_tier(&db) == "basic" {
+        if get_tier(&db) == "core" {
             return Err(PRO_REQUIRED_MSG.to_string());
         }
     }
@@ -864,7 +874,7 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
         .unwrap_or(0);
     let llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
     Ok(serde_json::json!({
-        "app": "titlesmith-desktop",
+        "app": "titleforge-desktop",
         "version": env!("CARGO_PKG_VERSION"),
         "seeded": count > 0,
         "templateCount": count,
@@ -878,7 +888,7 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
     let model_name = "SmolLM2-360M-Instruct-Q4_K_M.gguf";
     let app_dir = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("titlesmith-desktop");
+        .join("titleforge-desktop");
 
     let mut model_paths = vec![
         // Development: CWD-relative (npm run dev from titleforge-desktop/)
@@ -891,13 +901,13 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
         // Tauri v2 resource extraction — app data dir
         dirs::data_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("com.titlesmith.desktop")
+            .join("com.titleforge.desktop")
             .join("models")
             .join(model_name),
         // Tauri v2 resource extraction — with resources subfolder
         dirs::data_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("com.titlesmith.desktop")
+            .join("com.titleforge.desktop")
             .join("resources")
             .join("models")
             .join(model_name),
@@ -931,7 +941,7 @@ fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
 pub fn run() {
     let app_dir = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("titlesmith-desktop");
+        .join("titleforge-desktop");
     std::fs::create_dir_all(&app_dir).ok();
 
     let db_path = app_dir.join("titles.db");
