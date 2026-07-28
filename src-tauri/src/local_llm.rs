@@ -63,13 +63,40 @@ impl LocalLlm {
         let prompt_len = prompt_ids.len();
         let eos = self.tokenizer.token_to_id("<|im_end|>").unwrap_or(u32::MAX);
         let eos2 = self.tokenizer.token_to_id("<|endoftext|>").unwrap_or(u32::MAX);
+        let bos = self.tokenizer.token_to_id("<|im_start|>").unwrap_or(u32::MAX);
+        eprintln!("[local_llm] prompt_len={} eos={} eos2={} bos={}", prompt_len, eos, eos2, bos);
         let mut all_tokens = prompt_ids.clone();
 
         // Prefill: feed the full prompt at position 0
-        let input = Tensor::from_vec(prompt_ids, (1, prompt_len), &self.device).ok()?;
-        let logits = self.model.forward(&input, 0).ok()?;
-        let mut next = sample_token(&logits).ok()?;
-        if next == eos || next == eos2 { return None; }
+        let input = match Tensor::from_vec(prompt_ids, (1, prompt_len), &self.device) {
+            Ok(t) => t,
+            Err(e) => { eprintln!("[local_llm] Tensor::from_vec failed: {:?}", e); return None; }
+        };
+        let logits = match self.model.forward(&input, 0) {
+            Ok(l) => l,
+            Err(e) => { eprintln!("[local_llm] model.forward failed: {:?}", e); return None; }
+        };
+        let mut next = match sample_token(&logits) {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("[local_llm] sample_token failed: {:?}, logits shape={:?}", e, logits.dims());
+                // Try fallback: argmax token
+                match logits.i((0, logits.dim(1).unwrap_or(1) - 1)) {
+                    Ok(last) => {
+                        let flat: Vec<f32> = last.to_vec1().unwrap_or_default();
+                        if flat.is_empty() { return None; }
+                        flat.iter().enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)).map(|(i, _)| i as u32).unwrap_or(0)
+                    }
+                    Err(e2) => { eprintln!("[local_llm] fallback argmax also failed: {:?}", e2); return None; }
+                }
+            }
+        };
+        eprintln!("[local_llm] first generated token: {} (eos={} eos2={} match_eos={} match_eos2={})",
+            next, eos, eos2, next == eos, next == eos2);
+        if next == eos || next == eos2 {
+            eprintln!("[local_llm] EOS as first token — model gave up immediately");
+            return None;
+        }
         all_tokens.push(next);
 
         // Decode: feed one token at a time. `next` must be reassigned (not
@@ -90,8 +117,12 @@ impl LocalLlm {
         let output = self.tokenizer.decode(&all_tokens[prompt_len..], true).ok()?;
         let trimmed = output.trim().to_string();
 
-        // QC gate
-        if trimmed.len() < 5 || trimmed.split_whitespace().count() < 3 {
+        eprintln!("[local_llm] raw output ({} chars, {} words): '{}'",
+            trimmed.len(), trimmed.split_whitespace().count(), trimmed);
+
+        // QC gate — accepts even single-word output during development
+        if trimmed.is_empty() {
+            eprintln!("[local_llm] QC rejected (empty output)");
             return None;
         }
 
@@ -100,13 +131,23 @@ impl LocalLlm {
 }
 
 fn sample_token(logits: &Tensor) -> Result<u32, candle_core::Error> {
-    // logits shape: [1, seq_len, vocab] — take the last position
-    let seq_len = logits.dim(1)?;
-    let logits = logits.i((0, seq_len - 1))?; // [vocab]
+    // logits shape: [1, vocab] (prefill) or [1, 1, vocab] (decode)
+    // Always take the last position in the sequence.
+    let ndim = logits.dims().len();
+    let vocab_logits = if ndim == 2 {
+        // [batch, vocab] — prefill return
+        logits.i(0)?
+    } else if ndim >= 3 {
+        // [batch, seq_len, vocab] — decode, take last position
+        let seq_len = logits.dim(ndim - 2)?;
+        logits.i((0, seq_len - 1))?
+    } else {
+        return Err(candle_core::Error::Msg(format!("Unexpected logits shape: {:?}", logits.dims())));
+    };
     let temperature = 0.7f64;
     let top_p = 0.9f32;
-    let logits = (&logits / temperature)?;
-    let probs = candle_nn::ops::softmax(&logits, 0)?; // softmax over vocab
+    let logits_scaled = (&vocab_logits / temperature)?;
+    let probs = candle_nn::ops::softmax(&logits_scaled, 0)?;
     let probs_vec: Vec<f32> = probs.to_vec1()?;
 
     // Top-p (nucleus) sampling

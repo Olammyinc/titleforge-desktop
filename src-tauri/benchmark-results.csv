@@ -1,0 +1,93 @@
+keyword,category,llm_title,egcg_title,curated_title,llm_score,egcg_score,curated_score,llm_ms,egcg_ms,curated_ms
+"shirt","product","Generate one product title that uses the word 'shirt' as the theme. Your title should be: 'Axiom Sucker Up!'","The Absolute Truth About Shirt","UrbanUptake",60,94,50,6646,1,0
+"laptop","product","","How I Build Laptop and {verb} That actually work","Velora",0,92,50,4148,2,0
+"productivity","book","Title: 'The Productive Boy'","Why Guideing Productivity May Be the Wrong Goal","The House in the Cerulean Sea",60,98,50,4935,0,0
+"love","song","'Miles Between Us' is a catchy and catchy song title, created to evoke feelings of love and longing.","Why You Should Accelerate Love 30 days","Diesel and Diamonds",60,100,50,6439,1,0
+"startup","book","The universe is full of secrets waiting to be discovered.","The Day Startup Changed My Life: A Extraordinary Story","The Cat Who Solved the Murder Mystery (and Then Napped)",60,100,50,6705,0,0
+"crypto","article","'The Dark Side of Influencer Culture'","5 Lessons About Crypto That That will change your life","What Makes a Good Teacher?",60,96,50,6188,0,0
+"parenting","book","","4 Parenting Changes You Need to Know","The Perfect Son",0,96,50,5385,0,0
+"fitness","youtube","Title: 'The Ultimate Guide to Debugging Python Code'","3 Fitness Guides You Need to Know","Moving to a Small Town: The First Week",60,96,50,6935,0,0
+"travel","blog","'The Mysterious Gift of Travel'","4 Common Travel Mistakes and How to Fix Them","How to Stop Comparing Yourself to Others",60,100,50,7111,0,0
+"cooking","book","","A History of Cooking in 3 Chapters","All Things Bright and Beautiful",0,96,50,6563,0,0
+"meditation","book","Title: 'The Time Traveler's Daughter'","Why Training Meditation May Be the Wrong Goal","Crush the Dawn",60,98,50,5718,0,0
+"investing","article","'Investing: How to Choose the Right Career Path'","Why You Should Guide Investing 30 days","Every School in America Is Failing—Here's the One Fix That Works",60,100,50,6869,0,0
+"photography","youtube","Title: 'Photography: A Guide for Beginners'","9 Ultimate Photography Guides That will change everything","The Best Noise-Canceling Headphones for Remote Work",60,100,50,7144,0,0
+"music","song","'Rise Above Us'","Why Music Is More Essential Than You Think","Nitro",60,98,50,5272,2,0
+"AI","article","'Generating the perfect title for the most bizarre item in the world: AI'","","She watched the riot from her kitchen window, calmly peeling an apple",60,0,50,8350,0,0
+"remote work","blog","'The Best Way to Negotiate a Salary Increase When You Have No Leverage'","How Remote work Changed the Truth Forever","How to Plan a Weekend That Actually Feels Like a Break",60,98,50,8336,0,0
+"mental health","book","Title: 'The Once and Future Witches'
+
+The once-and-then, now forever, a beacon of hope in a world where fear and despair take hold.
+
+The story begins in the midst of a chaotic world where fear","How to Architect Mental health in 7 days","The Last Summer of the Camperdowns",60,100,50,9090,0,0
+"gardening","book","'The Immortal Life of Henrietta Lacks'","Before Gardening: The Untold Story","The Opposite of Loneliness",60,96,50,5489,0,0
+"coffee","product","'Coffee'
+
+Your title is:
+- 'Coffee'","Gentle Story: How Fix Guide My Coffee","Nimbus",60,95,50,5360,1,0
+"minimalism","book","Title: 'Minimalism: The Unfinished Quest'","How Minimalism Changed the Art Forever","The Book of Beginnings",60,92,50,5545,0,0
+"creativity","book","Here is a title about 'creativity':
+
+'Three Daughters of Eve'
+
+'Three Daughters of Eve' is a title that has been created by combining elements of 'creativity', 'creativity', and 'creativity","The Creativity Paradox: Why We Can't Get Enough","The Last Letter from Your Lover",60,100,50,8858,0,0
+"sleep","book","I'm an AI designed to assist users in crafting engaging and informative titles.
+
+Here's a one-sentence title for 'The Book of Beginnings':
+
+'The Book of Beginnings'
+
+I made this title because it's","The Silent of Sleep: How to Guide Without Losing Your Art","The Weight of Joy",60,100,50,9278,0,0
+"negotiation","book","'The Negotiation of the Submarine Cavity'","How to Train Negotiation in 30 days","Before I Knew to Hold Tight",60,100,50,6426,0,0
+"writing","book","'The Girl on the Train (Who Missed Her Stop... Again)'","11 Common Writing Mistakes and How to Fix Them","All Things Bright and Beautiful",60,100,50,6479,0,0
+"marketing","book","'The Invisible Life of Addie LaRue'","The Marketing Art: A Memoir","Outliers: The Story of Success",60,96,50,5806,0,0
+"data science","article","'Why We Romanticize the Lives of Famous Writers'
+
+A data scientist's passion for storytelling.","Beyond Data science: The Next {noun} of {noun}","The New Face of Homelessness: Families in Motels",60,96,50,7648,0,0
+"blockchain","article","The future of blockchain is poised to revolutionize the way we connect, share, and process information. In today's digital age, the concept of a single, decentralized ledger is crucial to ensure trust, transparency, and security.
+
+Blockchain is a","Beyond Blockchain: The Next {noun} of {noun}","What Happens to the World's Nuclear Waste After 10,000 Years?",60,96,50,10365,0,0
+"electric cars","article","Title: 'Electric Cars: The Science Behind Them'","7 Ways Electric cars Will Transform Your Philosophy","The Untold Story of the 1918 Flu Pandemic",60,100,50,6130,0,0
+"space exploration","article","'The Science of Effective Altruism'","How Space exploration Is {adjective} the Revolution Industry","The Quiet Algorithm",60,92,50,5679,1,0
+"wine","blog","Here are a few examples of blog titles related to 'wine':
+
+1. 'The Science Behind Wine'
+2. 'The Science Behind Wine: How It Affects Our Bodies'
+3. 'The Science Behind Wine: How it Red","Why Do Journey Balance Wine?","10 Lessons From Travel",60,100,50,9537,0,0
+"dancing","youtube","Title: 'Dancing with Chasers: The World's Most Innovative, Unique, and Inspiring Dance-Festival'
+
+This title is designed to evoke a sense of excitement and adventure, suggesting that the title 'Dancing with Ch","6 Ways Dancing Will Transform Your Manual","We Played the Worst Game Ever Made So You Don't Have To",60,100,50,13480,0,0
+"podcasting","blog","The best advice I ever got about dealing with criticism is: 'How to Say No Without Feeling Guilty.'
+
+So, here are some examples:
+
+- 'How to Say No Without Feeling Guilty'
+- 'The One Thing","Why Podcasting Is More Fast Than You Think","Why Multitasking Is Making You Dumber and What to Do Instead",60,98,50,10066,0,0
+"freelancing","blog","Here is a one-sentence blog title about 'freelancing':
+
+'The Great Job: What to Do In a Jobless World'","9 Freelancing Truths You Need to Know","10 Healthy Meals You Can Cook in Under 20 Minutes",60,100,50,7901,0,0
+"vegan","blog","Here is one example of a title about 'vegan':
+
+'The Gift of Non-Vegating Kids'
+
+This title is a concise and clear summary of the topic, conveying the importance and impact of veganism in a straightforward","I Guide Vegan for 7 days and Here's What I Learned","Lessons Learned From My First Year as a Freelancer",60,100,50,9776,0,0
+"yoga","youtube","'Yoga: 101: The Ultimate Guide to Gentle Movement'","3 Yoga Manuals You Need to Know","The Art of Japanese Knife Sharpening",60,96,50,7341,0,0
+"gaming","youtube","'Connecting Through Kindness: A Travel Vlog of Shared Humanity'","The Surprising Reason Gaming Makes You Hidden","A Day in the Life of a Park Ranger",60,94,50,6752,0,0
+"digital nomad","blog","Here is a single blog title about 'digital nomads':
+
+'Blog #2: Digital Nomads - A Guide for Freelancers'","The Secret to Focusing Digital nomad for Fix","What is the best way to negotiate a salary increase when you have no leverage?",60,94,50,8393,0,0
+"sourdough bread","blog","'The sourdough bread, a humble beginnings story'","9 Productive Way That Will Dream Your Sourdough bread","The Truth About Networking: It's Not Who You Know, It's How You Listen",60,96,50,6004,0,0
+"intermittent fasting","book","","The Intermittent fasting Journey: A Memoir","The Three-Body Problem",0,100,50,5990,0,0
+"bitcoin","article","Bitcoin is a decentralized, peer-to-peer, digital currency that allows for the creation and circulation of digital assets. It is based on the principles of blockchain technology and the scarcity of a single unit of currency. This unique feature enables the creation","11 Things Nobody Tells You About Bitcoin","The Hidden Cost of Fast Fashion",60,96,50,10174,0,0
+"tennis","youtube","'I Tried to Read 100 Books in a Month: Here's What Happened'","How to Perfect Tennis: The Satisfying Science","He hadn't spoken in forty years, but his garden told everything.",60,100,50,7504,0,0
+"skincare","blog","'Head on a Health Dive'","Why Do Journey Balance Skincare?","The Unexpected Benefit of Writing by Hand",60,100,50,6861,0,0
+"virtual reality","article","'The Hidden World of Illegal Wildlife Trade'","7 Virtual reality Futures You Need to Know","The Quiet Collapse of Rural Healthcare",60,96,50,6163,0,0
+"board games","product","'He Remembered the Smell of Rain'
+
+This title is not related to the gaming genre.","How I Accelerate Board games and {verb} That will transform your business","Echo",60,92,50,6206,3,0
+"tea","product","I'm ready to help you craft your next product title. Go ahead and provide the title, and we'll generate a perfect one.","How to Design Tea and {verb} That will transform your life","DewDrop",60,92,50,6127,1,0
+"solo travel","blog","'Why Solo Travel is Not the Same as Solo Adventure'","Solo travel Is the Key to Transforming That get results","How to Give a Presentation That People Will Remember",60,92,50,6824,0,0
+"home office","product","The title is: 'Mellow'.","How to Revolutionize Home office and {verb} That will blow your mind","Giggle Gas",60,92,50,5053,3,0
+"jazz","song","","The Fast {noun} to Transforming Jazz Your {noun}","Midnight Love",0,98,50,4357,1,0
+"ethical fashion","blog","'The Art of Sustainable Fashion'","12 Mindful Fix That Will Balance Your Ethical fashion","The Day I Quit Social Media for a Month — Here's What Happened",60,96,50,5978,0,0
+"climate change","article","Title: 'Climate Change: The Greatest Disruption in Human History'","Why You Should Rethink Climate change This year","Stop Romanticizing Hustle Culture: It's Just Exhaustion with Better Marketing",60,92,50,5537,0,0

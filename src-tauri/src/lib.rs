@@ -3,11 +3,11 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
-mod db;
-mod engine;
-mod local_llm;
-mod seo;
-mod title_gen;
+pub mod db;
+pub mod engine;
+pub mod local_llm;
+pub mod seo;
+pub mod title_gen;
 
 pub struct AppState {
     pub db: Mutex<rusqlite::Connection>,

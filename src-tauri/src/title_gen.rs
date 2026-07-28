@@ -701,28 +701,6 @@ impl Generator {
         slots: &[SlotDef],
         _keyword: &str,
     ) -> String {
-        /// Small words that should remain lowercase in title-case when not leading.
-        const SMALL_WORDS: &[&str] = &[
-            "a", "an", "the", "in", "of", "to", "for", "and", "or", "but",
-            "by", "with", "at", "from", "on", "as", "is", "it",
-        ];
-
-        /// Capitalize a word for title-case display.
-        fn title_case_word(word: &str, is_first: bool) -> String {
-            if word.is_empty() {
-                return word.to_string();
-            }
-            let lower = word.to_lowercase();
-            if !is_first && SMALL_WORDS.contains(&lower.as_str()) {
-                return lower;
-            }
-            let mut chars = word.chars();
-            match chars.next() {
-                Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
-                None => word.to_string(),
-            }
-        }
-
         let mut result = template.to_string();
         for (i, slot) in slots.iter().enumerate() {
             if i < filled.len() {
@@ -731,22 +709,7 @@ impl Generator {
                 if wants_gerund(&slot.name) {
                     word = to_gerund(&word);
                 }
-                // Capitalize every filled word using title-case rules
-                let is_first_word = result.starts_with(&placeholder);
-                let replacement = title_case_word(&word, is_first_word);
-                // Some templates reuse the same slot name for two distinct
-                // placeholders (e.g. "{adjective} vs {adjective}: ..." has two
-                // separate "adjective" slots, each filled with a different
-                // word so they don't repeat). `String::replace` replaces
-                // EVERY occurrence of the pattern in one call, so with a
-                // plain `.replace()` here the first slot's fill would
-                // overwrite BOTH placeholders and the second slot's distinct
-                // word would never make it into the title, silently
-                // collapsing "Bold vs Groundbreaking" into "Bold vs Bold".
-                // `replacen(.., 1)` consumes only the next (leftmost
-                // remaining) occurrence, so each slot fills its own
-                // placeholder in template order — correct whether or not the
-                // slot name is reused.
+                let replacement = title_case_word_fill(&word, result.starts_with(&placeholder));
                 result = result.replacen(&placeholder, &replacement, 1);
             }
         }
@@ -757,7 +720,73 @@ impl Generator {
             .replace(" !", "!")
             .replace(" ?", "?")
             .replace(" :", ":");
-        result
+        // Strip any remaining {placeholder} patterns — safety net for
+        // templates with more placeholder occurrences than defined slots.
+        result = strip_placeholders(&result);
+        result.trim().to_string()
+    }
+}
+
+/// Strip any remaining {placeholder} patterns from an assembled title.
+/// Manual implementation — no regex crate dependency.
+fn strip_placeholders(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut in_brace = false;
+    let mut brace_start = 0usize;
+    let chars: Vec<char> = s.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '{' {
+            in_brace = true;
+            brace_start = i;
+        } else if c == '}' && in_brace {
+            // Check if what's inside is a simple word (just letters/numbers/underscores)
+            let inside: String = chars[(brace_start + 1)..i].iter().collect();
+            let is_placeholder = inside.chars().all(|ch| ch.is_alphanumeric() || ch == '_')
+                && !inside.is_empty();
+            if is_placeholder {
+                // Remove the placeholder and add a space to prevent word concatenation
+                out.push(' ');
+            } else {
+                // Not a placeholder — keep the braces
+                out.push('{');
+                out.push_str(&inside);
+                out.push('}');
+            }
+            in_brace = false;
+        } else if !in_brace {
+            out.push(c);
+        }
+        i += 1;
+    }
+    if in_brace {
+        out.push('{');
+        out.push_str(&chars[(brace_start + 1)..].iter().collect::<String>());
+    }
+    // Clean up: collapse multiple spaces, fix punctuation spacing
+    let result = out;
+    let result = result.replace("  ", " ").replace("  ", " ");
+    result.trim().to_string()
+}
+
+/// Title-case a word for filling into a template.
+fn title_case_word_fill(word: &str, is_first: bool) -> String {
+    const SMALL_WORDS: &[&str] = &[
+        "a", "an", "the", "in", "of", "to", "for", "and", "or", "but",
+        "by", "with", "at", "from", "on", "as", "is", "it",
+    ];
+    if word.is_empty() {
+        return word.to_string();
+    }
+    let lower = word.to_lowercase();
+    if !is_first && SMALL_WORDS.contains(&lower.as_str()) {
+        return lower;
+    }
+    let mut chars = word.chars();
+    match chars.next() {
+        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+        None => word.to_string(),
     }
 }
 
