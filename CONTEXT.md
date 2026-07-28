@@ -1,6 +1,6 @@
 ﻿# TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-25
+> **Last updated:** 2026-07-28
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 
 ---
@@ -334,7 +334,7 @@ All tables have Row Level Security enabled with per-user policies.
 | **Activation** | Supabase auth modal | Full-screen split-panel takeover (no UI until activated) |
 | **Pages** | `index.html`, `dashboard.html` (separate) | Single page — Generator, Dashboard, Settings are sidebar panels |
 | **Auth** | Supabase (CDN + localStorage fallback) | License key (HTTP → offline cache) |
-| **Pro gate** | Tiered (guest/free/pro) | Always Pro — `isPro = true`, `isLoggedIn = true` |
+| **Pro gate** | Tiered (guest/free/pro) | Tiered — Core/Pro/Studio with backend gating. Tier stored in local SQLite, checked at generation time. |
 | **Data source** | Supabase via Netlify Functions | SQLite via `invoke()` |
 | **Generation** | AI only (via Netlify Function) | Local engine OR AI (bring-your-own-key) |
 | **Dashboard** | 5 sub-tabs + Settings separate page | 5 sub-tabs + Settings as own sidebar panel |
@@ -353,155 +353,175 @@ All tables have Row Level Security enabled with per-user policies.
 ### Font Fallbacks
 - `--font-display`: `'Clash Display', Georgia, 'Times New Roman', serif` (was `'Syne', sans-serif`)
 - `--font-body`: `'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ...` (was `'Instrument Sans', sans-serif`)
-- Applied in both `styles.css` files
 
 ### Complete UI Redesign (v0.2.0)
-- **Activation screen:** Full-screen split-panel (Ink 40% left + Paper 60% right). No chrome, no nav, no tool visible until activation.
-- **Left sidebar:** 220px Ink sidebar with 3 nav items (Generator, Dashboard, Settings). Single-page app — no separate pages.
-- **Generator:** Two-column card layout (input left 55%, config right 45%) with full-width results below.
-- **Dashboard merged:** Dashboard tabs (Overview, History, Favorites, Projects, Export) rendered inline. Settings moved to its own sidebar panel.
-- **Files removed:** `dashboard.html` and `dashboard.js` eliminated.
-- **Version bump:** 0.1.1 → 0.2.0, tag `v0.2.0` pushed.
-
-### Version Bump History
-- `1.0.0` → `0.1.0` (initial beta)
-- `0.1.0` → `0.1.1` (icon fix + FOUC fix)
-- `0.1.1` → `0.2.0` (complete UI redesign)
+- Activation screen, left sidebar, merged dashboard, single-page app. `dashboard.html`/`dashboard.js` removed.
 
 ### EGCG Algorithm (July 15, 2026)
-- **New file:** `src-tauri/src/title_gen.rs` (1270 lines) — full EGCG implementation replacing the old Markov chain
-- **Deleted file:** `src-tauri/src/markov.rs` (779 lines) — fully superseded
-- **Modified:** `engine.rs` — now orchestrates EGCG first, falls back to legacy template engine
-- **Modified:** `lib.rs` — AppState holds `Mutex<Generator>` instead of `Mutex<MarkovModel>`; initialization builds EGCG Generator at startup
-- **Three generation modes:** exemplar-guided template fill (70%), phrase stitching (20%), keyword-embedded exemplar (10%)
-- **Coherence scoring:** pairwise affinity matrix + unigram frequency + repeat penalty, normalized to 0-100
-- **Dependencies:** Pure Rust (`std` + `rand 0.8` + `rusqlite` + `serde`) — no new crates needed
-- **Build status:** Compiles clean, all 10 tests pass, zero warnings
+- Replaced old Markov chain with 3-mode EGCG. 11 bugs found over 4 audit rounds. `{placeholder}` leak fixed (July 28) via `strip_placeholders()`. 196-title sanity test: 0 leaks, 100% keyword presence. Still produces template-garbage on some keywords.
 
-### Version Bump History (continued)
-- `0.2.0` → current: EGCG algorithm replaces Markov (version not yet bumped)
+### TitleSmith → TitleForge Rebrand (July 25-28, 2026)
+- All source files renamed. Crate name `titlesmith-desktop` → `titleforge-desktop`. `tauri.conf.json` productName and identifier updated. UI labels, AI prompts, module docs all changed. Some data paths and `site/` folder still have old references (see §6.5).
 
-### CI Update
-- Added tag trigger (`tags: ['v*']`)
-- Added release job with auto GitHub Release on tag push
+### License System Overhaul (July 25-28, 2026)
+- Licenses stored by email, not Supabase user_id. Desktop buyers don't need a web account.
+- `generate_from_purchase` endpoint in `licenses.js` for Stripe webhook → auto license generation.
+- `stripe-webhook.js` detects desktop purchases (metadata check) and emails license keys via Resend.
+- License key format: `TF-CORE-XXXX`, `TF-PRO-XXXX`, `TF-STUDIO-XXXX`.
+- Machine tracking: `validate_license` and `background_verify` send `&machine=hostname`.
+- Website license checks don't burn device slots.
 
-### Curated Titles Expansion (July 15, 2026)
-- **Problem:** All 796 curated titles were tagged `genre: "any"`, `tone: "normal"` — the style/tone selector had no effect on EGCG-generated titles
-- **Fix:** Regenerated curated titles with true tone metadata using DeepSeek V4 Flash (~$12 API cost)
-- **Approach:** Rewrote `scripts/generate-curated-titles.py` to generate per-tone batches: 40 normal + 10 each for all 8 non-normal tones (shout, whisper, blessing, provocative, minimalist, storytelling, question, playful) per category
-- **Result:** 2,623 total curated titles (up from 796). Each category has ~90 normal + ~10 per non-normal tone
-- **Merge:** Deduped case-insensitively, appended to seed-data.json in both repos, stats block corrected
-- **Verification:** `cargo check` + `cargo test` (10/10 pass), 0 bad tone/genre values, spot-checks confirm tonal fidelity
-- **Caveat:** Existing installs won't auto-re-seed — only new installs get this data. Follow-up needed for a seed-data version marker.
+### Background License Verification (July 25, 2026)
+- New `background_verify` Rust command. 5s timeout, refresh-only — never revokes.
+- Frontend `startBackgroundTasks()` runs every 30 minutes.
+- Stores `license_key` and `license_email` for re-verification.
 
----
+### Tier Gating (July 25, 2026)
+- Backend: Core capped at 25 titles/request, no cloud AI, no projects. Pro/Studio: 100 titles, full access.
+- Known gap: frontend always displays "PRO" badge regardless of tier. Studio "unlimited" limit not honored.
 
-## 6. Current Status & Strategic Direction (July 24, 2026)
+### EGCG Template Leak Fix (July 28, 2026)
+- Root cause: templates had more `{placeholder}` occurrences than defined slot entries.
+- Fixed via `strip_placeholders()` in `assemble_title()`. Manual implementation (no regex crate added).
+- Sanity test: 0 bracket leaks in 196 titles, 100% keyword presence.
 
-### 6.1 Strategic Decisions Made
+### Local LLM Integration (July 25-28, 2026)
+- `local_llm.rs` compiled and tested with candle-rs 0.11 on Windows.
+- SmolLM2-135M (100.6MB): 4-14s/title. SmolLM2-360M (258MB): 12-16s/title.
+- Fixed `sample_token()` to handle 2D logits from prefill pass.
+- Quality is insufficient as sole engine — 135M ignores title-only instructions, produces category-irrelevant output ~36% of the time even with few-shot prompting. BYO-key cloud AI is the recommended quality path.
+- Model paths use `titleforge-desktop` and `com.titleforge.desktop`.
 
-1. **Kill EGCG algorithm.** The template-based engine (`title_gen.rs`) cannot be fixed — 11 documented bugs, with architectural flaws around semantic coherence (no language model), word pool collapse (80+ slot types → 3 pools), and unmanageable combinatorial surface (1,300 templates × 889 pool entries). See `EGCG_Audit_Report.md` for the full 4-round audit.
+### SEO Scoring Engine (July 27, 2026)
+- New `seo.rs`. 9 signals: length fit (chars per platform), keyword presence (front-loaded bonus), keyword density (10-25% sweet spot), search pattern match (~110 n-grams), question format, number/year detection, Flesch reading ease, power word density, uniqueness (n-gram vs curated corpus). All local, no API calls.
+- 19 unit tests pass (10 EGCG + 9 SEO). Weighted to 0-100 per spec.
+- Frontend: SEO badge pill (green 80+/amber 50-79/gray <50), SEO details panel with per-signal breakdown, dashboard mini-badge in history.
+- Integrated into engine.rs: LLM pass scores inline, EGCG+curated scored via post-generation sweep.
 
-2. **Adopt SmolLM2-360M as the sole generation engine.** The local LLM (258MB GGUF, candle-rs) has actual language understanding. Model file, tokenizer, and Rust integration code (`local_llm.rs`) already exist but have never been compiled. The first action is `cargo build` to verify the candle-rs integration.
+### keyring Migration (July 27, 2026)
+- XOR obfuscation replaced with OS credential storage (keyring crate v3).
+- macOS Keychain / Windows Credential Manager / Linux libsecret.
+- Dual-write pattern: stores in keyring + XOR-obfuscated SQLite fallback.
+- Empty values clear both stores.
 
-3. **Keep curated title retrieval** (EGCG Mode C) as an instant 0ms first-pass fallback. Remove EGCG Mode A (template fill), Mode B (phrase stitching), and the legacy template engine entirely.
+### Provider Cascade (July 25, 2026)
+- `generate.js`: single AI_PROVIDER → cascade: DeepSeek → OpenAI → Anthropic.
+- First provider with a configured API key wins. Falls through on failure.
+- AI_PROVIDER env var is now unused.
 
-4. **Unify brand under "TitleForge."** Retire the "TitleSmith" name. Desktop product becomes "TitleForge Desktop." The Editorial Industrial palette (Ink #0B0A0A, Paper #F9F7F2, Forge #E8782B) is the single design system for both web and desktop pages.
+### Web Content Fixes (July 25-28, 2026)
+- Fake "247,000+ titles" hero stat removed. Replaced with "1 payment, lifetime access".
+- Fabricated testimonials (Sarah K., Marcus T., Marcus O., Rachel K.) replaced with honest product benefit cards.
+- Footer copy fixed: removed "Every market rate is a true market reference" placeholder text.
+- vidIQ/SEMrush comparison tightened to title-specific claims with factual pricing and acknowledged strengths.
 
-5. **Three pricing tiers for desktop:** $29 Core / $59 Pro / $89 Studio (one-time purchase). Web app continues with Free / Pro ($15.83/mo annual) tiers. Both products coexist under the same domain.
+### Desktop Sales Pages (July 25, 2026)
+- `desktop.html`: expanding sales page (hero, features, walkthrough mockups, 3-tier pricing, FAQ, download CTA).
+- `desktop-download.html`: OS-detecting download page, collapsible install instructions, system requirements, license verification form.
+- `desktop.css`: ported from `site/styles.css` with full palette remap to TitleForge Editorial Industrial.
+- Clean URL redirects in `netlify.toml`: `/desktop`, `/desktop/download`, `/download`.
 
-6. **Recurring revenue model:** Annual update renewal ($15/yr), major version upgrades ($19 every 2-3 years), optional AI credit packs ($5/500 generations). Users always own what they bought.
+### Plausible Analytics (July 25, 2026)
+- Script tags added to `index.html` and `desktop.html`. Missing on `desktop-download.html`.
+- Custom events tracked: `signup`, `generate`, `pro_upgrade_click`, `favorite_add`.
+- Account not yet set up.
 
-7. **Background license verification + update checking.** App silently re-verifies license with server every 30 minutes when online. Automatically corrects spoofed/tampered local cache. Update check runs on the same cycle.
-
-8. **Web Pro subscribers get a free Basic desktop license.** Retention play. No marginal cost. Upsell path: Basic → Pro upgrade for price difference.
-
-9. **License system overhaul.** Desktop buyers purchase via Stripe → webhook generates license key → emailed directly. No Supabase account required. License validation looks up by key + email on the license record, not by Supabase user_id.
-
-### 6.2 New Pages to Create
-
-| Page | URL | Purpose |
-|------|-----|---------|
-| Desktop sales page | `/desktop` | Expansive single-page: Hero → Why Desktop → 6 feature rows → 4-step walkthrough → 3-tier pricing → Testimonials → FAQ → Download CTA |
-| Download page | `/desktop/download` | OS-detecting download page: 3 platform cards (Win/Mac/Linux), install instructions, system requirements, license activation form |
-| Desktop CSS | `desktop.css` | Desktop page-specific styles, ported from `site/styles.css` with TitleForge palette |
-
-### 6.3 Files to Modify
-
-| File | Changes |
-|------|---------|
-| `titleforge/index.html` | Add "Desktop App" nav link, add desktop pricing teaser below web pricing |
-| `titleforge/netlify.toml` | Add clean URL redirects for `/desktop`, `/desktop/download`, `/download` |
-| `titleforge/netlify/functions/licenses.js` | Add unauthenticated generation path, switch validation from user_id to email, support 3 tiers |
-| `titleforge/netlify/functions/stripe-webhook.js` | Add desktop purchase handling (metadata detection), auto-generate license key, email delivery |
-| `titleforge-desktop/src-tauri/src/lib.rs` | Add `background_verify` command, add tier gating, update `validate_license` for email-based lookup |
-| `titleforge-desktop/src-tauri/src/engine.rs` | Remove EGCG Mode A/B + template fallback, keep curated retrieval + LLM as primary |
-| `titleforge-desktop/src/app.js` | Add `startBackgroundTasks()` (30-min interval), add tier-gated UI elements, rename TitleSmith references |
-| `titleforge-desktop/src/index.html` | Rename TitleSmith → TitleForge in activation screen |
-| `titleforge-desktop/src/styles.css` | Minor branding updates if any TitleSmith references exist |
-
-### 6.4 Implementation Order
-
-| Phase | Tasks | Stream | Status |
-|-------|-------|--------|--------|
-| **Phase 1** (Week 1) | `cargo build` on local_llm.rs, benchmark quality, remove EGCG generation, add background_verify | A | **completed** (code written; cargo build pending) |
-| **Phase 2** (Week 1-2) | Background polling UI, tier gating in UI + Rust, branding updates in app | B | **completed** |
-| **Phase 3** (Week 1-2) | Create desktop.html, desktop-download.html, desktop.css, update index.html nav + pricing | C | **completed** |
-| **Phase 4** (Week 2) | License system overhaul: email-based validation, Stripe desktop webhook, upgrade flow | D | **completed** |
-| **Phase 5** (Week 2-3) | Integration testing, deploy to Netlify, verify download links, cross-browser test | All | **next** |
-
-All code changes committed and pushed July 25, 2026. Phases 1-4 are done — Phase 5 (cargo build + deploy + testing) is the remaining work.
+### Code Review Fixes (July 28, 2026)
+- Claude UI value `claude` → `anthropic` (was broken, users picking Claude got an error).
+- `background_verify` no longer revokes — only refreshes on success. No 24h cache fallback needed.
+- Machine tracking: both validate and background_verify now send `&machine=hostname`.
+- Tier renamed `"basic"` → `"core"` everywhere in Rust + JS. License prefix `TF-BASIC` → `TF-CORE`.
+- All remaining `titlesmith-desktop` / `com.titlesmith.desktop` references in lib.rs renamed.
+- Fake SHA256 hashes removed from download page.
 
 ---
 
-## 7. Key Decisions & Conventions (Updated)
+## 6. Current Status (July 28, 2026)
+
+### 6.1 Done (Compiled + Tested)
+- `cargo check` — 0 errors, 0 warnings
+- `cargo test` — 19/19 pass (10 EGCG + 9 SEO)
+- `cargo build --release` — 22.74 MB binary on Windows
+- `npm run dev` — app launches, EGCG generator builds (2,112 words), LLM lazy-loads
+- Desktop pages live at `titleforge-tool.netlify.app/desktop` and `/desktop/download`
+- License system overhaul (email-based, Stripe webhook, Resend email delivery)
+- Web deploy with nav, pricing teaser, honest testimonials, factual comparisons
+
+### 6.2 Blocked / Needs Action
+
+1. **EGCG is still the primary engine.** The plan to adopt SmolLM2 as sole engine was not completed — SmolLM2 quality is insufficient for production. EGCG remains as Pass 2 with a fixed placeholder leak. BYO-key cloud AI is the only path to production-quality titles.
+
+2. **SmolLM2 quality needs improvement.** 135M produces output but can't follow title-only instructions consistently. Few-shot prompting helps but doesn't fix the instruction-following issue. Options: try 360M with better prompting, try llama.cpp for faster inference, or accept cloud-first with EGCG as fallback.
+
+3. **EGCG Mode A and B are still live.** The strategic decision to "kill EGCG and keep only curated retrieval" was not executed. The engine.rs 3-pass pipeline (LLM → EGCG → curated) is the current shipped architecture.
+
+4. **Version numbers are inconsistent.** App is `v1.0.0-beta.1` in Cargo.toml but shows `v0.8.0` in activation screen, `v0.2.0` in download page links, and `v0.5.0` in settings. No single source of truth.
+
+5. **Frontend always shows PRO badge.** Tier gating exists on backend but the UI doesn't read `get_usage_stats.tier` — it always displays "Desktop Pro" regardless of actual tier.
+
+6. **Studio "unlimited batch" doesn't exist.** Code caps all tiers at 100 titles. Slider max is hard-locked to 100. The sales page claim is false.
+
+7. **Download page SHA256 hashes removed.** Need real hashes computed after production builds.
+
+8. **Plausible account not set up.** Script tags are in place but no account created. Missing on desktop-download.html.
+
+9. **`site/` folder still TitleSmith-branded.** The legacy marketing prototype was never cleaned up. Should be archived or deleted.
+
+10. **`package-lock.json` stale.** Still says `titlesmith-desktop` while `package.json` says `titleforge-desktop`.
+
+### 6.3 Strategic Decisions (Active)
+
+| # | Decision | Status |
+|---|----------|--------|
+| 1 | EGCG as primary engine, BYO cloud AI for quality | Active (LLM unproven) |
+| 2 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
+| 3 | One-time purchase + optional update renewal | Planned, not implemented |
+| 4 | Unify brand under TitleForge | Done (minor remnants in site/) |
+| 5 | Web Pro → free Core desktop license | Planned, not implemented |
+| 6 | Background license verification every 30 min | Done |
+| 7 | License by email, not user_id | Done |
+| 8 | Recurring revenue via annual updates + major version upgrades | Not implemented |
+
+---
+
+## 7. Key Decisions & Conventions
 
 - **No framework:** Both apps use vanilla HTML/CSS/JS — no React, Vue, or other frameworks
-- **Desktop is always tiered:** Core/Pro/Studio tiers with feature gating. Tier stored in local SQLite, verified by server.
-- **Offline-first, online-verified:** App works fully offline. When online, silently re-verifies license and checks updates every 30 minutes.
-- **License by email, not user_id:** Desktop buyers don't need a Supabase account. License validation matches key + email directly.
-- **One brand, two products:** "TitleForge" is the brand. "TitleForge Web" (SaaS) and "TitleForge Desktop" (downloadable) are the products.
-- **Web Pro → Free Desktop Basic:** Web Pro subscribers get a free Basic desktop license as a retention perk.
-- **Upgrade pricing = difference:** Users upgrading between desktop tiers pay only the price difference.
-- **JSON repair is critical:** AI models frequently return malformed JSON — 4-layer fallback in `generate.js`, simpler approach in desktop Rust.
-- **Seed data generated by AI:** DeepSeek V4 Pro (~$3 pass) + DeepSeek V4 Flash (~$12 tone-tagged expansion), ~$15 total, 2,623 curated titles across 16 categories with 9 tones each.
+- **Desktop is tiered:** Core/Pro/Studio tiers with backend gating. Tier stored in local SQLite, verified by server.
+- **Offline-first, online-verified:** App works fully offline. Background license refresh every 30 min when online.
+- **License by email, not user_id:** Desktop buyers don't need a Supabase account.
+- **One brand, two products:** "TitleForge" (web SaaS) and "TitleForge Desktop" (downloadable). Same palette, fonts, logo.
+- **EGCG is the primary offline engine.** Not ideal but compiles and produces output. BYO-key cloud AI for quality.
+- **License key prefix:** TF-CORE (not TF-BASIC) for the $29 tier.
+- **Upgrade pricing = difference (not yet implemented):** Users pay only the gap between tiers.
 
 ---
 
-## 8. Quick Reference (Updated)
+## 8. Quick Reference
 
 ### 8.1 Build Commands
 ```bash
-# Desktop — verify LLM compiles
-cd titleforge-desktop
-cargo build
-
-# Desktop — dev
-cd titleforge-desktop && npm run dev
-
-# Desktop — build all platforms
-cd titleforge-desktop && npm run build
-
-# Web — deploy
-cd titleforge && npx netlify deploy --prod
+cd titleforge-desktop && npm run dev          # dev server + app
+cd titleforge-desktop && npx tauri build       # production bundles
+cargo test --release                            # 19 tests
+cd titleforge && npx netlify deploy --prod      # web deploy
 ```
 
 ### 8.2 License Key Formats
-| Prefix | Tier | Source |
-|--------|------|--------|
-| `TF-BASIC-XXXX-XXXX-XXXX-XXXX` | Desktop Basic | Free with Web Pro, or $29 standalone |
-| `TF-PRO-XXXX-XXXX-XXXX-XXXX` | Desktop Pro | $59 standalone, or $30 upgrade from Basic |
-| `TF-STUDIO-XXXX-XXXX-XXXX-XXXX` | Desktop Studio | $89 standalone |
+| Prefix | Tier | Price | Source |
+|--------|------|-------|--------|
+| `TF-CORE-XXXX` | Core | $29 | Free with Web Pro, or $29 standalone |
+| `TF-PRO-XXXX` | Pro | $59 | $59 standalone, or upgrade from Core |
+| `TF-STUDIO-XXXX` | Studio | $89 | $89 standalone |
 
-### 8.3 New Web Routes
+### 8.3 Web Routes
 | URL | File | Purpose |
 |-----|------|---------|
-| `titleforge-tool.netlify.app/` | `index.html` | Web app landing + tool |
-| `titleforge-tool.netlify.app/desktop` | `desktop.html` | Desktop sales page |
-| `titleforge-tool.netlify.app/desktop/download` | `desktop-download.html` | Desktop download page |
-| `titleforge-tool.netlify.app/download` | `desktop-download.html` | Shortcut URL |
-| `titleforge-tool.netlify.app/dashboard` | `dashboard.html` | User dashboard |
+| `/` | `index.html` | Web app landing + tool |
+| `/desktop` | `desktop.html` | Desktop sales page |
+| `/desktop/download` | `desktop-download.html` | Download page |
+| `/dashboard` | `dashboard.html` | User dashboard |
 
 ### 8.4 Database URLs
-- **Web:** Supabase project dashboard → `titleforge` schema with 6 tables
-- **Desktop:** `~/.local/share/titleforge-desktop/titles.db` (Linux), `~/Library/Application Support/titleforge-desktop/titles.db` (macOS), `%APPDATA%/titleforge-desktop/titles.db` (Windows)
+- **Web:** Supabase project → `titleforge` schema (6 tables)
+- **Desktop:** `%APPDATA%/titleforge-desktop/titles.db` (Windows), `~/Library/Application Support/titleforge-desktop/titles.db` (macOS), `~/.local/share/titleforge-desktop/titles.db` (Linux)
