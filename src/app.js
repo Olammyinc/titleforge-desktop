@@ -160,9 +160,9 @@ function toggleSeoPanel(hostDiv, bd) {
 }
 
 // ---- STATE ----
-var isPro = true;
+var isPro = false;
 var isLoggedIn = true;
-var currentTier = 'pro';
+var currentTier = 'core';
 var isGuest = false;
 var selectedStyle = 'normal';
 var selectedGender = 'any';
@@ -630,7 +630,8 @@ function updateUsageDisplay() {
   usageBar.style.background = '#e8f5e9';
   usageBar.style.borderColor = '#c8e6c9';
   usageBar.style.color = '#2e7d32';
-  usageText.innerHTML = 'Pro — ' + dailyUsage + ' generations today <span style="font-weight:400;">(unlimited)</span>';
+  var tierLabel = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
+  usageText.innerHTML = tierLabel + ' — ' + dailyUsage + ' generations today';
 }
 
 // ============================================
@@ -1065,6 +1066,7 @@ function loadDashboardData() {
     currentTier = stats.tier || 'core';
     isPro = stats.isPro !== false;
     updateUsageDisplay();
+    setupSlider(); // re-apply slider max based on real tier
     renderDashboard();
   }).catch(function (err) {
     console.error('Dashboard load error:', err);
@@ -1853,7 +1855,7 @@ function populateDashFilters() {
   filterCat.innerHTML = '<option value="">All categories</option>';
   ALL_CATEGORIES.forEach(function (cat) {
     var opt = document.createElement('option');
-    opt.value = cat.label;
+    opt.value = cat.id;
     opt.textContent = cat.label;
     filterCat.appendChild(opt);
   });

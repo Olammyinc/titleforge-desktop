@@ -81,7 +81,7 @@ fn generate_titles(
 ) -> Result<Vec<TitleResult>, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
 
-    // Tier-based quantity cap. Basic = 25, Pro/Studio = 100.
+    // Tier-based quantity cap. Core = 25, Pro = 100, Studio = 500.
     let tier = get_tier(&db);
     let cap: u32 = match tier.as_str() {
         "pro" => 100,
@@ -670,9 +670,9 @@ fn background_verify(key: String, email: String, state: tauri::State<AppState>) 
 }
 
 fn urlencoding(s: &str) -> String {
-    s.chars().map(|c| match c {
-        'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
-        _ => format!("%{:02X}", c as u8),
+    s.bytes().map(|b| match b {
+        b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => char::from(b).to_string(),
+        _ => format!("%{:02X}", b),
     }).collect()
 }
 

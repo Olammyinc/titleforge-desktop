@@ -6,12 +6,10 @@ use llama_cpp_2::model::{LlamaChatMessage, AddBos};
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::model::params::LlamaModelParams;
 
-static BACKEND: OnceLock<LlamaBackend> = OnceLock::new();
+static BACKEND: OnceLock<Option<LlamaBackend>> = OnceLock::new();
 
 pub struct LocalLlm {
     model: LlamaModel,
-    #[allow(dead_code)]
-    backend: &'static LlamaBackend,
     pub loaded: bool,
 }
 
@@ -21,13 +19,20 @@ impl LocalLlm {
             eprintln!("[local_llm] Model file not found: {:?}", model_path);
             return None;
         }
-        let backend = BACKEND.get_or_init(|| {
-            LlamaBackend::init().expect("llama.cpp backend init failed")
+        let backend_opt = BACKEND.get_or_init(|| {
+            match LlamaBackend::init() {
+                Ok(b) => Some(b),
+                Err(e) => { eprintln!("[local_llm] Backend init failed: {:?}", e); None }
+            }
         });
+        let backend = match backend_opt {
+            Some(b) => b,
+            None => return None,
+        };
         eprintln!("[local_llm] Loading model from {:?}...", model_path);
         let model = LlamaModel::load_from_file(backend, model_path, &LlamaModelParams::default()).ok()?;
         eprintln!("[local_llm] Model loaded successfully");
-        Some(Self { model, backend, loaded: true })
+        Some(Self { model, loaded: true })
     }
 
     fn generate_chat_raw(&self, system: &str, user: &str) -> Option<String> {
@@ -39,7 +44,8 @@ impl LocalLlm {
         let tmpl = self.model.chat_template(None).ok()?;
         let prompt = self.model.apply_chat_template(&tmpl, &messages, true).ok()?;
         let ctx_params = LlamaContextParams::default();
-        let mut ctx = self.model.new_context(self.backend, ctx_params).ok()?;
+        let backend = BACKEND.get().expect("backend not initialized").as_ref().expect("backend init failed");
+        let mut ctx = self.model.new_context(backend, ctx_params).ok()?;
         let tokens = self.model.str_to_token(&prompt, AddBos::Always).ok()?;
         let n_prompt = tokens.len();
         let eos = self.model.token_eos();
