@@ -28,52 +28,36 @@ pub fn generate(
     if let Some(llm) = local_llm {
         let target_per_cat = (quantity as usize / categories.len().max(1)).max(1);
         for cat in categories {
-            let examples = fetch_curated_examples(conn, cat, genre, style, 4);
-            let mut attempts = 0usize;
+            // RAG: retrieve similar curated titles for few-shot prompting
+            let examples = generator.retrieve_similar(keyword, cat, 4);
             let mut got = 0usize;
-            let max_attempts = target_per_cat * 3;
-            let kw_lower = keyword.to_lowercase();
 
-            while got < target_per_cat && attempts < max_attempts {
-                attempts += 1;
-                let prompt = build_llm_prompt(cat, keyword, style, &examples);
-                let title = match llm.generate_one(&prompt) {
+            for _ in 0..target_per_cat * 2 {
+                if got >= target_per_cat { break; }
+                let title = match llm.generate_one_clean(keyword, cat, style, &examples) {
                     Some(t) => t,
                     None => continue,
                 };
-
-                // Hard QC gate — reject rather than accept a bad result to
-                // hit the count. A title that doesn't relate to the keyword,
-                // or that's just the model echoing back one of its own
-                // few-shot examples verbatim, is worse than showing fewer
-                // titles than requested.
                 let lower = title.to_lowercase();
+                let kw_lower = keyword.to_lowercase();
                 let has_keyword = lower.contains(&kw_lower)
                     || kw_lower.split_whitespace().any(|w| lower.contains(w));
-                let is_echo = examples.iter().any(|e| e.eq_ignore_ascii_case(&title));
-                let long_enough = title.split_whitespace().count() >= 3;
                 let already_seen = results.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
+                if already_seen { continue; }
 
-                if has_keyword && !is_echo && long_enough && !already_seen {
-                    // Use the same scorer that produces the breakdown so the
-                    // displayed score and its breakdown never disagree (using
-                    // calculate_heuristic_score for the number and leaving
-                    // breakdown: None here previously meant the LLM path was
-                    // the only one in the UI without a score explanation).
-                    let (score, breakdown) = calculate_score(&title, keyword, cat);
-                    let platform = seo::platform_for_category(cat);
-                    let (seo_score, seo_breakdown) = seo_scorer.score_seo(&title, keyword, cat, platform);
-                    results.push(TitleResult {
-                        title,
-                        score,
-                        categories: vec![cat.clone()],
-                        breakdown: Some(breakdown),
-                        source: Some("local-llm".to_string()),
-                        seo_score: Some(seo_score),
-                        seo_breakdown: Some(serde_json::to_value(&seo_breakdown).unwrap_or(serde_json::Value::Null)),
-                    });
-                    got += 1;
-                }
+                let (score, breakdown) = calculate_score(&title, keyword, cat);
+                let platform = seo::platform_for_category(cat);
+                let (seo_score, seo_breakdown) = seo_scorer.score_seo(&title, keyword, cat, platform);
+                results.push(TitleResult {
+                    title,
+                    score,
+                    categories: vec![cat.clone()],
+                    breakdown: Some(breakdown),
+                    source: Some("local-llm".to_string()),
+                    seo_score: Some(seo_score),
+                    seo_breakdown: Some(serde_json::to_value(&seo_breakdown).unwrap_or(serde_json::Value::Null)),
+                });
+                got += 1;
             }
         }
     }
@@ -143,27 +127,6 @@ fn fetch_curated_examples(conn: &Connection, category: &str, genre: &str, style:
     }
 }
 
-/// Build the few-shot prompt for one local-LLM generation call. Kept to
-/// plain text, one title per call — a 360M model won't reliably follow
-/// complex formatting instructions or batch requests.
-fn build_llm_prompt(category: &str, keyword: &str, style: &str, examples: &[String]) -> String {
-    let style_label = if style.is_empty() || style == "any" { "normal" } else { style };
-    let mut prompt = String::new();
-    if !examples.is_empty() {
-        prompt.push_str(&format!("Examples of {} {} titles:\n", style_label, category));
-        for ex in examples {
-            prompt.push_str(&format!("- \"{}\"\n", ex));
-        }
-        prompt.push('\n');
-    }
-    prompt.push_str(&format!(
-        "Write ONE new {} {} title about \"{}\". Reply with only the title, nothing else.",
-        style_label, category, keyword
-    ));
-    prompt
-}
-
-/// Map 80+ specialized pool names to the 8 available SQLite word pools.
 /// Instant curated-title fallback for remaining slots after the LLM pass.
 /// Pulls matching curated titles via fetch_curated_examples (same category/
 /// genre/tone relax ladder) and wraps them as scored TitleResults.

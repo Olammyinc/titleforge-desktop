@@ -885,52 +885,45 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
 
 /// Lazy-load the local LLM model on first generation call.
 /// Checks multiple paths so it works in dev, production, and CI.
+/// Prefers Qwen2.5-1.5B first, falls back to SmolLM2 models.
 fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
-    let model_name = "SmolLM2-360M-Instruct-Q4_K_M.gguf";
+    let model_names = vec![
+        "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "SmolLM2-360M-Instruct-Q4_K_M.gguf",
+        "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+    ];
     let app_dir = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("titleforge-desktop");
 
-    let mut model_paths = vec![
-        // Development: CWD-relative (npm run dev from titleforge-desktop/)
-        std::path::PathBuf::from("../models").join(model_name),
-        // Tauri bundles resources relative to the binary
-        std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|d| d.join("models").join(model_name)))
-            .unwrap_or_default(),
-        // Tauri v2 resource extraction — app data dir
-        dirs::data_dir()
-            .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("com.titleforge.desktop")
-            .join("models")
-            .join(model_name),
-        // Tauri v2 resource extraction — with resources subfolder
-        dirs::data_dir()
-            .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("com.titleforge.desktop")
-            .join("resources")
-            .join("models")
-            .join(model_name),
-        // Tauri v2 resource extraction — via app-dir + resources
-        dirs::data_dir()
-            .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("titlesmith-desktop")
-            .join("resources")
-            .join("models")
-            .join(model_name),
-        // App data dir (manual copy from CI/script)
-        app_dir.join("models").join(model_name),
-    ];
-    // Remove any empty paths (from failed .ok()/.unwrap_or_default() calls)
-    model_paths.retain(|p| !p.as_os_str().is_empty());
+    for model_name in &model_names {
+        let mut model_paths = vec![
+            std::path::PathBuf::from("../models").join(model_name),
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|d| d.join("models").join(model_name)))
+                .unwrap_or_default(),
+            dirs::data_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join("com.titleforge.desktop")
+                .join("models")
+                .join(model_name),
+            dirs::data_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join("titleforge-desktop")
+                .join("models")
+                .join(model_name),
+            app_dir.join("models").join(model_name),
+        ];
+        model_paths.retain(|p| !p.as_os_str().is_empty());
 
-    for p in &model_paths {
-        if p.exists() {
-            let llm = local_llm::LocalLlm::load(p);
-            if llm.is_some() {
-                println!("[local_llm] Loaded from {:?}", p);
-                return llm;
+        for p in &model_paths {
+            if p.exists() {
+                let llm = local_llm::LocalLlm::load(p);
+                if llm.is_some() {
+                    println!("[local_llm] Loaded {} from {:?}", model_name, p);
+                    return llm;
+                }
             }
         }
     }

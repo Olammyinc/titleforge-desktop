@@ -93,6 +93,50 @@ impl Generator {
         self.all_curated.is_empty()
     }
 
+    /// Retrieve the top-k most similar curated titles for a keyword+category.
+    /// Token-overlap scoring — no ML. Used for RAG few-shot in LLM prompting.
+    pub fn retrieve_similar(&self, keyword: &str, category: &str, k: usize) -> Vec<String> {
+        if self.all_curated.is_empty() || keyword.is_empty() || k == 0 {
+            return vec![];
+        }
+        let kw_tokens: HashSet<String> = keyword
+            .to_lowercase()
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty() && w.len() > 1)
+            .map(|w| w.to_string())
+            .collect();
+        if kw_tokens.is_empty() {
+            return vec![];
+        }
+        // Score every curated title by token overlap with keyword
+        let mut scored: Vec<(f64, &str)> = Vec::new();
+        for (title, cat, _genre, _tone) in &self.all_curated {
+            let t_tokens: HashSet<String> = title
+                .to_lowercase()
+                .split(|c: char| !c.is_alphanumeric())
+                .filter(|w| !w.is_empty())
+                .map(|w| w.to_string())
+                .collect();
+            let overlap = kw_tokens.intersection(&t_tokens).count();
+            if overlap > 0 {
+                let cat_bonus = if cat == category { 0.5 } else { 0.0 };
+                scored.push((overlap as f64 + cat_bonus, title.as_str()));
+            }
+        }
+        // Sort by score descending, dedup, take top k
+        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut result: Vec<String> = Vec::new();
+        for (_, title) in scored {
+            let lower = title.to_lowercase();
+            if seen.contains(&lower) { continue; }
+            seen.insert(lower);
+            result.push(title.to_string());
+            if result.len() >= k { break; }
+        }
+        result
+    }
+
     /// Build the EGCG generator from the SQLite database.
     ///
     /// Loads curated titles, word pools, and templates, then builds
