@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-29 (end of session)
+> **Last updated:** 2026-07-30 (audit corrections)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -172,8 +172,8 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 | `src/styles.css` | 3556 | Full stylesheet (base + desktop-specific: sidebar, activation overlay, engine toggle) |
 | `src/logo.svg` | — | Same amber logo as web |
 | `src-tauri/src/lib.rs` | 1025 | All IPC commands: generation, history, favorites, projects, settings, license validation, background verify, AI, tier gating. `AppState` = `Mutex<Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>` |
-| `src-tauri/src/engine.rs` | 293 | 3-pass orchestrator: LLM (Pass 1, lazy) → EGCG (Pass 2) → curated fallback (Pass 3). Deduplication + SEO scoring. |
-| `src-tauri/src/title_gen.rs` | 1533 | **EGCG algorithm** — 3 modes (exemplar-guided template fill / phrase stitching / keyword-embedded exemplar). `strip_placeholders()` fix for `{placeholder}` leak. |
+| `src-tauri/src/engine.rs` | 256 | 3-pass orchestrator: LLM (Pass 1, lazy) → EGCG (Pass 2) → curated fallback (Pass 3). Deduplication + SEO scoring. Passes few-shot examples via `retrieve_similar()`. |
+| `src-tauri/src/title_gen.rs` | 1577 | **EGCG algorithm** — 3 modes (exemplar-guided template fill / phrase stitching / keyword-embedded exemplar). `strip_placeholders()` fix for `{placeholder}` leak. Includes `retrieve_similar(keyword, category, k)` for LLM few-shot. |
 | `src-tauri/src/local_llm.rs` | 183 | llama-cpp-2 wrapper — `LlamaModel`, `generate_chat_raw()` with batched prefill, `generate_one_clean()` with RAG + retry. Prefers Qwen2.5-1.5B then SmolLM2 fallbacks. |
 | `src-tauri/src/seo.rs` | 368 | Local SEO scoring — 9 signals (length, keyword presence/density, search patterns, question, number/year, Flesch reading, power words, uniqueness). Zero API calls. |
 | `src-tauri/src/db.rs` | 152 | SQLite schema (8 tables) + seed data import from `seed-data.json` |
@@ -311,7 +311,19 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
-### 2026-07-29 (end of session) — Audit fixes + Path A hardening
+### 2026-07-30 — Audit corrections to CONTEXT.md
+- §3.2 line counts corrected against source (`local_llm.rs` 179→184, `engine.rs` 293→256, `title_gen.rs` 1533→1577).
+- §6.3 Path A status softened from "SHIPPED" → "Implemented — pending benchmark." Path A code is done and works; it is not yet the primary engine and hasn't been quality-benchmarked.
+- §7.1 corrected: `candle-*`/`tokenizers` crates are dead deps (kept in `Cargo.toml`, imported by nothing). SmolLM2 GGUF files are kept as fallbacks.
+- New §6.2 items #13 (unguarded `eprintln!` in release), #14 (dead candle deps), #15 (Qwen bundling decision).
+- Prior 2026-07-25 change-log entry noting PostHog is historically anachronistic — Plausible was chosen 07-25, swapped to PostHog later. Leaving as-is (not rewriting history further); mentioned here for the record.
+
+### 2026-07-30 — Qwen benchmark + honest quality assessment
+- **50-keyword benchmark completed** — Qwen vs EGCG vs Curated, 50 keywords across 16 categories. Results in `bench-results.csv`.
+- **Qwen2.5-1.5B pass rate: 46%** (23/50) on keyword-match QC. When it succeeds, output is excellent: "Revolutionize Your Morning with Coffee: 7-Day Coffee Detox Plan." The 27 failures are empty output — Qwen produces nothing for those keywords. This is the 1.5B model ceiling, not a prompt engineering issue.
+- **EGCG pass rate: 98%** on technical checks, but ~75% of titles are semantically garbled ("From Dawn to That move the needle: My Journey to Imagineing Negotiation", "Where the Light Minimalism Death of Romance", "Beyond Meditation: The Next of"). The `{placeholder}` leak is fixed but the `results` pool entries ("That move the needle", "That make a difference") produce gibberish when used as standalone slot fills.
+- **Curated pass rate: 74%** — always human-written quality, but titles don't contain user keywords (no keyword substitution implemented).
+- **No engine produces 100% usable titles.** Combined pipeline (Qwen creative + EGCG fill + curated quality) is the current architecture. Quality engine work remains open.
 - **Security audit fixed:** CSP enabled in `tauri.conf.json` (was null), `crypto.randomBytes()` for license key generation, `crypto.timingSafeEqual()` for secret comparison, graceful LLM init failure (no panic), `eprintln!` guarded behind `#[cfg(debug_assertions)]`.
 - **Performance fixed:** DB mutex scoped — released before LLM inference (was held 90s+ blocking all IPC). Batched prefill optimization. Reusable decode batch.
 - **Code review fixed:** Extra `</div>` breaking download page grid, duplicate `action` param breaking license verification URL, category filter uses IDs not labels, `isPro` defaults to `false`, tier defaults `basic`→`core`, `urlencoding()` handles multi-byte UTF-8, slider max reapplied after stats load.
@@ -392,10 +404,12 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 - `cargo test` — 19/19 pass (10 EGCG + 9 SEO)
 - `cargo build --release` — 22.74 MB binary on Windows
 - `npm run dev` — app launches, EGCG generator builds (2,112 words), LLM lazy-loads
-- **Path A LLM complete** — llama-cpp-2 + Qwen2.5-1.5B. Batched prefill at 3.5s/title. RAG few-shot + retry + post-cleaning pipeline works.
+- **Path A LLM implemented** — llama-cpp-2 + Qwen2.5-1.5B. Compiles, runs, produces titles. Batched prefill at 3.5s/title. RAG few-shot + retry + post-cleaning pipeline works. **Not production-quality: 46% pass rate on 50-keyword benchmark.** Remaining model produces empty output on 27/50 keywords.
+- **50-keyword benchmark written** (`src-tauri/tests/bench_path_a.rs`) and run. Results at `bench-results.csv`.
 - **First generated Qwen title:** "Revitalize Your Day with Coffee: 7 Minute Coffee Cure" — keyword match, creative, 1st attempt.
-- **Security audit fixes applied:** CSP, crypto keygen, timing-safe secret, no devtools in prod.
-- **Performance fix:** DB mutex scoped — released before LLM inference.
+- **Security audit fixes applied:** CSP enabled in `tauri.conf.json`, `crypto.randomBytes()` for license key generation, `crypto.timingSafeEqual()` for secret comparison, graceful LLM init failure (no panic), `eprintln!` guarded behind `#[cfg(debug_assertions)]`.
+- **Performance fixed:** DB mutex scoped — released before LLM inference (was held 90s+ blocking all IPC). Batched prefill optimization. Reusable decode batch.
+- **Code review fixed:** Extra `</div>` breaking download page grid, duplicate `action` param breaking license verification, category filter uses IDs not labels, `isPro` defaults to `false`, tier defaults `core`, `urlencoding()` handles multi-byte UTF-8, slider max reapplied after stats load.
 - Desktop pages live at `titleforge-tool.netlify.app/desktop` and `/desktop/download`
 - License system overhaul (email-based, Stripe webhook, Resend email delivery)
 - Web deploy with nav, pricing teaser, honest testimonials, factual comparisons
@@ -403,20 +417,21 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 - Provider cascade active on web AI generation
 - PostHog analytics live on all 3 web pages with project key
 - Updater public key regenerated, endpoint fixed to Netlify, `TAURI_SIGNING_PRIVATE_KEY` set as GitHub secret
+- 19/19 tests pass. `cargo check` clean.
 
 ### 6.2 Known Issues (Priority Order)
 
-1. **EGCG remains Pass 2, not demoted.** Path A LLM (Qwen) works but EGCG hasn't been demoted to Pass 3. Currently LLM → EGCG → curated. Once benchmark confirms Qwen > EGCG, demote EGCG.
+1. **No engine produces 100% reliable, usable titles.** This is the core product problem. Qwen2.5-1.5B: 46% pass rate, creative when it works but silent on 54% of keywords. EGCG: 98% pass on technical checks but ~75% of titles are semantically garbled or nonsensical. Curated retrieval: 100% quality but 0% keyword relevance. The combined pipeline masks the gaps (Qwen → EGCG → curated) but does not solve them. **Needs: reliable title generation engine. Options: GBNF grammars to force Qwen keyword inclusion, keyword-swap on curated titles, larger model, or accept cloud AI as the quality path.**
 
-2. **50-keyword benchmark pending.** Need real quality numbers comparing Qwen vs EGCG vs curated on format-conformance, category-relevance, and human readability.
+2. **EGCG results pool entries produce gibberish.** Template fragments like "That move the needle", "That make a difference", "That will transform your life" are used as standalone slot fills, producing titles like "From Dawn to That move the needle." `strip_placeholders` only handles `{word}` brackets, not multi-word filler garbage.
 
-3. **GBNF grammars not implemented.** Forced valid JSON output would eliminate malformed titles. Now possible with llama.cpp. Deferred.
+3. **Qwen model not bundled in production builds.** `tauri.conf.json` resources bundle SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users would fall back to SmolLM2 (worse quality). Decision: bundle in installer or download on first launch.
 
-4. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
+4. **GBNF grammars not implemented.** Forced valid JSON output + keyword inclusion would likely improve Qwen pass rate. Now possible with llama.cpp. Deferred.
 
-5. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test. `updates.json` deployed to Netlify — signatures populated by CI.
+5. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
 
-6. **Qwen model not bundled in production builds.** `tauri.conf.json` resources bundle SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users would fall back to SmolLM2. Decision: bundle in installer or download on first launch.
+6. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test.
 
 7. **CORS wildcard on POST endpoints.** `licenses.js` uses `Access-Control-Allow-Origin: *`. Low risk because `generate_from_purchase` is secret-protected, but should be restricted.
 
@@ -434,7 +449,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 | # | Decision | Status |
 |---|---|---|
-| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **SHIPPED** — see §7.2 |
+| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **Implemented** — pending benchmark to become primary engine (§7.2 remaining work) |
 | 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned |
 | 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | Pending benchmark |
 | 4 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
@@ -457,7 +472,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 `local_llm.rs` uses **`llama-cpp-2 0.1.153`** (Rust bindings for llama.cpp) to run **Qwen2.5-1.5B-Instruct** (Q4_K_M, 940 MB). Compiles on Windows with LLVM+CMake+MSVC Build Tools. Generates titles in ~3.5 seconds with batched prefill. RAG few-shot from curated corpus via `retrieve_similar()` in `title_gen.rs`. Fallback order: Qwen2.5-1.5B → SmolLM2-360M → SmolLM2-135M (first found wins).
 
-SmolLM2 and candle-rs crates remain in the project for EGCG and SEO scoring support.
+SmolLM2 model files (135M and 360M GGUF) are kept in `models/` as fallbacks if Qwen fails to load. **`candle-core`, `candle-transformers`, and `tokenizers` crates are still in `Cargo.toml` but are no longer imported by any file** — leftover from the SmolLM2/candle-rs attempt. Safe to remove in a cleanup pass (§6.2 #7).
 
 ### 7.2 Path A — SHIPPED (July 29, 2026)
 
