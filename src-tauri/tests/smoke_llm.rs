@@ -9,7 +9,7 @@ fn smoke_llama() {
         return;
     }
     eprintln!("[smoke] Loading Qwen2.5-1.5B via llama-cpp-2...");
-    let llm = match titleforge_lib::local_llm::LocalLlm::load(model_path) {
+    let mut llm = match titleforge_lib::local_llm::LocalLlm::load(model_path) {
         Some(l) => l,
         None => { eprintln!("[smoke] Failed to load Qwen"); return; }
     };
