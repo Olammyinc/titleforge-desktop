@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-29
+> **Last updated:** 2026-07-29 (end of session)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -311,6 +311,12 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-07-29 (end of session) — Audit fixes + Path A hardening
+- **Security audit fixed:** CSP enabled in `tauri.conf.json` (was null), `crypto.randomBytes()` for license key generation, `crypto.timingSafeEqual()` for secret comparison, graceful LLM init failure (no panic), `eprintln!` guarded behind `#[cfg(debug_assertions)]`.
+- **Performance fixed:** DB mutex scoped — released before LLM inference (was held 90s+ blocking all IPC). Batched prefill optimization. Reusable decode batch.
+- **Code review fixed:** Extra `</div>` breaking download page grid, duplicate `action` param breaking license verification URL, category filter uses IDs not labels, `isPro` defaults to `false`, tier defaults `basic`→`core`, `urlencoding()` handles multi-byte UTF-8, slider max reapplied after stats load.
+- **19/19 tests pass.** `cargo check` clean.
+
 ### 2026-07-29 (later) — Path A LLM COMPLETE + batch prefill optimization
 - **llama-cpp-2** compiled on Windows with LLVM + CMake + MSVC Build Tools installed.
 - **Qwen2.5-1.5B-Instruct** (Q4_K_M, 940 MB) replaces SmolLM2 as the local LLM. Candle-rs (candle-core, candle-transformers, candle-nn, tokenizers) **still present** in Cargo.toml for the SEO engine and EGCG.
@@ -357,7 +363,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 - **Tier gating (backend):** Core capped at 25 titles/request, no cloud AI, no projects. Pro/Studio: 100 titles, full access.
 - **Provider cascade:** `generate.js` — DeepSeek → OpenAI → Anthropic. `AI_PROVIDER` env var deprecated.
 - **Desktop sales pages:** `desktop.html`, `desktop-download.html`, `desktop.css`. Redirects in `netlify.toml`.
-- **Plausible tags added** to `index.html` + `desktop.html`. Account not yet created.
+- **Plausible tags → PostHog** switched on all 3 web pages. Account live.
 - **Web content honesty pass:** fake "247,000+ titles" stat removed, fabricated testimonials replaced with product-benefit cards, footer placeholder copy removed, vidIQ/SEMrush comparison tightened.
 
 ### 2026-07-25 → 07-28 — Local LLM (SmolLM2) Attempt
@@ -387,39 +393,50 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 - `cargo build --release` — 22.74 MB binary on Windows
 - `npm run dev` — app launches, EGCG generator builds (2,112 words), LLM lazy-loads
 - **Path A LLM complete** — llama-cpp-2 + Qwen2.5-1.5B. Batched prefill at 3.5s/title. RAG few-shot + retry + post-cleaning pipeline works.
+- **First generated Qwen title:** "Revitalize Your Day with Coffee: 7 Minute Coffee Cure" — keyword match, creative, 1st attempt.
+- **Security audit fixes applied:** CSP, crypto keygen, timing-safe secret, no devtools in prod.
+- **Performance fix:** DB mutex scoped — released before LLM inference.
 - Desktop pages live at `titleforge-tool.netlify.app/desktop` and `/desktop/download`
 - License system overhaul (email-based, Stripe webhook, Resend email delivery)
 - Web deploy with nav, pricing teaser, honest testimonials, factual comparisons
 - SEO scoring integrated end-to-end
 - Provider cascade active on web AI generation
+- PostHog analytics live on all 3 web pages with project key
+- Updater public key regenerated, endpoint fixed to Netlify, `TAURI_SIGNING_PRIVATE_KEY` set as GitHub secret
 
 ### 6.2 Known Issues (Priority Order)
 
-1. **SmolLM2 quality insufficient.** Being replaced under Path A — see §7.
+1. **EGCG remains Pass 2, not demoted.** Path A LLM (Qwen) works but EGCG hasn't been demoted to Pass 3. Currently LLM → EGCG → curated. Once benchmark confirms Qwen > EGCG, demote EGCG.
 
-2. **EGCG remains the primary offline engine.** Not by choice — SmolLM2 didn't work. Once Path A lands, EGCG will be demoted to Pass 3 (behind LLM + curated).
+2. **50-keyword benchmark pending.** Need real quality numbers comparing Qwen vs EGCG vs curated on format-conformance, category-relevance, and human readability.
 
-3. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
+3. **GBNF grammars not implemented.** Forced valid JSON output would eliminate malformed titles. Now possible with llama.cpp. Deferred.
 
-4. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test. `updates.json` has empty signatures until CI signs a release.
+4. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
 
-5. **Web Pro → free Core desktop license** not implemented. Strategic decision made, no code.
+5. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test. `updates.json` deployed to Netlify — signatures populated by CI.
 
-6. **Upgrade pricing (pay the difference) between desktop tiers** not implemented.
+6. **Qwen model not bundled in production builds.** `tauri.conf.json` resources bundle SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users would fall back to SmolLM2. Decision: bundle in installer or download on first launch.
 
-7. **Annual update renewal / major version upgrade pricing** not implemented.
+7. **CORS wildcard on POST endpoints.** `licenses.js` uses `Access-Control-Allow-Origin: *`. Low risk because `generate_from_purchase` is secret-protected, but should be restricted.
 
-8. **Admin dashboard for support staff** — planned, not started. Deferred for post-launch.
+8. **License key validation endpoint has no rate limiting.** Public endpoint, no per-IP throttle. Could be used for enumeration.
 
-9. **Path A LLM** — **COMPLETE.** llama-cpp-2 + Qwen2.5-1.5B. Batched prefill at 3.5s/title. GBNF grammars and 50-keyword benchmark are next optimizations.
+9. **Web Pro → free Core desktop license** not implemented. Strategic decision made, no code.
+
+10. **Upgrade pricing (pay the difference) between desktop tiers** not implemented.
+
+11. **Annual update renewal / major version upgrade pricing** not implemented.
+
+12. **Admin dashboard for support staff** — planned, not started. Deferred for post-launch.
 
 ### 6.3 Strategic Decisions (Active)
 
 | # | Decision | Status |
 |---|---|---|
-| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **Adopted — see §7** |
+| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **SHIPPED** — see §7.2 |
 | 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned |
-| 3 | EGCG demoted to Pass 3 fallback once Path A lands | Pending Path A |
+| 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | Pending benchmark |
 | 4 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
 | 5 | One-time purchase + optional update renewal | Planned, not implemented |
 | 6 | Unify brand under TitleForge | **Done** |
@@ -430,6 +447,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 | 11 | Updater signed builds via CI | **Done** (key set, untested) |
 | 12 | Analytics (PostHog) | **Done** (live on all 3 web pages) |
 | 13 | Admin dashboard for support staff | Planned, not started |
+| 14 | Security hardening (CSP, crypto keygen, safe compare) | **Done** (July 29 audit fixes) |
 
 ---
 
