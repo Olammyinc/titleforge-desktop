@@ -107,30 +107,47 @@ impl LocalLlm {
         let style_label = if style.is_empty() || style == "any" { "normal" } else { style };
 
         for attempt in 1..=3u32 {
-            let system = "You are TitleForge, an elite title generator. Generate ONE creative, clickable title. Output ONLY the title text — no explanation, no preamble, no markdown formatting, no quotes around the title.";
+            // Stronger system prompt — keyword inclusion is MANDATORY
+            let system = format!(
+                "You are TitleForge, an elite title generator. Generate ONE creative, clickable {} title about \"{}\". CRITICAL RULE: the title MUST contain the word \"{}\" somewhere in it. Output ONLY the title text — no explanation, no preamble, no markdown, no quotes.",
+                category, keyword, keyword
+            );
+
             let mut user_prompt = String::new();
             if !examples.is_empty() {
                 user_prompt.push_str(&format!("Examples of {} {} titles:\n", style_label, category));
-                for ex in examples.iter().take(4) { user_prompt.push_str(&format!("- \"{}\"\n", ex)); }
+                for ex in examples.iter().take(3) { user_prompt.push_str(&format!("- \"{}\"\n", ex)); }
                 user_prompt.push('\n');
             }
             user_prompt.push_str(&format!(
-                "Write ONE {} {} title about \"{}\". 3-15 words, must contain the keyword \"{}\", creative and clickable.",
-                style_label, category, keyword, keyword
+                "Write a {} {} title. The word \"{}\" MUST appear in the title. 3-15 words, creative, clickable.",
+                style_label, category, keyword
             ));
-            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — write a DIFFERENT title.)", attempt)); }
+            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT title. MUST include \"{}\".)", attempt, keyword)); }
 
-            let raw = match self.generate_chat_raw(system, &user_prompt) {
+            let raw = match self.generate_chat_raw(&system, &user_prompt) {
                 Some(r) => r,
                 None => continue,
             };
             let cleaned = clean_output(&raw);
-            // Debug logging — only in debug builds
             #[cfg(debug_assertions)]
-            eprintln!("[local_llm] attempt {}: cleaned '{}'", attempt, cleaned);
+            eprintln!("[local_llm] attempt {}: '{}' -> '{}'", attempt, raw, cleaned);
             if cleaned.len() < 3 || cleaned.split_whitespace().count() < 2 { continue; }
             let cl = cleaned.to_lowercase();
-            if !cl.contains(&kw_lower) && !kw_tokens.iter().any(|w| cl.contains(w)) { continue; }
+
+            // Keyword QC: strict on attempt 1, relaxed on retries
+            // Qwen-1.5B can't reliably force keyword inclusion.
+            // When it fails, the creative alternative is better than nothing.
+            let keyword_ok = match attempt {
+                1 => cl.contains(&kw_lower) || kw_tokens.iter().any(|&w| cl.contains(w))
+                    || (kw_tokens.len() > 1 && {
+                        let m = kw_tokens.iter().filter(|&w| cl.contains(w)).count();
+                        m * 2 >= kw_tokens.len()
+                    }),
+                _ => cl.len() >= 4, // relax: accept any coherent output on retry
+            };
+            if !keyword_ok { continue; }
+
             if examples.iter().any(|e| e.eq_ignore_ascii_case(&cleaned)) { continue; }
             if is_instruction_echo(&cl) { continue; }
             return Some(cleaned);
@@ -175,10 +192,12 @@ fn clean_title(s: &str) -> String {
     t = t.trim_matches(|c: char| matches!(c, '"' | '\'' | '\u{201c}' | '\u{201d}' | '`')).to_string();
     t = t.trim_matches(|c: char| matches!(c, '\u{2018}' | '\u{2019}')).to_string();
     t = t.replace("**", "").replace("__", "").replace('*', "").replace('#', "").replace('`', "");
-    t = t.trim_start_matches(|c: char| matches!(c, '-' | '|' | '*')).trim().to_string();
+    t = t.trim_start_matches(|c: char| matches!(c, '-' | '•' | '*')).trim().to_string();
     if let Some(pos) = t.find(". ") {
         let prefix = &t[..pos];
         if prefix.chars().all(|c| c.is_ascii_digit()) && pos <= 3 { t = t[pos + 2..].to_string(); }
     }
     t.trim().to_string()
 }
+
+
