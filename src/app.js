@@ -51,7 +51,7 @@ function invoke(cmd, args) {
         if (cmd === 'validate_license') { mockDb.settings.license_status = 'valid'; mockDb.settings.license_tier = 'pro'; return Promise.resolve({ valid: true, tier: 'pro' }); }
         if (cmd === 'get_categories') return Promise.resolve([]);
         if (cmd === 'get_history' || cmd === 'get_favorites' || cmd === 'get_projects') return Promise.resolve([]);
-        if (cmd === 'get_usage_stats') return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0 });
+        if (cmd === 'get_usage_stats') return Promise.resolve({ totalGenerations: 0, todayGenerations: 0, totalFavorites: 0, isPro: true, tier: 'pro' });
         if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') return Promise.resolve();
         if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null, source: 'template', seo_score: 82, seo_breakdown: { platform: 'amazon', length_fit: { score: 90, weight: 20, value: '24 chars', detail: '24 chars — acceptable for amazon' }, keyword_presence: { score: 100, weight: 20, value: 'front-loaded', detail: 'keyword leads the title' }, keyword_density: { score: 100, weight: 10, value: '20%', detail: 'density in sweet spot' }, search_pattern: { score: 60, weight: 15, value: '1 match(es)', detail: 'matched: guide to' }, question_format: { score: 0, weight: 5, value: 'no', detail: 'not a question' }, number_year: { score: 0, weight: 10, value: 'none', detail: 'no numbers present' }, reading_level: { score: 60, weight: 5, value: 'n/a', detail: 'too short' }, power_words: { score: 60, weight: 5, value: '1 power word(s)', detail: '1 power word' }, uniqueness: { score: 85, weight: 10, value: '82% novel', detail: 'low overlap — mostly novel' } } }]);
         if (cmd === 'get_app_info') return Promise.resolve({ version: '0.0.0-devmock', seeded: false, templateCount: 0, localLlmLoaded: false });
@@ -162,6 +162,7 @@ function toggleSeoPanel(hostDiv, bd) {
 // ---- STATE ----
 var isPro = true;
 var isLoggedIn = true;
+var currentTier = 'pro';
 var isGuest = false;
 var selectedStyle = 'normal';
 var selectedGender = 'any';
@@ -590,7 +591,9 @@ function setupTranslateToggle() {
 function setupSlider() {
   var slider = document.getElementById('quantity');
   if (!slider) return;
-  slider.max = 100;
+  if (currentTier === 'studio') slider.max = 500;
+  else if (currentTier === 'pro') slider.max = 100;
+  else slider.max = 25;
   updateQuantityLabel();
   slider.addEventListener('input', function () {
     updateSliderTrack(slider);
@@ -1059,6 +1062,8 @@ function loadDashboardData() {
     });
     var stats = results[3];
     dailyUsage = stats.todayGenerations || 0;
+    currentTier = stats.tier || 'core';
+    isPro = stats.isPro !== false;
     updateUsageDisplay();
     renderDashboard();
   }).catch(function (err) {
@@ -1087,7 +1092,7 @@ function renderStatsBar() {
     '<div class="stat-card"><span class="stat-number">' + totalTitles + '</span><span class="stat-label">Titles generated</span></div>' +
     '<div class="stat-card"><span class="stat-number">' + dashFavorites.length + '</span><span class="stat-label">Favorites</span></div>' +
     '<div class="stat-card"><span class="stat-number">' + dashProjects.length + '</span><span class="stat-label">Projects</span></div>' +
-    '<div class="stat-card"><span class="stat-badge" style="background:var(--forge);">PRO</span><span class="stat-label">Desktop Pro</span></div>';
+    '<div class="stat-card"><span class="stat-badge" style="background:var(--forge);">' + currentTier.toUpperCase() + '</span><span class="stat-label">Desktop ' + currentTier.charAt(0).toUpperCase() + currentTier.slice(1) + '</span></div>';
 }
 
 // ---- OVERVIEW TAB ----
@@ -1577,12 +1582,27 @@ function renderSettingsContent() {
   var el = document.getElementById('settingsUsage');
   if (el) el.textContent = dailyUsage;
 
+  // Update plan label from current tier
+  var planEl = document.getElementById('settingsPlan');
+  if (planEl) {
+    var tierLabel = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
+    planEl.textContent = 'Desktop ' + tierLabel;
+  }
+
   // Update version from app_info
   invoke('get_app_info').then(function (info) {
     var verEl = document.getElementById('settingsVersion');
     if (verEl && info.version) verEl.textContent = info.version;
     var updateVerEl = document.getElementById('settingsUpdateVersion');
     if (updateVerEl && info.version) updateVerEl.textContent = 'v' + info.version;
+    // Propagate version to sidebar and activation screen
+    var sidebarVer = document.getElementById('sidebarVersion');
+    if (sidebarVer && info.version) sidebarVer.textContent = 'v' + info.version;
+    var actVer = document.getElementById('activationVersion');
+    if (actVer && info.version) actVer.textContent = 'v' + info.version;
+    // Update tier badge in sidebar
+    var tierBadge = document.getElementById('sidebarTierBadge');
+    if (tierBadge) tierBadge.textContent = currentTier.toUpperCase();
 
     // The local LLM lazy-loads on the first title generation, not at app
     // startup, so `localLlmLoaded` being false here can mean either "hasn't

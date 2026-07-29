@@ -84,7 +84,8 @@ fn generate_titles(
     // Tier-based quantity cap. Basic = 25, Pro/Studio = 100.
     let tier = get_tier(&db);
     let cap: u32 = match tier.as_str() {
-        "pro" | "studio" => 100,
+        "pro" => 100,
+        "studio" => 500,
         _ => 25,
     };
     let quantity = quantity.min(cap);
