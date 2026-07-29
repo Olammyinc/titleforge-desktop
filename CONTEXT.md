@@ -1,7 +1,8 @@
-﻿# TitleForge — Full Project Context
+# TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-28
+> **Last updated:** 2026-07-29
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
+> **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
 ---
 
@@ -12,10 +13,10 @@
 | | Web App | Desktop App |
 |---|---|---|
 | **Deployment** | Netlify (free tier) | Tauri v2 native binary |
-| **Pricing** | Free tier + $15.83/mo annual Pro ($19/mo monthly) | $29 Core / $59 Pro / $89 Studio one-time |
-| **AI** | Serverless via Netlify Functions (DeepSeek V4 Flash default, configurable) | Bring-your-own-key (OpenAI, DeepSeek, Claude, Gemini) + offline engine |
-| **Database** | Supabase Postgres (6 tables) | Local SQLite (`titles.db`) |
-| **Auth** | Supabase Auth (CDN + localStorage fallback) | License key activation (24h offline cache) |
+| **Pricing** | Free / Pro ($15.83/mo annual, $19/mo monthly) | $29 Core / $59 Pro / $89 Studio (one-time) |
+| **AI** | Serverless via Netlify Functions (provider cascade: DeepSeek → OpenAI → Anthropic) | Bring-your-own-key (OpenAI, DeepSeek, Claude, Gemini) + offline engine |
+| **Database** | Supabase Postgres (6 tables, RLS) | Local SQLite (`titles.db`) |
+| **Auth** | Supabase Auth (CDN + localStorage fallback) | License key activation (24h offline cache + 30min background refresh) |
 | **Platforms** | Any browser | Windows (.exe NSIS), macOS (.dmg), Linux (.deb, .AppImage) |
 
 ### Brand Identity
@@ -33,7 +34,7 @@
 - **Hosting:** Netlify (free tier, drag-and-drop or git-connected)
 - **Frontend:** Vanilla HTML/CSS/JS — no framework
 - **Backend:** 7 Netlify Functions (serverless Node.js with `node-fetch`)
-- **AI Provider:** DeepSeek V4 Flash (`deepseek-v4-flash`) — configurable to OpenAI, Anthropic, Flux Router via `AI_PROVIDER` env var
+- **AI Provider:** Cascade — DeepSeek V4 Flash → OpenAI (`gpt-4o-mini`) → Anthropic (`claude-3-5-sonnet`). First provider with a configured API key wins; falls through on failure.
 - **Auth:** Supabase Auth (CDN: `@supabase/supabase-js@2`) + localStorage fallback (`titleforge_auth` key)
 - **Database:** Supabase Postgres — 6 tables with Row Level Security
 - **Payments:** Stripe Payment Links + Customer Portal, webhook upgrades `user_metadata.isPro`
@@ -42,28 +43,30 @@
 
 | File | Lines | Purpose |
 |---|---|---|
-| `index.html` | 663 | Landing page: hero, benefits, comparison, pricing (web + desktop), testimonials, FAQ, auth/waitlist/exit modals, sticky CTA |
-| `app.js` | 2826 | All UI logic: auth, generation, results display, floating generator, dashboard rendering, settings, license management, export, projects |
+| `index.html` | 596 | Landing page: hero, benefits, comparison, pricing (web + desktop), FAQ, auth/waitlist/exit modals, sticky CTA |
+| `app.js` | 2839 | All UI logic: auth, generation, results display, floating generator, dashboard rendering, settings, license management, export, projects |
 | `styles.css` | 3003 | Full stylesheet: design system (CSS variables), nav, hero, benefits, why section, comparison strip, pricing, FAQ, tool section, results, cross-medium, floating generator, dashboard, responsive breakpoints |
 | `dashboard.html` | 134 | Dashboard shell: 6 tabs (Overview, History, Favorites, Projects, Export, Settings) |
-| `dashboard.js` | 85 | Dashboard page init: auth check from localStorage, Stripe redirect handler, tab wiring |
-| `netlify.toml` | 12 | Netlify config: functions dir, redirects for `/api/generate` and `/api/validate-license` |
-| `supabase-setup.sql` | 231 | Idempotent schema: 6 tables, RLS policies, RPC for atomic usage increment, indexes |
-| `updates.json` | 23 | Desktop auto-updater manifest: v0.1.0, platform URLs (empty signatures — needs private key) |
+| `dashboard.js` | 84 | Dashboard init: auth check from localStorage, Stripe redirect handler, tab wiring |
+| `desktop.html` | 595 | Desktop sales page: hero, features, walkthrough mockups, 3-tier pricing, FAQ, download CTA |
+| `desktop-download.html` | 956 | OS-detecting download page, collapsible install instructions, system requirements, license verification form |
+| `desktop.css` | 908 | Desktop page styles (ported from legacy `site/styles.css`, remapped to TitleForge palette) |
+| `netlify.toml` | 35 | Netlify config: functions dir, redirects for `/api/*`, `/desktop`, `/desktop/download`, `/download` |
+| `supabase-setup.sql` | 300 | Idempotent schema: 6 tables, RLS policies, RPC for atomic usage increment, indexes |
 | `logo.svg` | — | Vector logo: anvil + forge spark in amber |
-| `seed-data.json` | 1.0MB | 1,300 templates + 889 word pool entries + 2,623 curated titles (same as desktop seed) |
+| `seed-data.json` | 1.0 MB | 1,300 templates + 889 word pool entries + 2,623 curated titles (mirror of desktop seed) |
 
 ### 2.3 Netlify Functions
 
-| Function | Lines | Purpose | HTTP Methods |
-|---|---|---|---|
-| `config.js` | 24 | Returns public config: Supabase URL, anon key, Stripe links | GET |
-| `generate.js` | 569 | AI title generation: multi-provider support (OpenAI/DeepSeek/Anthropic/Flux), 3 prompt modes (standard, cross-medium, name rubric), robust JSON repair (4 fallback layers), 7 fine-tune fields | POST |
-| `licenses.js` | 193 | License CRUD: validate from desktop (public), generate for Pro users, deactivate, machine registration (max 3 devices) | GET, POST |
-| `stripe-webhook.js` | 100 | Listens for `checkout.session.completed`, verifies Stripe signature, looks up user by email, sets `user_metadata.isPro = true` | POST |
-| `usage.js` | 329 | Usage tracking + dashboard API: GET returns usage/history/favorites/projects; POST handles: increment (atomic RPC), save history, add/remove favorite, create/delete project, add to project, update title notes | GET, POST |
-| `verify-subscription.js` | 76 | Checks Pro status via token, syncs usage table | GET |
-| `waitlist.js` | 45 | Captures email signups to Supabase waitlist table | POST |
+| Function | Lines | Purpose |
+|---|---|---|
+| `config.js` | 24 | Returns public config: Supabase URL, anon key, Stripe links |
+| `generate.js` | 649 | AI title generation: provider cascade, 3 prompt modes (standard, cross-medium, name rubric), 4-layer JSON repair pipeline, 7 fine-tune fields |
+| `licenses.js` | 279 | License CRUD: validate (public, email-based), generate for Pro users, `generate_from_purchase` (Stripe path), deactivate, machine registration (max 3 devices) |
+| `stripe-webhook.js` | 214 | `checkout.session.completed` — signature verify, desktop-purchase branch (metadata-detected → generates key → emails via Resend), web-Pro branch (sets `user_metadata.isPro`) |
+| `usage.js` | 346 | Usage tracking + dashboard API: GET → usage/history/favorites/projects; POST → increment (atomic RPC), history, favorites, projects, notes |
+| `verify-subscription.js` | 130 | Checks Pro status via token, syncs usage table |
+| `waitlist.js` | 45 | Captures email signups to Supabase waitlist table |
 
 ### 2.4 Database Schema (Supabase — 6 tables)
 
@@ -72,7 +75,7 @@ All tables have Row Level Security enabled with per-user policies.
 **1. `usage`** — Daily usage tracking
 - `id` UUID PK, `user_id` UUID FK→`auth.users`, `date` DATE, `count` INTEGER, `is_pro` BOOLEAN
 - Unique constraint on `(user_id, date)`
-- RPC `increment_usage(p_user_id, p_is_pro)` for atomic race-condition-free increments
+- RPC `increment_usage(p_user_id, p_is_pro)` for atomic increments
 
 **2. `title_history`** — Saved generation batches
 - `id` UUID PK, `user_id` UUID FK, `keyword` TEXT, `categories` TEXT[], `genre` TEXT, `style` TEXT, `titles` JSONB
@@ -84,42 +87,41 @@ All tables have Row Level Security enabled with per-user policies.
 - `id` UUID PK, `user_id` UUID FK, `name` TEXT, `titles` JSONB
 
 **5. `licenses`** — Desktop app license keys
-- `id` UUID PK, `user_id` UUID FK, `license_key` TEXT UNIQUE, `tier` TEXT, `source` TEXT, `is_active` BOOLEAN, `activated_machines` TEXT[], `expires_at` TIMESTAMPTZ
-- Key format: `TF-BASIC-XXXX-XXXX-XXXX-XXXX` or `TF-PRO-XXXX-XXXX-XXXX-XXXX`
+- `id` UUID PK, `user_id` UUID FK **(nullable — desktop-only buyers have no auth row)**, `email` TEXT, `license_key` TEXT UNIQUE, `tier` TEXT (`core`/`pro`/`studio`), `source` TEXT, `is_active` BOOLEAN, `activated_machines` TEXT[], `expires_at` TIMESTAMPTZ
+- Key formats: `TF-CORE-XXXX`, `TF-PRO-XXXX`, `TF-STUDIO-XXXX`
+- Validation is by (`license_key`, `email`) — no Supabase account required
 
 **6. `waitlist`** — Desktop app waitlist signups
 - `id` UUID PK, `email` TEXT UNIQUE, `source` TEXT
 
 ### 2.5 Auth Flow
 1. Supabase CDN script loaded: `@supabase/supabase-js@2`
-2. `tryInitSupabase()` fetches config from `/.netlify/functions/config` to get Supabase URL + anon key
-3. If CDN fails to load (blocked by ad blockers, etc.), `localStorage` fallback reads `titleforge_auth` key
-4. On successful auth: `onAuthSuccess()` persists `{email, token, isLoggedIn}` to localStorage, applies Pro UI
+2. `tryInitSupabase()` fetches config from `/.netlify/functions/config` for Supabase URL + anon key
+3. If CDN is blocked, `localStorage` fallback reads `titleforge_auth` key
+4. On successful auth, `onAuthSuccess()` persists `{email, token, isLoggedIn}` to localStorage, applies Pro UI
 5. `onAuthRestoredFromStorage()` — cross-page auth (dashboard reads localStorage if Supabase CDN didn't load)
 6. Guest mode always works: 3 generations, no signup, local-only tracking via `titleforge_guest_usage` localStorage key
 7. Free tier: 5/day, requires account (authenticated Supabase user)
 
 ### 2.6 Payments
-- **Stripe Payment Links** for Pro subscription (monthly `$19` or annual `$190`)
-- **Customer Portal** for subscription management (cancellation)
-- **Webhook flow:** `checkout.session.completed` → `stripe-webhook.js` → verify signature → find user by email → set `user_metadata.isPro = true`
-- **Dashboard redirect:** After Stripe checkout, redirects to `dashboard.html?session_id=...` → `verifySubscription()` → checks `verify-subscription` function → refreshes page
-- **Billing toggle:** Frontend shows monthly/yearly pricing with 17% annual discount
+- **Web Pro subscription:** Stripe Payment Link, `$19/mo` or `$190/yr` (17% annual discount)
+- **Desktop one-time:** Separate Stripe Payment Links per tier ($29 / $59 / $89), `metadata.product = "desktop"`, `metadata.tier = "core|pro|studio"`
+- **Customer Portal:** Subscription management (cancellation) for web Pro
+- **Webhook — web Pro:** `checkout.session.completed` → verify signature → find user by email → set `user_metadata.isPro = true`
+- **Webhook — desktop:** `checkout.session.completed` with `metadata.product == "desktop"` → generate `TF-<TIER>-XXXX` key → insert into `licenses` table with buyer email → email the key via Resend
+- **Dashboard redirect:** After Stripe checkout, redirects to `dashboard.html?session_id=...` → `verifySubscription()` → checks `verify-subscription` → refreshes
 
 ### 2.7 AI Generation (`generate.js`)
-- **4 providers supported:** OpenAI (`gpt-4o-mini`), DeepSeek (`deepseek-v4-flash` — default), Anthropic (`claude-3-5-sonnet`), Flux Router (`flux-auto`)
+- **Provider cascade:** DeepSeek → OpenAI → Anthropic. `AI_PROVIDER` env var is no longer used.
+- **Models:** DeepSeek `deepseek-v4-flash`, OpenAI `gpt-4o-mini`, Anthropic `claude-3-5-sonnet`
 - **3 prompt modes:**
   1. **Standard:** Categories as comma-separated list, generates title array with scores + breakdowns
   2. **Cross-medium:** Per-category adaptation with medium-specific conventions (YouTube ALL CAPS, books poetic, etc.)
-  3. **Name rubric:** For `childname`, `character`, `street` categories — uniqueness, memorability, meaning depth, pronunciation, origin vibe
+  3. **Name rubric:** For `childname`, `character`, `street` — uniqueness, memorability, meaning depth, pronunciation, origin vibe
 - **7 fine-tune fields:** audience, emotion, length, angle, mustInclude, avoid, beatTitle
-- **JSON repair pipeline:** 4 fallback layers:
-  1. Direct `JSON.parse`
-  2. `repairJson()` — fixes non-ASCII quotes, spaces in property names, trailing commas, unquoted keys, comments, single quotes
-  3. `repairTruncatedJson()` — closes truncated brackets and strings
-  4. Last-good-position extraction — scans for `}}` boundaries and tries parsing substrings
+- **JSON repair pipeline (4 layers):** direct parse → `repairJson()` → `repairTruncatedJson()` → last-good-position scan
 - **`response_format: { type: "json_object" }`** used on OpenAI-compatible providers
-- **Temperature:** 0.85, with `frequency_penalty: 0.6`, `presence_penalty: 0.4`
+- **Sampling:** Temperature 0.85, `frequency_penalty: 0.6`, `presence_penalty: 0.4`
 
 ### 2.8 Frontend Features
 | Feature | Guest | Free | Pro |
@@ -128,42 +130,26 @@ All tables have Row Level Security enabled with per-user policies.
 | Titles per batch | 10 | 10 | 100 |
 | Categories | 5 | 5 | 16 |
 | Styles | 4 | 4 | 9 |
-| Fine-tune | No | No | Yes |
-| Gender selector | No | No | Yes |
-| Cross-medium | No | No | Yes |
-| Subtitles | No | No | Yes |
-| Translation | No | No | Yes (12 languages) |
-| Score visible | Yes | Yes (teasered) | Full |
-| Breakdown | PRO badges | PRO badges | Full values |
-| Dashboard | No | Yes | Yes |
-| Favorites | No | Yes | Yes |
-| Projects | No | No | Yes |
-| CSV Export | No | No | Yes |
-| Desktop license | No | No | Basic included |
+| Fine-tune / Cross-medium / Subtitles / Translation | No | No | Yes |
+| Score visible | Yes | Yes (teasered) | Full breakdown |
+| Dashboard / Favorites | No | Yes | Yes |
+| Projects / CSV Export | No | No | Yes |
+| Desktop license | No | No | Core included |
 
-**Landing page sections:** Hero → Benefits → Why TitleForge (with comparison vs vidIQ/SEMrush) → Desktop App teaser → Tool section → Testimonials → Pricing (web + desktop tiers) → FAQ → Footer
-
-**Floating generator:** Sticky FAB (⚡) available on all pages — opens modal with keyword input, category/style selectors, genre, quantity, cross-medium toggle, generates via same Netlify function.
-
-**Dashboard tabs:** Overview (stats + recent activity + quick actions) → History (search/filter/sort, score badges, breakdown popups, favorites, project buttons) → Favorites (starred titles) → Projects (3-column responsive grid, inline notes, project picker dropdown) → Export (checkbox selection, CSV download, clipboard copy) → Settings (plan info, billing management, desktop license management)
-
-**Exit intent modal:** Shows on mouseout (top of page) for non-logged-in users: "Before you go... get 3 free titles."
+**Landing page sections:** Hero → Benefits → Why TitleForge (comparison strip) → Desktop App teaser → Tool section → Pricing → FAQ → Footer
+**Floating generator:** Sticky FAB (⚡) on all pages
+**Exit intent modal:** Shows on mouseout for non-logged-in users
+**Analytics:** Plausible script tag on `index.html` and `desktop.html`. Events: `signup`, `generate`, `pro_upgrade_click`, `favorite_add`. **Account not yet created** — script fires no-ops.
 
 ### 2.9 Deployment
-- **Netlify env vars required:**
-  ```
-  SUPABASE_URL        — Supabase project URL
-  SUPABASE_SERVICE_KEY — Supabase service_role key (for admin operations)
-  SUPABASE_ANON_KEY    — Supabase anon/public key (for client-side init)
-  DEEPSEEK_API_KEY     — DeepSeek API key (default AI provider)
-  AI_PROVIDER          — "deepseek" (default), "openai", "anthropic", or "flux"
-  STRIPE_SECRET_KEY    — Stripe secret key
-  STRIPE_WEBHOOK_SECRET — Stripe webhook signing secret
-  STRIPE_PRO_LINK      — Stripe Payment Link for Pro subscription
-  STRIPE_PORTAL_LINK   — Stripe Customer Portal link
-  STRIPE_SUCCESS_URL   — Redirect URL after successful payment
-  ```
-- **Deploy methods:** `npx netlify deploy --prod`, git push (if connected), or drag-and-drop
+```
+SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_ANON_KEY
+DEEPSEEK_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY  (cascade — at least one required)
+STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRO_LINK, STRIPE_PORTAL_LINK, STRIPE_SUCCESS_URL
+STRIPE_DESKTOP_CORE_LINK, STRIPE_DESKTOP_PRO_LINK, STRIPE_DESKTOP_STUDIO_LINK
+RESEND_API_KEY, RESEND_FROM_EMAIL  (for desktop license delivery)
+```
+Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 
 ---
 
@@ -171,272 +157,219 @@ All tables have Row Level Security enabled with per-user policies.
 
 ### 3.1 Tech Stack
 - **Framework:** Tauri v2 (Rust backend + webview frontend)
-- **Frontend:** Vanilla HTML/CSS/JS (604 lines lighter than web app — 1427 vs 2826)
-- **Rust crates:** `tauri 2`, `rusqlite 0.31` (bundled SQLite), `reqwest 0.12` (blocking HTTP), `serde/serde_json`, `rand 0.8`, `chrono 0.4`, `dirs 5`, `hostname 0.4`, `tauri-plugin-shell 2`, `tauri-plugin-updater 2`
+- **Frontend:** Vanilla HTML/CSS/JS — single-page app, left sidebar layout
+- **Rust crates:** `tauri 2`, `rusqlite 0.31` (bundled SQLite), `reqwest 0.12` (blocking HTTP), `serde/serde_json`, `rand 0.8`, `chrono 0.4`, `dirs 5`, `hostname 0.4`, `keyring 3`, `candle-core / candle-transformers 0.11` (being replaced — see §7), `tokenizers`, `tauri-plugin-shell 2`, `tauri-plugin-updater 2`
 - **Database:** Local SQLite via `rusqlite` with bundled compilation (no system SQLite needed)
-- **Seed data:** 1,300 templates (30 per category × 16), 889 word pool entries across 8 pools, 2,623 curated titles across 16 categories with 9 tones each
-- **Build targets:** Windows (NSIS installer), macOS (.dmg), Linux (.deb + .AppImage)
+- **Seed data:** 1,300 templates (30/category × 16), 889 word pool entries across 8 pools, 2,623 curated titles across 16 categories × 9 tones
+- **Build targets:** Windows (NSIS), macOS (.dmg), Linux (.deb + .AppImage)
 
 ### 3.2 Key Files
 
 | File | Lines | Purpose |
 |---|---|---|
-| `src/index.html` | 293 | Main app page: compact hero, tool section with engine toggle, license activation overlay |
-| `src/app.js` | 1427 | Desktop UI logic: license gate, generation (local engine + AI), dashboard data loading via `invoke()`, settings with API key management |
-| `src/styles.css` | 3164 | Extended stylesheet (same base as web + desktop-specific: license overlay, engine toggle) |
-| `src/dashboard.html` | 134 | Dashboard shell (same structure as web) |
-| `src/dashboard.js` | 35 | Dashboard init (no auth needed — always Pro, local data via `invoke()`) |
-| `src-tauri/src/lib.rs` | 799 | All 19 IPC commands: generation, history, favorites, projects, settings, license validation, AI integration. AppState holds `db` and `generator` (EGCG). |
-| `src-tauri/src/engine.rs` | 373 | Title generation orchestrator: calls EGCG `Generator::generate()` first, falls back to template engine. Also contains legacy `slot_name_to_pool_name()` mapping and `generate_from_templates()`. |
-| `src-tauri/src/title_gen.rs` | 1270 | **EGCG algorithm** (replaces `markov.rs`). Three generation modes (70/20/10): exemplar-guided template fill, phrase stitching, keyword-embedded exemplar. Coherence-scored with pairwise affinity matrix, softmax sampling, and stemmer-based lexical affinity. |
-| `src-tauri/src/db.rs` | 144 | SQLite schema (8 tables) + seed data import from `seed-data.json` |
-| `src-tauri/src/main.rs` | 5 | Entry point → calls `titleforge_lib::run()` |
-| `src-tauri/tauri.conf.json` | 65 | App config: version `0.1.0`, window 1100×750, CSP, bundle config, updater endpoint |
-| `src-tauri/Cargo.toml` | 26 | Rust dependencies |
-| `src-tauri/capabilities/default.json` | 12 | Tauri v2 permissions: core, shell:allow-open, updater |
-| `src-tauri/build.rs` | 3 | Standard Tauri build hook |
-| `seed-data.json` | 1.0MB | Generated by DeepSeek V4 Pro (~$12 one-time cost): 1,300 templates (30/category), 889 word pool entries across 8 pools, 2,623 curated titles across 16 categories (tone-tagged: normal + 8 distinct tones) |
-| `.github/workflows/build.yml` | 84 | CI: 3-platform builds, artifact upload, auto GitHub Release on tag push |
-| `package.json` | 16 | NPM: `@tauri-apps/api ^2`, `@tauri-apps/cli ^2`, scripts `dev`/`build` |
-| `README.md` | 36 | Setup instructions: clone, `npm install`, `npm run dev` |
+| `src/index.html` | 373 | Single-page app: sidebar nav, generator, dashboard panel, settings panel, activation overlay |
+| `src/app.js` | 1862 | Desktop UI logic: license gate, background verify, generation (local + AI), dashboard rendering via `invoke()`, settings with API key management |
+| `src/styles.css` | 3556 | Full stylesheet (base + desktop-specific: sidebar, activation overlay, engine toggle) |
+| `src/logo.svg` | — | Same amber logo as web |
+| `src-tauri/src/lib.rs` | 1025 | All IPC commands: generation, history, favorites, projects, settings, license validation, background verify, AI, tier gating. `AppState` = `Mutex<Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>` |
+| `src-tauri/src/engine.rs` | 293 | 3-pass orchestrator: LLM (Pass 1, lazy) → EGCG (Pass 2) → curated fallback (Pass 3). Deduplication + SEO scoring. |
+| `src-tauri/src/title_gen.rs` | 1533 | **EGCG algorithm** — 3 modes (exemplar-guided template fill / phrase stitching / keyword-embedded exemplar). `strip_placeholders()` fix for `{placeholder}` leak. |
+| `src-tauri/src/local_llm.rs` | 179 | candle-rs SmolLM2 wrapper — `LocalLlm::load()`, `generate()`. Chat template applied. **Being replaced under Path A — see §7.** |
+| `src-tauri/src/seo.rs` | 368 | Local SEO scoring — 9 signals (length, keyword presence/density, search patterns, question, number/year, Flesch reading, power words, uniqueness). Zero API calls. |
+| `src-tauri/src/db.rs` | 152 | SQLite schema (8 tables) + seed data import from `seed-data.json` |
+| `src-tauri/src/main.rs` | 5 | Entry point → `titleforge_lib::run()` |
+| `src-tauri/tauri.conf.json` | 66 | App config, updater endpoint, CSP, bundle config |
+| `src-tauri/Cargo.toml` | 37 | Rust dependencies |
+| `src-tauri/capabilities/default.json` | 12 | Tauri v2 permissions |
+| `seed-data.json` | 1.0 MB | Same as web seed |
+| `site/` | legacy | Old TitleSmith marketing prototype — **still branded TitleSmith**, needs cleanup or deletion |
 
-### 3.3 Rust Backend — All IPC Commands
+### 3.3 Rust Backend — IPC Commands
 
-**State management:** `AppState` struct holds `Mutex<rusqlite::Connection>` and `Mutex<title_gen::Generator>`.
+`AppState` = `Mutex<rusqlite::Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>`
 
-| Command | Signature | Description |
+**Generation:**
+- `generate_titles(keyword, categories, style, genre, quantity, state) -> Vec<TitleResult>` — offline 3-pass pipeline. Tier-capped (Core=25, Pro/Studio=100).
+- `generate_with_ai(keyword, categories, style, genre, quantity, provider, api_key, cross_medium, include_subtitles, include_translation, translate_lang, gender, finetune)` — BYO cloud AI. **Pro/Studio only.**
+
+**History / Favorites / Projects:**
+- `get_history`, `get_favorites`, `toggle_favorite`
+- `get_projects`, `create_project`, `delete_project`, `add_to_project`, `update_title_notes` — **Pro/Studio only** for projects
+- `record_generation` — writes to `user_history`
+
+**Settings / Meta:**
+- `get_categories`, `get_usage_stats` (returns `tier`, `isPro`), `get_app_info`
+- `get_settings`, `set_setting` — sensitive keys stored in OS keyring, fallback XOR/SQLite
+
+**License:**
+- `validate_license(key, email)` — HTTP → Netlify `/licenses?action=validate&key=...&email=...&machine=...`. 24h offline cache.
+- `background_verify(key, email)` — silent refresh, 5s timeout, refresh-only (never revokes)
+- `deactivate_license()` — clears license settings
+
+### 3.4 Engine — 3-Pass Pipeline
+
+`engine.rs` orchestrates:
+
+1. **Pass 1 — LLM (lazy).** If model file present and loaded, generate via `local_llm.rs`. **Being rewritten under Path A (§7).**
+2. **Pass 2 — EGCG (`title_gen.rs`).** Template-based generation with pairwise-affinity coherence scoring. `strip_placeholders()` guard prevents `{placeholder}` leaks (fixed July 28).
+3. **Pass 3 — Curated fallback.** Retrieval from 2,623 curated titles, keyword-swapped into topic slot.
+
+All passes: dedup + SEO score sweep post-generation.
+
+**EGCG modes (still live despite earlier plan to remove):**
+- **A — Exemplar-Guided Template Fill (70%):** Fill template slots by scoring candidates against left context + keyword affinity + category naturalness. Softmax sample. Retries up to 6× per slot if below `MIN_COHERENCE=0.05`.
+- **B — Phrase Stitching (20%):** Mined intro fragments + keyword + closer fragments from curated titles.
+- **C — Keyword-Embedded Exemplar (10%):** Find highest-affinity curated title, swap its topic token with the keyword.
+
+**Scoring:** `raw = 2.0 × avg_pairwise_affinity + 0.5 × ln(1 + unigram_sum) - 1.5 × repeat_penalty` → normalized 0–65 base + heuristic bonuses → capped at 100.
+
+**Post Path A:** EGCG will be demoted to Pass 3 fallback only. See §7.
+
+### 3.5 SEO Scoring (`seo.rs`)
+
+Deduced locally, zero API calls. 9 weighted signals → 0–100:
+
+| Signal | Weight | Method |
 |---|---|---|
-| `generate_titles` | `(keyword, categories, style, genre, quantity, state) -> Vec<TitleResult>` | Offline engine: template mixer + curated fallback |
-| `generate_with_ai` | `(keyword, categories, style, genre, quantity, provider, api_key, cross_medium, include_subtitles, include_translation, translate_lang, gender, finetune) -> Vec<TitleResult>` | Cloud AI via user's API key (4 providers) |
-| `get_categories` | `() -> Vec<&str>` | Returns 16 category strings |
-| `get_usage_stats` | `(state) -> Value` | Returns `totalGenerations`, `todayGenerations`, `totalFavorites`, `isPro: true` |
-| `record_generation` | `(keyword, categories, genre, style, titles, state)` | Saves to `user_history` table |
-| `get_history` | `(state) -> Vec<HistoryEntry>` | Returns all history entries ordered by date DESC |
-| `get_favorites` | `(state) -> Vec<FavoriteEntry>` | Returns all favorites |
-| `toggle_favorite` | `(title, keyword, score, category, state) -> bool` | Add/remove (toggle) — returns `true` if now favorited |
-| `get_projects` | `(state) -> Vec<ProjectEntry>` | Returns projects with joined `project_titles` as JSON array |
-| `create_project` | `(name, state) -> ProjectEntry` | Creates project, returns new entry |
-| `delete_project` | `(project_id, state)` | Deletes project + cascading project_titles |
-| `add_to_project` | `(project_id, title, keyword, score, state)` | Adds title to `project_titles` table |
-| `update_title_notes` | `(project_id, title, notes, state)` | Updates notes on a project title |
-| `get_settings` | `(state) -> HashMap<String, String>` | Returns all settings (with XOR deobfuscation for sensitive keys) |
-| `set_setting` | `(key, value, state)` | Upserts setting (with XOR obfuscation for sensitive keys) |
-| `get_app_info` | `(state) -> Value` | Returns `{app, version, seeded, templateCount}` |
-| `validate_license` | `(key, email, state) -> Value` | HTTP call to Netlify `/licenses?action=validate`, 24h cache fallback |
-| `deactivate_license` | `(state)` | Clears all `license_%` settings |
+| Length fit | 20% | Platform-specific sweet spot (Google 50–60 chars, YouTube 48–60, Amazon 60–80). Peak-and-decay. |
+| Keyword presence | 20% | Front-loaded (first 3 words) scores higher than tail. |
+| Keyword density | 10% | Sweet spot 10–25%. Penalize >40% (stuffing). |
+| Search pattern match | 15% | N-gram match against ~110 bundled search modifiers ("how to", "best", "why", "vs", "in [year]"). |
+| Question format | 5% | who/what/when/where/why/how/is/are/can/does prefix → bonus. |
+| Number/year | 10% | Digit → bonus. Year ±2 of current → extra. |
+| Flesch reading ease | 5% | Pure math. Sweet spot 60–80. |
+| Power words | 5% | Density from bundled lexicon (shared with EGCG). |
+| Uniqueness | 10% | N-gram overlap vs `curated_titles` corpus. Generic → penalty. |
 
-### 3.4 Engine (`engine.rs` + `title_gen.rs`)
+**Output:** `SeoBreakdown { length_fit, keyword_position, keyword_density, search_pattern_hits, is_question, has_number, reading_ease, uniqueness, platform_target }`
 
-**Orchestrator (`engine.rs`):**
-- Calls EGCG `Generator::generate()` first (the new algorithm)
-- Falls back to legacy template engine (`generate_from_templates()`) if EGCG doesn't produce enough results
-- Deduplication and score-sorting across both passes
-- Contains the `slot_name_to_pool_name()` mapping function for 80+ pool aliases → 8 standard pools
+**Frontend:** SEO badge pill (green 80+/amber 50–79/gray <50), breakdown panel on hover, dashboard mini-badge in history. **Free web users see the score, Pro sees the breakdown.**
 
-**EGCG Algorithm (`title_gen.rs`) — replaces old Markov chain:**
-- **Data structures:** `Generator` struct with `word2id`, `id2word`, `affinity` (pairwise co-occurrence within window=5), `unigram_cat` (per-category word frequency), `templates`, `pools`, `exemplar_vocab`, `intro_fragments`, `closer_fragments`, `all_curated`
-- **`Generator::build(conn)`:** Loads all data from SQLite, builds all indices at startup
-- **`Generator::generate(keyword, categories, style, genre, qty)`:** Public API with 70/20/10 proportional mode allocation
-- **Mode A — Exemplar-Guided Template Fill (70%):** Fill template slots by scoring candidates against left context + keyword affinity + category naturalness. Softmax sampling, never uniform random. Retries up to 6x per slot if below `MIN_COHERENCE=0.05`.
-- **Mode B — Phrase Stitching (20%):** Mined intro fragments + keyword + closer fragments from curated titles
-- **Mode C — Keyword-Embedded Exemplar (10%):** Find highest-affinity curated title, swap its topic token with the keyword
-- **Scoring:** `EGCG raw = 2.0 × avg_pairwise_affinity + 0.5 × ln(1 + unigram_sum) - 1.5 × repeat_penalty` → normalized to 0-65 base + heuristic bonuses (keyword, numbers, curiosity, emotional, power words, word count) → capped at 100
-- **Utilities:** `tokenize()`, `stem()` (crude suffix-stripping), `softmax_sample()` (temperature 0.7, top-K 12), `resolve_pool_name()` (standalone copy of pool name mapping)
+**Tests:** 9 unit tests in `seo.rs`. All passing.
 
-**Key improvements over old Markov:**
-| Issue | Markov | EGCG |
-|---|---|---|
-| Sparse transitions | freq-1 = dead end | Soft score, sparsity degrades gracefully |
-| Noise | 15% uniform backoff | No uniform term. Fallback ladder: affinity → unigram → keyword |
-| Semantics | None | Pairwise co-occurrence + stemmer-based lexical affinity |
-| Keyword splice | Bidirectional creates unnatural junction | Left-to-right only, keyword fills topic slot |
-| Slot filling | Random from pool | Exemplar-restricted, coherence-scored, softmax-sampled |
-
-### 3.5 Database (`db.rs`) — SQLite
+### 3.6 Database (`db.rs`) — SQLite
 - **Data path:** `dirs::data_dir() / titleforge-desktop / titles.db`
 - **8 tables:** `patterns`, `word_pools`, `curated_titles`, `user_history`, `user_favorites`, `user_settings`, `user_projects`, `project_titles`
-- **Seed import:** Reads `seed-data.json`, inserts templates/word pools/curated titles with `INSERT OR IGNORE`
-- **Seed lookup paths:** `./seed-data.json` (next to binary) or `$DATA_DIR/titleforge-desktop/seed-data.json`
+- **Seed import:** Reads `seed-data.json`, inserts with `INSERT OR IGNORE`
+- **Seed lookup:** `./seed-data.json` (next to binary) or `$DATA_DIR/titleforge-desktop/seed-data.json`
 
-### 3.6 Settings & API Key Security
-- **XOR obfuscation:** API keys are XOR'd with the machine hostname before storage — prevents plaintext keys in SQLite
-- **Marker prefix:** Obfuscated values prefixed with `obf:` and stored as hex
-- **Sensitive key detection:** Any setting key containing `api_key`, `apikey`, `secret`, `token`, or `password` is obfuscated on write, deobfuscated on read
-- **Known limitation:** This is obfuscation, not encryption. A determined attacker with filesystem access can extract keys. Planned migration to OS-level credential storage (macOS Keychain, Windows DPAPI, Linux libsecret).
+### 3.7 API Key Storage
+- **Primary:** OS credential store via `keyring` crate v3 (macOS Keychain, Windows Credential Manager, Linux libsecret)
+- **Fallback:** XOR-obfuscated SQLite `user_settings` row (used only when keyring unavailable)
+- **Dual-write:** `set_setting` writes to both stores; `get_settings` reads keyring first
+- **Sensitive key detection:** Any setting key containing `api_key`, `apikey`, `secret`, `token`, or `password` is routed through keyring
+- **Clearing:** Empty value clears both stores
 
-### 3.7 AI Integration (Desktop)
-- **4 providers supported:** OpenAI (`gpt-4o-mini`), DeepSeek (`deepseek-v4-flash`), Anthropic Claude (`claude-sonnet-4-5`), Google Gemini (`gemini-2.0-flash`)
-- **User-managed:** API key entered in Dashboard → Settings → AI Integration, stored via `set_setting`
-- **Prompt:** Single prompt with quality rules, style, and optional fine-tune injections (audience, emotion, length, angle, mustInclude, avoid)
-- **Response parsing:** Same JSON extraction (strip code fences, parse `titles` key)
-- **Error handling:** Returns `API error (status)` or `AI returned malformed JSON`
-- **Engine toggle:** UI button switches between "Database" (local) and "AI" (cloud). Status bar shows provider and key status.
+### 3.8 BYO Cloud AI (Desktop)
+- **4 providers:** OpenAI (`gpt-4o-mini`), DeepSeek (`deepseek-v4-flash`), Anthropic (`claude-sonnet-4-5`), Google Gemini (`gemini-2.0-flash`)
+- **UI mapping:** Dropdown value `anthropic` (was broken as `claude` — fixed July 28)
+- **User-managed:** Key entered in Settings → AI Integration, stored via keyring
+- **Prompt:** Single quality-rules prompt + style + optional fine-tune injections
+- **Engine toggle:** UI button switches Database ↔ AI. Status bar shows provider + key status.
 
-### 3.8 License System
-- **Activation flow:** User enters key + email → `validate_license` Rust command → blocking HTTP GET to `https://titleforge-tool.netlify.app/.netlify/functions/licenses?action=validate&key=...&email=...`
-- **Server validation (`licenses.js`):** Queries Supabase `licenses` table, checks email matches owner, verifies `is_active`, registers machine (max 3), records `activated_machines`
-- **Offline cache:** On successful validation, stores `license_status=valid`, `license_tier`, `license_validated_at=<RFC3339>` in `user_settings`
-- **Cache expiry:** If server unreachable, checks if last validation was < 24 hours ago
-- **UI gate:** On load, `checkLicense()` calls `get_settings` — if `license_status != 'valid'`, hides `.nav`, `.hero-compact`, `.tool-section`, `.footer` and shows activation overlay
-- **`initApp()`** restores all UI elements after successful activation
-- **Buy link** in overlay opens `https://titleforge-tool.netlify.app/dashboard` via Tauri shell (or `window.open` fallback)
+### 3.9 License System
+- **Activation:** User enters key + email → `validate_license` → HTTP GET `.../licenses?action=validate&key=...&email=...&machine=<hostname>`
+- **Server (`licenses.js`):** Query `licenses` table by key, verify email matches record, verify `is_active`, register machine (max 3), return `{valid, tier}`
+- **Offline cache:** On success, stores `license_status=valid`, `license_tier`, `license_validated_at=<RFC3339>`, `license_key`, `license_email` in `user_settings`
+- **Cache expiry:** 24h if server unreachable
+- **Background refresh:** `startBackgroundTasks()` runs every 30 min; calls `background_verify` (refresh-only, never revokes)
+- **UI gate:** `checkLicense()` hides `.nav`, `.hero-compact`, `.tool-section`, `.footer` and shows activation overlay if `license_status != 'valid'`
+- **Website license validation** does not burn a machine slot
 
-### 3.9 CI/CD (`build.yml`)
-- **Triggers:** Push to `master`/`main` branches, `v*` tags, manual `workflow_dispatch`
-- **3 build jobs (parallel):**
-  - `build-linux` (ubuntu-22.04): `--bundles deb,appimage`
-  - `build-windows` (windows-latest): `--bundles nsis`
-  - `build-macos` (macos-latest): `--bundles dmg`
-- **Artifacts:** Each job uploads `src-tauri/target/release/bundle/**/*` with names `titleforge-linux`, `titleforge-windows`, `titleforge-macos`
-- **Release job:** Only on tag push (`startsWith(github.ref, 'refs/tags/v')`). Downloads all artifacts, generates release notes, uses `softprops/action-gh-release@v2` to create GitHub Release
-- **Env vars:** Uses `TAURI_UPDATER_PRIVATE_KEY` and `TAURI_UPDATER_KEY_PASSWORD` from repo secrets for updater signature generation
-- **Node 20** used across all builds
+### 3.10 CI/CD (`.github/workflows/build.yml`)
+- **Triggers:** Push to `master`/`main`, `v*` tags, manual dispatch
+- **3 parallel jobs:** `build-linux` (ubuntu-22.04, `deb,appimage`), `build-windows` (`nsis`), `build-macos` (`dmg`)
+- **Artifacts:** Uploaded per-platform (`titleforge-{linux|windows|macos}`)
+- **Release job:** Only on `v*` tag → `softprops/action-gh-release@v2`, downloads all artifacts
+- **Signing:** `TAURI_UPDATER_PRIVATE_KEY` + `TAURI_UPDATER_KEY_PASSWORD` repo secrets
+- **Node 20** everywhere
 
-### 3.10 Auto-Updater
-- **Configured in `tauri.conf.json`:** Plugin `updater` with public key `nMmbyRXVNON1KJT3yWIb0m/2xrfNFRPeZGrsRUEMk2I=`
+### 3.11 Auto-Updater
+- **Config:** `tauri.conf.json` → updater plugin, public key `nMmbyRXVNON1KJT3yWIb0m/2xrfNFRPeZGrsRUEMk2I=`
 - **Endpoint:** `https://titleforge-tool.netlify.app/updates.json`
-- **`updates.json` format:** Version `0.1.0`, platform-specific URLs pointing to GitHub Releases, empty signatures (needs private key setup to fill)
-- **Capability permissions:** `updater:default`, `updater:allow-check`, `updater:allow-download-and-install`
-
-### 3.11 Versioning
-- Desktop: `0.1.0` (beta semver) in both `package.json` and `tauri.conf.json`
-- Web: Version also in `updates.json`
-- Cargo.toml still says `1.0.0` (package version — separate from app version in tauri.conf.json)
-
-### 3.12 Seed Data Structure
-```json
-{
-  "generated_at": "ISO timestamp",
-  "model": "deepseek-v4-pro",
-  "stats": { "total_templates": 1300, "total_word_pool_entries": 889, "total_curated_titles": 2623 },
-  "templates": {
-    "book": [{ "template": "...", "slots": [...], "genre": "any", "tone": "normal", "quality_score": 0.8 }]  // 30 each
-    // ... 16 categories
-  },
-  "word_pools": {
-    "action_verbs": [50 words], "power_adjectives": [55], "nouns": [60],
-    "timeframes": [50], "emotions": [60], "numbers": [70], "hooks": [70], "results": [60]
-  },
-  "curated_titles": {
-    "book": [{ "title": "...", "genre": "...", "tone": "...", "appeal_score": 85, "notes": "" }]  // ~50 each
-    // ... 16 categories (article has only 26)
-  }
-}
-```
+- **Permissions:** `updater:default`, `updater:allow-check`, `updater:allow-download-and-install`
+- **Known gap:** `updates.json` has empty signatures — not yet wired to the signed release pipeline
 
 ---
 
 ## 4. Frontend Differences: Web vs Desktop
 
 | Aspect | Web | Desktop |
-|---|---|---|---|
-| **Layout** | Top nav bar + scrollable page | Left sidebar (Ink, 220px) + content area (Paper) |
-| **Activation** | Supabase auth modal | Full-screen split-panel takeover (no UI until activated) |
-| **Pages** | `index.html`, `dashboard.html` (separate) | Single page — Generator, Dashboard, Settings are sidebar panels |
-| **Auth** | Supabase (CDN + localStorage fallback) | License key (HTTP → offline cache) |
-| **Pro gate** | Tiered (guest/free/pro) | Tiered — Core/Pro/Studio with backend gating. Tier stored in local SQLite, checked at generation time. |
+|---|---|---|
+| **Layout** | Top nav + scrollable page | Left sidebar (Ink, 220px) + content area |
+| **Activation** | Supabase auth modal | Full-screen split-panel takeover |
+| **Pages** | `index.html`, `dashboard.html` (separate) | Single page — Generator/Dashboard/Settings are sidebar panels |
+| **Auth** | Supabase (CDN + localStorage fallback) | License key (HTTP + offline cache + 30-min background verify) |
+| **Tier gate** | Guest / Free / Pro | Core / Pro / Studio — backend enforces, **UI still always shows "PRO"** (bug — see §6.2) |
 | **Data source** | Supabase via Netlify Functions | SQLite via `invoke()` |
-| **Generation** | AI only (via Netlify Function) | Local engine OR AI (bring-your-own-key) |
-| **Dashboard** | 5 sub-tabs + Settings separate page | 5 sub-tabs + Settings as own sidebar panel |
-| **Favorites/Projects** | Server-side (Supabase tables) | Local SQLite tables |
-| **Floating generator** | Yes (FAB button) | No |
+| **Generation** | Cloud AI only | 3-pass local (LLM → EGCG → curated) OR BYO cloud AI |
+| **Favorites/Projects** | Supabase tables | Local SQLite |
+| **Floating generator** | Yes (FAB) | No |
 | **Engine toggle** | No | Yes (Database / AI) |
 
 ---
 
-## 5. What We Changed (This Session & Prior)
+## 5. Change Log (Rolling)
 
-### Logo Redesign
-- Old: Blue gradient `#2563eb→#1e3a5f` with anvil + pen nib + spark
-- New: Amber forge palette `#E8782B→#D45C1A`, simplified anvil shape, forge flame indicator, dark base
+### 2026-07-29 (later) — Bug fixes + housekeeping + updater
+- **Tier badge fixed** — sidebar, stats bar, and settings now read `currentTier` from `get_usage_stats`. No longer falsely shows "PRO" to Core buyers.
+- **Studio batch cap** raised from 100 to 500 in `lib.rs`. Slider max tier-aware. Sales page copy: "Up to 500 titles per batch".
+- **Version unification** — activation screen, sidebar, and settings now read version from `get_app_info` (single source: `CARGO_PKG_VERSION`). No hardcoded strings.
+- **`site/` folder deleted** — legacy TitleSmith prototype fully removed (all content already ported to `desktop.html`/`desktop.css`).
+- **`package-lock.json` regenerated** — `titlesmith-desktop` → `titleforge-desktop`.
+- **Analytics: Plausible → PostHog** — free tier (1M events/month), session recordings, heatmaps. Switched on all 3 web pages.
+- **Download page: Windows SHA256** published (`b887fabb...`). Mac/Linux pending CI build.
+- **Updater: public key regenerated**, endpoint fixed to Netlify, `updates.json` created. `TAURI_SIGNING_PRIVATE_KEY` set as GitHub secret.
 
-### Font Fallbacks
-- `--font-display`: `'Clash Display', Georgia, 'Times New Roman', serif` (was `'Syne', sans-serif`)
-- `--font-body`: `'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ...` (was `'Instrument Sans', sans-serif`)
+### 2026-07-29 — CONTEXT.md consolidation + Path A adoption
+- Root `paul/CONTEXT.md` consolidated as single source of truth. `titleforge-desktop/CONTEXT.md` is now a read-only mirror.
+- Local LLM direction locked: **Path A** (llama.cpp + Qwen2.5-1.5B-Instruct + GBNF grammar + RAG few-shot). See §7. Path B (LoRA fine-tune) queued for later.
+- SmolLM2 + candle-rs approach deprecated but not yet removed — Path A implementation is next work.
 
-### Complete UI Redesign (v0.2.0)
-- Activation screen, left sidebar, merged dashboard, single-page app. `dashboard.html`/`dashboard.js` removed.
+### 2026-07-28 — Code Review Fixes
+- Claude UI dropdown value `claude` → `anthropic` (users picking Claude previously got API errors)
+- `background_verify` no longer revokes — refresh-only on success
+- Machine tracking: `validate` and `background_verify` both send `&machine=<hostname>`
+- Tier renamed `"basic"` → `"core"` in Rust + JS. License prefix `TF-BASIC` → `TF-CORE`.
+- Remaining `titlesmith-desktop` / `com.titlesmith.desktop` references in `lib.rs` renamed
+- Fake SHA256 hashes removed from download page
+- EGCG `{placeholder}` leak fixed via `strip_placeholders()` in `assemble_title()`. Sanity test: 0 leaks in 196 titles, 100% keyword presence.
 
-### EGCG Algorithm (July 15, 2026)
-- Replaced old Markov chain with 3-mode EGCG. 11 bugs found over 4 audit rounds. `{placeholder}` leak fixed (July 28) via `strip_placeholders()`. 196-title sanity test: 0 leaks, 100% keyword presence. Still produces template-garbage on some keywords.
+### 2026-07-27 — SEO Engine + Keyring
+- New `src-tauri/src/seo.rs` (368 lines, 9 signals, 9 tests). See §3.5.
+- Frontend SEO badge + breakdown panel + dashboard mini-badge
+- XOR API-key obfuscation replaced with `keyring 3` (OS credential store). Dual-write fallback preserved.
 
-### TitleSmith → TitleForge Rebrand (July 25-28, 2026)
-- All source files renamed. Crate name `titlesmith-desktop` → `titleforge-desktop`. `tauri.conf.json` productName and identifier updated. UI labels, AI prompts, module docs all changed. Some data paths and `site/` folder still have old references (see §6.5).
+### 2026-07-25 — Rebrand + Licensing + Desktop Site
+- **TitleSmith → TitleForge:** crate rename, `tauri.conf.json` productName + identifier, UI labels, prompts, docs. Leftovers in `site/` folder + `package-lock.json` (see §6.2).
+- **License overhaul:** email-based validation (no Supabase account required for buyers). `generate_from_purchase` endpoint. `stripe-webhook.js` detects `metadata.product == "desktop"`, generates key, emails via Resend.
+- **Background verification:** `background_verify` command + `startBackgroundTasks()` 30-min interval
+- **Tier gating (backend):** Core capped at 25 titles/request, no cloud AI, no projects. Pro/Studio: 100 titles, full access.
+- **Provider cascade:** `generate.js` — DeepSeek → OpenAI → Anthropic. `AI_PROVIDER` env var deprecated.
+- **Desktop sales pages:** `desktop.html`, `desktop-download.html`, `desktop.css`. Redirects in `netlify.toml`.
+- **Plausible tags added** to `index.html` + `desktop.html`. Account not yet created.
+- **Web content honesty pass:** fake "247,000+ titles" stat removed, fabricated testimonials replaced with product-benefit cards, footer placeholder copy removed, vidIQ/SEMrush comparison tightened.
 
-### License System Overhaul (July 25-28, 2026)
-- Licenses stored by email, not Supabase user_id. Desktop buyers don't need a web account.
-- `generate_from_purchase` endpoint in `licenses.js` for Stripe webhook → auto license generation.
-- `stripe-webhook.js` detects desktop purchases (metadata check) and emails license keys via Resend.
-- License key format: `TF-CORE-XXXX`, `TF-PRO-XXXX`, `TF-STUDIO-XXXX`.
-- Machine tracking: `validate_license` and `background_verify` send `&machine=hostname`.
-- Website license checks don't burn device slots.
+### 2026-07-25 → 07-28 — Local LLM (SmolLM2) Attempt
+- `local_llm.rs` compiled and tested with `candle-rs 0.11` on Windows
+- SmolLM2-135M: 4–14 s/title. SmolLM2-360M: 12–16 s/title.
+- Fixed `sample_token()` for 2D logits from prefill pass
+- **Quality verdict:** insufficient as sole engine — 135M ignores title-only instructions ~36% of runs even with few-shot. 360M no meaningful improvement.
+- **Decision (2026-07-29):** Adopt Path A. Being replaced.
 
-### Background License Verification (July 25, 2026)
-- New `background_verify` Rust command. 5s timeout, refresh-only — never revokes.
-- Frontend `startBackgroundTasks()` runs every 30 minutes.
-- Stores `license_key` and `license_email` for re-verification.
+### 2026-07-15 — EGCG Algorithm
+- Replaced old Markov chain with 3-mode EGCG (`title_gen.rs`, then 1270 lines, now 1533)
+- Deleted `markov.rs`
+- 11 documented bugs surfaced over 4 audit rounds → EGCG became fallback engine, not the winner
 
-### Tier Gating (July 25, 2026)
-- Backend: Core capped at 25 titles/request, no cloud AI, no projects. Pro/Studio: 100 titles, full access.
-- Known gap: frontend always displays "PRO" badge regardless of tier. Studio "unlimited" limit not honored.
-
-### EGCG Template Leak Fix (July 28, 2026)
-- Root cause: templates had more `{placeholder}` occurrences than defined slot entries.
-- Fixed via `strip_placeholders()` in `assemble_title()`. Manual implementation (no regex crate added).
-- Sanity test: 0 bracket leaks in 196 titles, 100% keyword presence.
-
-### Local LLM Integration (July 25-28, 2026)
-- `local_llm.rs` compiled and tested with candle-rs 0.11 on Windows.
-- SmolLM2-135M (100.6MB): 4-14s/title. SmolLM2-360M (258MB): 12-16s/title.
-- Fixed `sample_token()` to handle 2D logits from prefill pass.
-- Quality is insufficient as sole engine — 135M ignores title-only instructions, produces category-irrelevant output ~36% of the time even with few-shot prompting. BYO-key cloud AI is the recommended quality path.
-- Model paths use `titleforge-desktop` and `com.titleforge.desktop`.
-
-### SEO Scoring Engine (July 27, 2026)
-- New `seo.rs`. 9 signals: length fit (chars per platform), keyword presence (front-loaded bonus), keyword density (10-25% sweet spot), search pattern match (~110 n-grams), question format, number/year detection, Flesch reading ease, power word density, uniqueness (n-gram vs curated corpus). All local, no API calls.
-- 19 unit tests pass (10 EGCG + 9 SEO). Weighted to 0-100 per spec.
-- Frontend: SEO badge pill (green 80+/amber 50-79/gray <50), SEO details panel with per-signal breakdown, dashboard mini-badge in history.
-- Integrated into engine.rs: LLM pass scores inline, EGCG+curated scored via post-generation sweep.
-
-### keyring Migration (July 27, 2026)
-- XOR obfuscation replaced with OS credential storage (keyring crate v3).
-- macOS Keychain / Windows Credential Manager / Linux libsecret.
-- Dual-write pattern: stores in keyring + XOR-obfuscated SQLite fallback.
-- Empty values clear both stores.
-
-### Provider Cascade (July 25, 2026)
-- `generate.js`: single AI_PROVIDER → cascade: DeepSeek → OpenAI → Anthropic.
-- First provider with a configured API key wins. Falls through on failure.
-- AI_PROVIDER env var is now unused.
-
-### Web Content Fixes (July 25-28, 2026)
-- Fake "247,000+ titles" hero stat removed. Replaced with "1 payment, lifetime access".
-- Fabricated testimonials (Sarah K., Marcus T., Marcus O., Rachel K.) replaced with honest product benefit cards.
-- Footer copy fixed: removed "Every market rate is a true market reference" placeholder text.
-- vidIQ/SEMrush comparison tightened to title-specific claims with factual pricing and acknowledged strengths.
-
-### Desktop Sales Pages (July 25, 2026)
-- `desktop.html`: expanding sales page (hero, features, walkthrough mockups, 3-tier pricing, FAQ, download CTA).
-- `desktop-download.html`: OS-detecting download page, collapsible install instructions, system requirements, license verification form.
-- `desktop.css`: ported from `site/styles.css` with full palette remap to TitleForge Editorial Industrial.
-- Clean URL redirects in `netlify.toml`: `/desktop`, `/desktop/download`, `/download`.
-
-### Plausible Analytics (July 25, 2026)
-- Script tags added to `index.html` and `desktop.html`. Missing on `desktop-download.html`.
-- Custom events tracked: `signup`, `generate`, `pro_upgrade_click`, `favorite_add`.
-- Account not yet set up.
-
-### Code Review Fixes (July 28, 2026)
-- Claude UI value `claude` → `anthropic` (was broken, users picking Claude got an error).
-- `background_verify` no longer revokes — only refreshes on success. No 24h cache fallback needed.
-- Machine tracking: both validate and background_verify now send `&machine=hostname`.
-- Tier renamed `"basic"` → `"core"` everywhere in Rust + JS. License prefix `TF-BASIC` → `TF-CORE`.
-- All remaining `titlesmith-desktop` / `com.titlesmith.desktop` references in lib.rs renamed.
-- Fake SHA256 hashes removed from download page.
+### Earlier
+- **v0.2.0** — Full desktop UI redesign: activation split-panel, left sidebar, single-page layout, `dashboard.html`/`dashboard.js` (desktop) removed
+- **Font rebrand:** Clash Display + Satoshi
+- **Logo redesign:** amber forge palette
 
 ---
 
-## 6. Current Status (July 28, 2026)
+## 6. Current Status (2026-07-29)
 
 ### 6.1 Done (Compiled + Tested)
 - `cargo check` — 0 errors, 0 warnings
@@ -446,82 +379,197 @@ All tables have Row Level Security enabled with per-user policies.
 - Desktop pages live at `titleforge-tool.netlify.app/desktop` and `/desktop/download`
 - License system overhaul (email-based, Stripe webhook, Resend email delivery)
 - Web deploy with nav, pricing teaser, honest testimonials, factual comparisons
+- SEO scoring integrated end-to-end
+- Provider cascade active on web AI generation
 
-### 6.2 Blocked / Needs Action
+### 6.2 Known Issues (Priority Order)
 
-1. **EGCG is still the primary engine.** The plan to adopt SmolLM2 as sole engine was not completed — SmolLM2 quality is insufficient for production. EGCG remains as Pass 2 with a fixed placeholder leak. BYO-key cloud AI is the only path to production-quality titles.
+1. **SmolLM2 quality insufficient.** Being replaced under Path A — see §7.
 
-2. **SmolLM2 quality needs improvement.** 135M produces output but can't follow title-only instructions consistently. Few-shot prompting helps but doesn't fix the instruction-following issue. Options: try 360M with better prompting, try llama.cpp for faster inference, or accept cloud-first with EGCG as fallback.
+2. **EGCG remains the primary offline engine.** Not by choice — SmolLM2 didn't work. Once Path A lands, EGCG will be demoted to Pass 3 (behind LLM + curated).
 
-3. **EGCG Mode A and B are still live.** The strategic decision to "kill EGCG and keep only curated retrieval" was not executed. The engine.rs 3-pass pipeline (LLM → EGCG → curated) is the current shipped architecture.
+3. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
 
-4. **Version numbers are inconsistent.** App is `v1.0.0-beta.1` in Cargo.toml but shows `v0.8.0` in activation screen, `v0.2.0` in download page links, and `v0.5.0` in settings. No single source of truth.
+4. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test. `updates.json` has empty signatures until CI signs a release.
 
-5. **Frontend always shows PRO badge.** Tier gating exists on backend but the UI doesn't read `get_usage_stats.tier` — it always displays "Desktop Pro" regardless of actual tier.
+5. **Web Pro → free Core desktop license** not implemented. Strategic decision made, no code.
 
-6. **Studio "unlimited batch" doesn't exist.** Code caps all tiers at 100 titles. Slider max is hard-locked to 100. The sales page claim is false.
+6. **Upgrade pricing (pay the difference) between desktop tiers** not implemented.
 
-7. **Download page SHA256 hashes removed.** Need real hashes computed after production builds.
+7. **Annual update renewal / major version upgrade pricing** not implemented.
 
-8. **Plausible account not set up.** Script tags are in place but no account created. Missing on desktop-download.html.
+8. **Admin dashboard for support staff** — planned, not started. Deferred for post-launch.
 
-9. **`site/` folder still TitleSmith-branded.** The legacy marketing prototype was never cleaned up. Should be archived or deleted.
-
-10. **`package-lock.json` stale.** Still says `titlesmith-desktop` while `package.json` says `titleforge-desktop`.
+9. **Path A LLM** — the big remaining technical work. Full spec in §7.2.
 
 ### 6.3 Strategic Decisions (Active)
 
 | # | Decision | Status |
-|---|----------|--------|
-| 1 | EGCG as primary engine, BYO cloud AI for quality | Active (LLM unproven) |
-| 2 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
-| 3 | One-time purchase + optional update renewal | Planned, not implemented |
-| 4 | Unify brand under TitleForge | Done (minor remnants in site/) |
-| 5 | Web Pro → free Core desktop license | Planned, not implemented |
-| 6 | Background license verification every 30 min | Done |
-| 7 | License by email, not user_id | Done |
-| 8 | Recurring revenue via annual updates + major version upgrades | Not implemented |
+|---|---|---|
+| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **Adopted — see §7** |
+| 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned |
+| 3 | EGCG demoted to Pass 3 fallback once Path A lands | Pending Path A |
+| 4 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
+| 5 | One-time purchase + optional update renewal | Planned, not implemented |
+| 6 | Unify brand under TitleForge | **Done** |
+| 7 | Web Pro → free Core desktop license | Planned, not implemented |
+| 8 | Background license verification every 30 min | Done |
+| 9 | License by email, not user_id | Done |
+| 10 | Recurring revenue via annual updates + major version upgrades | Not implemented |
+| 11 | Updater signed builds via CI | **Done** (key set, untested) |
+| 12 | Analytics (PostHog) | **Done** (live on all 3 web pages) |
+| 13 | Admin dashboard for support staff | Planned, not started |
 
 ---
 
-## 7. Key Decisions & Conventions
+## 7. Local LLM Roadmap
 
-- **No framework:** Both apps use vanilla HTML/CSS/JS — no React, Vue, or other frameworks
-- **Desktop is tiered:** Core/Pro/Studio tiers with backend gating. Tier stored in local SQLite, verified by server.
-- **Offline-first, online-verified:** App works fully offline. Background license refresh every 30 min when online.
-- **License by email, not user_id:** Desktop buyers don't need a Supabase account.
-- **One brand, two products:** "TitleForge" (web SaaS) and "TitleForge Desktop" (downloadable). Same palette, fonts, logo.
-- **EGCG is the primary offline engine.** Not ideal but compiles and produces output. BYO-key cloud AI for quality.
-- **License key prefix:** TF-CORE (not TF-BASIC) for the $29 tier.
-- **Upgrade pricing = difference (not yet implemented):** Users pay only the gap between tiers.
+### 7.1 Where we are
+
+`local_llm.rs` uses **`candle-rs 0.11`** to run **SmolLM2** (135M or 360M). Compiles, runs, produces text. **Quality is insufficient** — the model can't reliably follow "output only titles, one per line" instructions. It hallucinates categories, produces prose, and ignores format constraints ~36% of the time even with few-shot prompting. Sub-1B general models fundamentally lack the capacity for reliable instruction-following without help.
+
+### 7.2 Path A — Ship this (adopted 2026-07-29)
+
+**Goal:** Small, fast, forced-format local model that consistently produces quality titles.
+
+**Stack change:**
+- **Runtime:** `candle-rs` → **`llama-cpp-2`** (Rust bindings for llama.cpp). Faster CPU inference, mature quantization, and — critically — **GBNF grammar constraints** that force the model to emit only tokens matching a defined output shape.
+- **Model:** SmolLM2 → **Qwen2.5-1.5B-Instruct** (Q4_K_M quant, ~1 GB). Best-in-class instruction-following at that size. Apache 2.0 license. Alternative: Llama-3.2-1B-Instruct (~800 MB, Meta license). Evaluate both in spike phase, pick winner.
+- **Prompting:** Add **retrieval-augmented few-shot**. For each generation, retrieve the 5 most-similar titles from the 2,623 curated corpus (by keyword+category token overlap; embedding retrieval optional later) and inject them as examples in the prompt.
+- **Structured output:** Define a GBNF grammar that forces the model to emit a JSON array of exactly `N` title strings, each 3–15 words, no other tokens allowed. Eliminates malformed output entirely — no JSON repair needed for local LLM.
+
+**Files to change:**
+
+| File | Change |
+|---|---|
+| `src-tauri/Cargo.toml` | Drop `candle-core`, `candle-transformers`, `tokenizers` (if no other user). Add `llama-cpp-2` (or `llama_cpp` — evaluate both). |
+| `src-tauri/src/local_llm.rs` | Rewrite around llama.cpp handles. New API: `LocalLlm::load(model_path)`, `generate(prompt, grammar, n_predict, temp)`. Keep the public surface as close to today's as possible so `engine.rs` change is minimal. |
+| `src-tauri/src/local_llm.rs` (new fns) | `build_grammar(qty)` returns a GBNF string. `build_prompt(keyword, category, style, few_shot)` composes the Qwen chat-template prompt. |
+| `src-tauri/src/engine.rs` | Pass 1 (LLM) rewritten to use new API. Retrieve few-shot examples from `title_gen::Generator::retrieve_similar()` (new helper). |
+| `src-tauri/src/title_gen.rs` | Add `retrieve_similar(keyword, category, k) -> Vec<String>` — token-overlap ranking against `all_curated`. |
+| `titleforge-desktop/models/` (new dir) | Bundle or side-load `qwen2.5-1.5b-instruct-q4_k_m.gguf`. Decide: ship in installer (bumps installer to ~1.1 GB) or download on first launch. |
+| `src/index.html` + `src/app.js` | First-launch flow: if model missing, prompt to download (~1 GB, HTTPS, resume-able). Show progress. |
+| CI (`build.yml`) | If bundling: fetch model as a build artifact step. If side-loading: no change. |
+| `desktop.html` | Update "under the hood" copy to name the real engine and honest install size. |
+
+**Milestones:**
+
+1. **Spike (1–2 days):** Rust project outside the app — `llama-cpp-2` + Qwen2.5-1.5B + GBNF grammar. Prove: (a) it loads, (b) grammar forces valid JSON, (c) throughput ≥5 tok/s on a modest CPU.
+2. **Integration (3–5 days):** Replace `local_llm.rs` internals. Keep same public surface as much as possible so `engine.rs` change is minimal.
+3. **Retrieval helper (1 day):** `retrieve_similar()` in `title_gen.rs`. Simple token-overlap ranker — no ML.
+4. **Prompt + grammar tuning (2–3 days):** Iterate on the Qwen chat template, few-shot format, and GBNF strictness. Ship the best version.
+5. **Model delivery (1–2 days):** Decide bundle vs first-launch download. Wire the flow.
+6. **Benchmark (1 day):** 50-keyword test set. Score: format-conformance (target 100%), category-relevance (target ≥85%), human read (target: not embarrassing).
+7. **Ship + demote EGCG to Pass 3.** Update `desktop.html` marketing to describe the real engine.
+
+**Total budget:** ~2 weeks of focused engineering.
+
+**Success criteria for shipping Path A:**
+- 100% format-conformance (grammar guarantee)
+- ≥85% category-relevance on the 50-keyword benchmark
+- ≥5 tok/s on a 4-core CPU without GPU
+- Installer size ≤1.2 GB total
+- No regression in offline capability
+
+### 7.3 Path B — Planned future upgrade (after Path A ships)
+
+**Goal:** A small model specialized for title generation. Higher quality ceiling than any general-purpose small model.
+
+**Approach:**
+1. **Synthetic training data:** Use DeepSeek or GPT-4o to generate 20–50k `(keyword, category, style) → titles[10]` pairs. Cost: ~$20–50 in API. Include the existing 2,623 curated titles as gold examples.
+2. **Data curation:** Filter for length, non-repetition, category-appropriateness. Dedup. Split 90/5/5 train/val/test.
+3. **LoRA fine-tune** Qwen2.5-1.5B (the Path A base). Rank 16–32 adapter. 3–5 epochs. Runpod A100 ~4–8 hours. Cost: ~$20–40.
+4. **Merge or side-load** the adapter. Ship as ~50 MB file separate from base model, hot-swappable.
+5. **Bench Path B vs Path A** on the same 50-keyword test set. If Path B doesn't clearly win, don't ship it.
+
+**Retriggers:** Every ~6 months regenerate training data with the latest strong AI, re-train, re-ship adapter. Base model stays put.
+
+**Cost model:** ~$50–100 per training cycle. Adapter file is tiny to ship. Real cost is engineering time (~1–2 weeks per cycle).
+
+**Not urgent:** Do this after Path A is in users' hands and you have real-world quality signal.
+
+### 7.4 What we're deliberately not doing
+
+- **Cloud-only (Path C).** Offline must work. Rejected.
+- **Custom transformer / from-scratch training.** Diminishing returns vs LoRA on a proven base.
+- **7B+ models locally.** Install size and inference speed become punishing on non-GPU machines.
+- **ONNX / DirectML / MLX per-platform.** llama.cpp is uniformly good across CPU targets and Metal/CUDA when present.
 
 ---
 
-## 8. Quick Reference
+## 8. Key Decisions & Conventions
 
-### 8.1 Build Commands
+- **No framework.** Vanilla HTML/CSS/JS. No React, Vue, Svelte, Tailwind. Don't introduce one.
+- **Desktop is tiered.** Core/Pro/Studio with backend gating in `lib.rs`. Tier stored in SQLite, verified by server every 30 min.
+- **Offline-first, online-verified.** App works fully offline. Silent license refresh + update check every 30 min when online.
+- **License by email, not user_id.** Desktop buyers don't need a Supabase account.
+- **One brand, two products.** "TitleForge" (web SaaS) and "TitleForge Desktop" (downloadable). Same palette, fonts, logo.
+- **Local LLM path is Path A** (§7.2). SmolLM2 + candle-rs is being replaced.
+- **EGCG is not trusted.** Stays as fallback only. If curated retrieval + Path A LLM cover a case, EGCG is not needed.
+- **License key prefixes:** `TF-CORE-XXXX` ($29), `TF-PRO-XXXX` ($59), `TF-STUDIO-XXXX` ($89).
+- **Upgrade pricing = difference** (once implemented).
+- **JSON repair is critical for cloud AI.** Kept for web `generate.js`. Not needed for Path A local LLM (grammar-constrained).
+- **Seed data generated by AI.** ~$15 total (DeepSeek V4 Pro + Flash). 2,623 curated titles across 16 categories × 9 tones.
+
+---
+
+## 9. Quick Reference
+
+### 9.1 Build Commands
 ```bash
-cd titleforge-desktop && npm run dev          # dev server + app
-cd titleforge-desktop && npx tauri build       # production bundles
-cargo test --release                            # 19 tests
-cd titleforge && npx netlify deploy --prod      # web deploy
+cd titleforge-desktop && npm run dev              # dev server + app
+cd titleforge-desktop && npx tauri build          # production bundles
+cd titleforge-desktop/src-tauri && cargo test     # 19 tests (10 EGCG + 9 SEO)
+cd titleforge && npx netlify deploy --prod        # web deploy
 ```
 
-### 8.2 License Key Formats
+### 9.2 License Key Formats
 | Prefix | Tier | Price | Source |
-|--------|------|-------|--------|
-| `TF-CORE-XXXX` | Core | $29 | Free with Web Pro, or $29 standalone |
-| `TF-PRO-XXXX` | Pro | $59 | $59 standalone, or upgrade from Core |
-| `TF-STUDIO-XXXX` | Studio | $89 | $89 standalone |
+|---|---|---|---|
+| `TF-CORE-XXXX` | Core | $29 | Standalone; free with Web Pro (planned) |
+| `TF-PRO-XXXX` | Pro | $59 | Standalone; upgrade from Core (planned) |
+| `TF-STUDIO-XXXX` | Studio | $89 | Standalone |
 
-### 8.3 Web Routes
+### 9.3 Web Routes
 | URL | File | Purpose |
-|-----|------|---------|
+|---|---|---|
 | `/` | `index.html` | Web app landing + tool |
-| `/desktop` | `desktop.html` | Desktop sales page |
-| `/desktop/download` | `desktop-download.html` | Download page |
 | `/dashboard` | `dashboard.html` | User dashboard |
+| `/desktop` | `desktop.html` | Desktop sales page |
+| `/desktop/download` (or `/download`) | `desktop-download.html` | Download + license activation |
 
-### 8.4 Database URLs
+### 9.4 Database URLs
 - **Web:** Supabase project → `titleforge` schema (6 tables)
-- **Desktop:** `%APPDATA%/titleforge-desktop/titles.db` (Windows), `~/Library/Application Support/titleforge-desktop/titles.db` (macOS), `~/.local/share/titleforge-desktop/titles.db` (Linux)
+- **Desktop:**
+  - Windows: `%APPDATA%/titleforge-desktop/titles.db`
+  - macOS: `~/Library/Application Support/titleforge-desktop/titles.db`
+  - Linux: `~/.local/share/titleforge-desktop/titles.db`
+
+### 9.5 Endpoints (Netlify Functions)
+Base: `https://titleforge-tool.netlify.app/.netlify/functions/`
+| Path | Method | Notes |
+|---|---|---|
+| `config` | GET | Public bootstrap config |
+| `generate` | POST | AI title generation (auth required) |
+| `usage` | GET/POST | Dashboard data + increments |
+| `verify-subscription` | GET | Post-Stripe redirect verify |
+| `licenses?action=validate` | GET | Desktop license validation (public) |
+| `licenses` | POST | License CRUD (auth) + `generate_from_purchase` (Stripe internal) |
+| `stripe-webhook` | POST | Stripe events |
+| `waitlist` | POST | Waitlist signup |
+
+---
+
+## 10. CONTEXT.md Maintenance
+
+This file is the **single source of truth**. Update it whenever:
+
+1. A significant implementation is completed (3+ files changed, new feature, architecture change)
+2. Git log has 5+ new commits
+3. A blocker is resolved or a new one appears
+4. A strategic decision or convention is established or reversed
+5. Version numbers change
+
+**How to update:** Read the current file, read the diff, rewrite affected sections. Add a dated entry to §5 (Change Log). Keep §6.2 (Known Issues) ranked by priority. Never let §6 drift more than a few commits from reality.
+
+`titleforge-desktop/CONTEXT.md` should be treated as a **read-only mirror** of §3 + §6 of this file. If they disagree, this file wins.
