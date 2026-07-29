@@ -31,6 +31,7 @@ candle-core = "0.11"
 candle-transformers = "0.11"
 candle-nn = "0.11"
 tokenizers = "0.21"
+llama-cpp-2 = "0.1.153"
 
 [features]
 default = []
