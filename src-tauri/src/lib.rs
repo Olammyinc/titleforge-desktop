@@ -79,22 +79,28 @@ fn generate_titles(
     quantity: u32,
     state: tauri::State<AppState>,
 ) -> Result<Vec<TitleResult>, String> {
-    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-
-    // Tier-based quantity cap. Core = 25, Pro = 100, Studio = 500.
-    let tier = get_tier(&db);
-    let cap: u32 = match tier.as_str() {
-        "pro" => 100,
-        "studio" => 500,
-        _ => 25,
+    // Read tier and curated data before releasing DB lock.
+    // The DB mutex must never be held during LLM inference (3.5s+/title).
+    let (_tier, quantity) = {
+        let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+        let tier = get_tier(&db);
+        let cap: u32 = match tier.as_str() {
+            "pro" => 100,
+            "studio" => 500,
+            _ => 25,
+        };
+        let quantity = quantity.min(cap);
+        (tier, quantity)
     };
-    let quantity = quantity.min(cap);
 
     let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
     let mut llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
     if llm_guard.is_none() {
         *llm_guard = lazy_load_llm();
     }
+    // Re-acquire DB for the engine passes (fetch_curated_sample, fallback queries).
+    // These are millisecond operations — safe to lock.
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
 }
 

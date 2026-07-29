@@ -17,12 +17,11 @@
         "height": 750,
         "resizable": true,
         "fullscreen": false,
-        "center": true,
-        "devtools": true
+        "center": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' https://api.fontshare.com; font-src 'self' https://api.fontshare.com; script-src 'self'; connect-src 'self' https://titleforge-tool.netlify.app https://api.openai.com https://api.deepseek.com https://api.anthropic.com https://generativelanguage.googleapis.com"
     }
   },
   "bundle": {

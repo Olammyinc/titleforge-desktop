@@ -40,7 +40,7 @@ pub fn generate(
                 };
                 let lower = title.to_lowercase();
                 let kw_lower = keyword.to_lowercase();
-                let has_keyword = lower.contains(&kw_lower)
+                let _has_keyword = lower.contains(&kw_lower)
                     || kw_lower.split_whitespace().any(|w| lower.contains(w));
                 let already_seen = results.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
                 if already_seen { continue; }

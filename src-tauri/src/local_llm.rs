@@ -25,10 +25,7 @@ impl LocalLlm {
                 Err(e) => { eprintln!("[local_llm] Backend init failed: {:?}", e); None }
             }
         });
-        let backend = match backend_opt {
-            Some(b) => b,
-            None => return None,
-        };
+        let backend = backend_opt.as_ref()?;
         eprintln!("[local_llm] Loading model from {:?}...", model_path);
         let model = LlamaModel::load_from_file(backend, model_path, &LlamaModelParams::default()).ok()?;
         eprintln!("[local_llm] Model loaded successfully");
@@ -36,6 +33,7 @@ impl LocalLlm {
     }
 
     fn generate_chat_raw(&self, system: &str, user: &str) -> Option<String> {
+        #[allow(unused_must_use)]
         let messages: Vec<LlamaChatMessage> = vec![
             LlamaChatMessage::new("system".into(), system.into()),
             LlamaChatMessage::new("user".into(), user.into()),
@@ -44,28 +42,24 @@ impl LocalLlm {
         let tmpl = self.model.chat_template(None).ok()?;
         let prompt = self.model.apply_chat_template(&tmpl, &messages, true).ok()?;
         let ctx_params = LlamaContextParams::default();
-        let backend = BACKEND.get().expect("backend not initialized").as_ref().expect("backend init failed");
+        let backend = BACKEND.get()?.as_ref()?;
         let mut ctx = self.model.new_context(backend, ctx_params).ok()?;
         let tokens = self.model.str_to_token(&prompt, AddBos::Always).ok()?;
         let n_prompt = tokens.len();
         let eos = self.model.token_eos();
         let max_new = 60;
-        let mut all_tokens = tokens;
 
-        // Batched prefill: feed ALL prompt tokens in one batch decode.
-        // Size the batch for the full prompt + decode window so there's no
-        // reallocation pressure during the decode loop.
+        // Batched prefill: all tokens in one decode (only last requests logits)
         let max_tokens = n_prompt + max_new as usize;
         {
             let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(max_tokens, 1);
-            for (i, &tok) in all_tokens.iter().enumerate() {
-                let last = i == n_prompt - 1;
-                batch.add(tok, i as i32, &[0], last);
+            for (i, &tok) in tokens.iter().enumerate() {
+                batch.add(tok, i as i32, &[0], i == n_prompt - 1);
             }
             ctx.decode(&mut batch).ok()?;
         }
 
-        // Sample first generated token from the prefill logits
+        // Sample first token
         let mut next: Option<llama_cpp_2::token::LlamaToken> = {
             let mut best_tok = eos;
             let mut best_logit = f32::NEG_INFINITY;
@@ -75,10 +69,13 @@ impl LocalLlm {
             if best_tok == eos { None } else { Some(best_tok) }
         };
 
+        // Track generated tokens for output decoding
+        let mut gen_tokens: Vec<llama_cpp_2::token::LlamaToken> = Vec::new();
+
         // Autoregressive decode: one token per step
         for pos in n_prompt as i32..(n_prompt as i32 + max_new) {
             let tok = match next { Some(t) => t, None => break };
-            all_tokens.push(tok);
+            gen_tokens.push(tok);
             let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(1, 1);
             batch.add(tok, pos, &[0], true);
             if ctx.decode(&mut batch).is_err() { break; }
@@ -91,16 +88,15 @@ impl LocalLlm {
             next = Some(best_tok);
         }
 
-        let generated = &all_tokens[n_prompt..];
-        if generated.is_empty() { return None; }
+        if gen_tokens.is_empty() { return None; }
         #[allow(deprecated)]
-        let result = self.model.tokens_to_str(generated, llama_cpp_2::model::Special::Tokenize).ok()?;
+        let result = self.model.tokens_to_str(&gen_tokens, llama_cpp_2::model::Special::Tokenize).ok()?;
         let trimmed = result.trim().to_string();
         if trimmed.is_empty() { None } else { Some(trimmed) }
     }
 
     pub fn generate_one_clean(
-        &self,
+        &mut self,
         keyword: &str,
         category: &str,
         style: &str,
@@ -129,7 +125,9 @@ impl LocalLlm {
                 None => continue,
             };
             let cleaned = clean_output(&raw);
-            eprintln!("[local_llm] attempt {}: '{}' -> '{}'", attempt, raw, cleaned);
+            // Debug logging — only in debug builds
+            #[cfg(debug_assertions)]
+            eprintln!("[local_llm] attempt {}: cleaned '{}'", attempt, cleaned);
             if cleaned.len() < 3 || cleaned.split_whitespace().count() < 2 { continue; }
             let cl = cleaned.to_lowercase();
             if !cl.contains(&kw_lower) && !kw_tokens.iter().any(|w| cl.contains(w)) { continue; }
@@ -177,7 +175,7 @@ fn clean_title(s: &str) -> String {
     t = t.trim_matches(|c: char| matches!(c, '"' | '\'' | '\u{201c}' | '\u{201d}' | '`')).to_string();
     t = t.trim_matches(|c: char| matches!(c, '\u{2018}' | '\u{2019}')).to_string();
     t = t.replace("**", "").replace("__", "").replace('*', "").replace('#', "").replace('`', "");
-    t = t.trim_start_matches(|c: char| matches!(c, '-' | '•' | '*')).trim().to_string();
+    t = t.trim_start_matches(|c: char| matches!(c, '-' | '|' | '*')).trim().to_string();
     if let Some(pos) = t.find(". ") {
         let prefix = &t[..pos];
         if prefix.chars().all(|c| c.is_ascii_digit()) && pos <= 3 { t = t[pos + 2..].to_string(); }
