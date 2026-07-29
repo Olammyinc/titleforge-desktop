@@ -43,27 +43,24 @@ impl LocalLlm {
         let tokens = self.model.str_to_token(&prompt, AddBos::Always).ok()?;
         let n_prompt = tokens.len();
         let eos = self.model.token_eos();
-        let n_prompt = tokens.len();
         let max_new = 60;
-        // Build combined sequence: prompt tokens followed by generated tokens
         let mut all_tokens = tokens;
-        let mut next: Option<llama_cpp_2::token::LlamaToken> = None;
 
-        // Process prompt tokens one at a time to build KV cache correctly
-        for i in 0..n_prompt - 1 {
-            let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(1, 1);
-            batch.add(all_tokens[i], i as i32, &[0], false);
-            ctx.decode(&mut batch).ok()?;
-        }
-        // Last prompt token — request logits
+        // Batched prefill: feed ALL prompt tokens in one batch decode.
+        // Size the batch for the full prompt + decode window so there's no
+        // reallocation pressure during the decode loop.
+        let max_tokens = n_prompt + max_new as usize;
         {
-            let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(1, 1);
-            batch.add(all_tokens[n_prompt - 1], (n_prompt - 1) as i32, &[0], true);
+            let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(max_tokens, 1);
+            for (i, &tok) in all_tokens.iter().enumerate() {
+                let last = i == n_prompt - 1;
+                batch.add(tok, i as i32, &[0], last);
+            }
             ctx.decode(&mut batch).ok()?;
         }
 
-        // Sample from last prompt token
-        next = {
+        // Sample first generated token from the prefill logits
+        let mut next: Option<llama_cpp_2::token::LlamaToken> = {
             let mut best_tok = eos;
             let mut best_logit = f32::NEG_INFINITY;
             for cd in ctx.candidates() {
@@ -72,7 +69,7 @@ impl LocalLlm {
             if best_tok == eos { None } else { Some(best_tok) }
         };
 
-        // Decode loop
+        // Autoregressive decode: one token per step
         for pos in n_prompt as i32..(n_prompt as i32 + max_new) {
             let tok = match next { Some(t) => t, None => break };
             all_tokens.push(tok);
