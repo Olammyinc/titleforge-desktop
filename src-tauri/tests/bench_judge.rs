@@ -179,6 +179,79 @@ fn call_judge(title: &str, keyword: &str, category: &str, api_key: &str) -> Opti
     None
 }
 
+/// Generate one title via cloud AI (DeepSeek) using the web app's prompt format.
+/// Mirrors titleforge/netlify/functions/generate.js::buildPrompt + callOpenAICompatible.
+fn generate_title_cloud(keyword: &str, category: &str, api_key: &str) -> Option<String> {
+    let cat_label = match category {
+        "book" => "books", "article" => "articles", "blog" => "blog posts",
+        "youtube" => "YouTube videos", "song" => "songs", "movie" => "movies/films",
+        "podcast" => "podcast episodes", "product" => "products",
+        "speech" => "speeches", "newsletter" => "newsletters",
+        _ => category,
+    };
+
+    let system = format!(
+        "You are TitleForge — an elite title generator for authors, marketers, and creators. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."
+    );
+
+    let prompt = format!(
+        "Generate 1 title for a {cat_label} named \"{keyword}\".
+
+The keyword is \"{keyword}\". Every title must be about this keyword — not about the category itself.
+
+Communication style: normal
+
+QUALITY RULES:
+- EMOTIONAL PULL: Make the reader feel something. Curiosity, surprise, aspiration, or urgency.
+- SPECIFICITY: Use concrete details — numbers, names, vivid specifics.
+- CURIOSITY GAP: The reader should NEED to click to satisfy an open question.
+- NO FILLER: Every title must be genuinely strong.
+- VARIETY: Mix structures — question, declaration, numbered list, story hook, counterintuitive.
+- NO CLICHÉS: Never use 'unlock the secrets', 'ultimate guide', 'game changer', 'revolutionize', etc.
+
+Respond with exactly: {{\"titles\":[{{\"title\":\"Your Title Here\",\"score\":85,\"breakdown\":{{\"curiosityGap\":\"High\",\"emotionalTrigger\":\"aspiration\",\"powerWords\":[\"word1\",\"word2\"],\"lengthAnalysis\":\"Optimal (8 words)\",\"specificity\":\"Concrete\"}}}}]}}",
+        cat_label = cat_label, keyword = keyword
+    );
+
+    let body = serde_json::json!({
+        "model": "deepseek-v4-flash",
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.85,
+        "max_tokens": 512,
+        "thinking": {"type": "disabled"},
+        "response_format": {"type": "json_object"},
+    });
+
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build().ok()?;
+
+    let resp = client
+        .post("https://api.deepseek.com/v1/chat/completions")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&body)
+        .send().ok()?;
+
+    let data: serde_json::Value = resp.json().ok()?;
+    let content = data["choices"][0]["message"]["content"].as_str()?;
+    
+    // Extract the first title from the JSON response
+    let parsed: serde_json::Value = {
+        let cleaned = content
+            .strip_prefix("```json").unwrap_or(content)
+            .strip_prefix("```").unwrap_or(content)
+            .strip_suffix("```").unwrap_or(content);
+        serde_json::from_str(cleaned).ok()?
+    };
+
+    let title = parsed["titles"][0]["title"].as_str()?.trim().to_string();
+    if title.is_empty() { None } else { Some(title) }
+}
+
 #[test]
 fn benchmark_judge() {
     // ── API key: env var first, then .bench-key file, then error ──
@@ -241,12 +314,13 @@ fn benchmark_judge() {
 
     println!("\n╔═══════════════════════════════════════════════════════════════════════╗");
     println!("║  Benchmark v2 — LLM-Judge Usability Scores — {}                ║", format!("{:<18}", model_name));
-    println!("║  50 keywords × 3 engines (Qwen/EGCG/Curated)                       ║");
+    println!("║  50 keywords × 4 engines (Cloud/Qwen/EGCG/Curated)                  ║");
     println!("║  ≥70 = Usable. <70 = Rubbish.                                      ║");
     println!("╚═══════════════════════════════════════════════════════════════════════╝\n");
 
     #[derive(Default)]
     struct EngineStats { count: usize, sum: u64, sum_sq: u64, usable: usize, times: Vec<f32> }
+    let mut cloud_s = EngineStats::default();
     let mut qwen_s = EngineStats::default();
     let mut egcg_s = EngineStats::default();
     let mut cur_s = EngineStats::default();
@@ -256,6 +330,9 @@ fn benchmark_judge() {
     let total = BENCH_KEYWORDS.len();
     for (i, (keyword, category)) in BENCH_KEYWORDS.iter().enumerate() {
         eprintln!("[{}/{}] {}", i + 1, total, keyword);
+
+        // ── Cloud AI (DeepSeek — web app generation prompt) ──
+        let cloud_title = generate_title_cloud(keyword, category, &api_key).unwrap_or_default();
 
         // ── Qwen ──
         let qwen_title = if let Some(ref mut m) = llm {
@@ -278,8 +355,9 @@ fn benchmark_judge() {
         let cur_title = generator.retrieve_similar(keyword, category, 1).first().cloned().unwrap_or_default();
 
         // ── Judge each title ──
-        for (engine_name, title) in &[("qwen", &qwen_title), ("egcg", &egcg_title), ("curated", &cur_title)] {
+        for (engine_name, title) in &[("cloud", &cloud_title), ("qwen", &qwen_title), ("egcg", &egcg_title), ("curated", &cur_title)] {
             let stats: &mut EngineStats = match *engine_name {
+                "cloud" => &mut cloud_s,
                 "qwen" => &mut qwen_s,
                 "egcg" => &mut egcg_s,
                 _ => &mut cur_s,
@@ -350,6 +428,7 @@ fn benchmark_judge() {
     println!("╠══════════════════════════════════════════════════════════════════════╣");
     println!("║  Engine     Mean     StdDev   %Usable    AvgTime                   ║");
     println!("╠══════════════════════════════════════════════════════════════════════╣");
+    println!("║  {} ║", fmt_eng("Cloud", &cloud_s));
     println!("║  {} ║", fmt_eng("Qwen", &qwen_s));
     println!("║  {} ║", fmt_eng("EGCG", &egcg_s));
     println!("║  {} ║", fmt_eng("Curated", &cur_s));
@@ -365,7 +444,7 @@ fn benchmark_judge() {
     eprintln!("Cache saved to {:?}", cache_path());
 
     // ── Assertions: validate the benchmark actually produced results ──
-    assert!(qwen_s.sum > 0 || egcg_s.sum > 0 || cur_s.sum > 0,
+    assert!(cloud_s.sum > 0 || qwen_s.sum > 0 || egcg_s.sum > 0 || cur_s.sum > 0,
         "ALL judge scores are 0 across all engines — API calls are failing silently. Check [judge] errors above.");
     assert!(qwen_s.usable + egcg_s.usable + cur_s.usable > 0,
         "ZERO usable titles found (threshold ≥70). Either the engines produce garbage or the judge is broken.");
