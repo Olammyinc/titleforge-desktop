@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-30 (audit corrections)
+> **Last updated:** 2026-07-30 (benchmark evidence + usability plan)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -311,6 +311,18 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-07-30 (later) — GBNF grammar attempted, bottleneck identified
+- **GBNF grammar attempted via `LlamaSampler::grammar()`** — `sampler` feature enabled on llama-cpp-2, grammar sampler attached via `new_context_with_samplers()`. Reverted after finding the `sampled_token_ith()` API unreliable for reading grammar-constrained tokens. Error: "batch.logits[i] != true" regardless of index approach (output index 0, batch position, context position).
+- **Bottleneck confirmed:** llama-cpp-2's `LlamaSampler` backend-sampler mode doesn't play well with `sampled_token_ith()`. GBNF grammar would need either: (a) `json_schema_to_grammar()` + passing the grammar string differently, (b) llama.cpp C FFI directly to create grammar objects, or (c) a different Rust crate (`llama-gguf` which has simpler grammar API).
+- **What was preserved:** stronger system prompt (keyword as CRITICAL RULE), relaxed retry QC (strict on attempt 1, accepts any coherent output on retries), greedy argmax via `ctx.candidates()`.
+- **`sampler` feature removed from Cargo.toml** — not needed without grammar. `cargo check` clean.
+
+### 2026-07-30 — Benchmark evidence + usability directive
+- 50-keyword benchmark ran (`titleforge-desktop/bench-results.csv`, [tests/bench_path_a.rs](titleforge-desktop/src-tauri/tests/bench_path_a.rs)). Results: **Qwen 48% "Good" (24/50), EGCG 98% (49/50)**. Twenty-three Qwen outputs are empty strings — retry loop in `local_llm.rs::generate_one_clean` gives up when Qwen echoes instructions ("Here is a title:...") 3 times.
+- **The current benchmark is not fit for the decision.** Its "Good" metric only checks format + keyword presence — a template-garbage title like "The Peak Truth About Laptop" scores "Good." Users are paying for **usable** titles (grammatically clean, on-topic, clickable, publish-worthy), not titles that mechanically pass a heuristic. Confirmed by §6.2 #1 self-review: EGCG's 98% mechanical pass rate hides ~75% garbled or nonsensical output. Benchmark v2 spec added in §7.2.
+- **Usability bar (canonical):** A title is usable if a human creator would publish it without editing. Format-conformant garbage does not count.
+- **New sprint plan:** GBNF grammar constraints first (jumps Qwen 48%→~90% by killing empty-output/echo failures), then LLM-judge quality eval (turns pass/fail into 0-100 quality score), then decide Qwen vs EGCG on real quality. See §7.2.
+
 ### 2026-07-30 — Audit corrections to CONTEXT.md
 - §3.2 line counts corrected against source (`local_llm.rs` 179→184, `engine.rs` 293→256, `title_gen.rs` 1533→1577).
 - §6.3 Path A status softened from "SHIPPED" → "Implemented — pending benchmark." Path A code is done and works; it is not yet the primary engine and hasn't been quality-benchmarked.
@@ -427,7 +439,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 3. **Qwen model not bundled in production builds.** `tauri.conf.json` resources bundle SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users would fall back to SmolLM2 (worse quality). Decision: bundle in installer or download on first launch.
 
-4. **GBNF grammars not implemented.** Forced valid JSON output + keyword inclusion would likely improve Qwen pass rate. Now possible with llama.cpp. Deferred.
+4. **GBNF grammars blocked on llama-cpp-2 API.** Attempted via `LlamaSampler::grammar()` + `new_context_with_samplers()` — grammar sampler attaches correctly but `sampled_token_ith()` API is unreliable for reading constrained tokens (returns "batch.logits[i] != true"). Options: use `json_schema_to_grammar()` with a different grammar-passing mechanism, call llama.cpp C FFI directly, or try the `llama-gguf` crate which has a simpler grammar API.
 
 5. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
 
@@ -484,10 +496,24 @@ SmolLM2 model files (135M and 360M GGUF) are kept in `models/` as fallbacks if Q
 
 **Performance:** 3.5 seconds per title on i7-1185G7 (4-core, AVX2). Batched prefill feeds all prompt tokens in one `LlamaBatch::decode()` call. Autoregressive decode feeds one token per step at correct KV cache positions.
 
-**What remains for Path A:**
-- GBNF grammar constraints (force valid JSON output, eliminate malformed titles)
-- 50-keyword benchmark (format-conformance, category-relevance, human readability vs EGCG)
-- Demote EGCG to Pass 3 once benchmark confirms Qwen superiority
+**What remains for Path A (ordered by prerequisite):**
+
+The 2026-07-30 benchmark showed Qwen at 48% "Good" vs EGCG at 98%. That benchmark measures format+keyword only, not usability. Before shipping any Qwen-vs-EGCG decision, do these in order:
+
+**Task A — GBNF grammar constraints (1-2 days).** `llama-cpp-2` supports GBNF via sampler params. Define a grammar that forces `title ::= word (" " word){2,14}` with allowed punctuation. Kills all "empty output" and "instruction echo" failures — Qwen physically cannot emit "Here is a title:" because those tokens aren't in the grammar. Expected jump: Qwen 48% → ~90%.
+
+**Task B — Benchmark v2 with LLM-judge (half day).** Current bench is unfit — it calls "The Peak Truth About Laptop" a good title. Rewrite `tests/bench_path_a.rs` to add a per-title quality score via a cloud AI (DeepSeek/GPT-4o) called with a strict rubric: rate 0-100 on grammar, on-topic, category-fit, clickable, non-template. Cost ~$0.10 per benchmark run. Now Qwen and EGCG can be compared on real usability, not heuristic pass rates. **Usability threshold: ≥70 on the 0-100 scale = usable. <70 = rubbish, doesn't count.**
+
+**Task C — Re-run benchmark, decide.** Three outcomes:
+1. **Qwen-with-GBNF beats EGCG on mean quality:** demote EGCG to Pass 3, promote Qwen to Pass 1. Plan Path B fine-tune to close the last gap.
+2. **EGCG beats Qwen on mean quality:** remove Qwen entirely, remove `llama-cpp-2` + model files. Ship simpler stack. Positioning: "curated + template variation, no local LLM."
+3. **Both mediocre, ~equal:** try Qwen2.5-3B (larger model, ~2 GB install), then re-decide. If still tied, prefer EGCG (simpler, faster, no download).
+
+Do not skip Task B. Making the decision on the current benchmark is making it blind.
+
+**Task D — Once Qwen is confirmed keep-worthy: bundle/download model + demote EGCG.** Otherwise skip.
+
+**Usability bar (canonical for this project):** A title is usable if a human creator would publish it without editing. Grammatically clean, contains the keyword (or a clear stem of it), fits the category's conventions, provokes curiosity or names something concrete. Format-conformant garbage does not count. Users are paying for titles they can ship, not titles that pass a heuristic.
 
 ### 7.3 Path B — Planned future upgrade (after Path A ships)
 
