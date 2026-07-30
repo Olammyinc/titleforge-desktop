@@ -228,11 +228,10 @@ fn benchmark_judge() {
             stats.sum_sq += (judge_score as u64).pow(2);
             if usable { stats.usable += 1; }
 
-            csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",{},{},{},{},{}\n",
+            csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",{},{},{},{}\n",
                 keyword, category, engine_name,
                 title.replace('"', "'"),
                 mech_pass as u8, judge_score, usable as u8,
-                if *engine_name == "qwen" { qwen_s.times.last().copied().unwrap_or(0.0) } else { 0.0 },
                 cached as u8));
         }
     }
