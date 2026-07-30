@@ -127,21 +127,31 @@ fn call_judge(title: &str, keyword: &str, category: &str, api_key: &str) -> Opti
 
 #[test]
 fn benchmark_judge() {
-    // ── Check for API key ──
-    let api_key = std::env::var("BENCH_JUDGE_API_KEY").unwrap_or_else(|_| {
-        eprintln!("\n╔══════════════════════════════════════════════════════════════╗");
-        eprintln!("║  ERROR: BENCH_JUDGE_API_KEY not set                        ║");
-        eprintln!("║                                                             ║");
-        eprintln!("║  This benchmark calls DeepSeek to rate each title on        ║");
-        eprintln!("║  usability (0-100). Set your API key:                       ║");
-        eprintln!("║                                                             ║");
-        eprintln!("║    set BENCH_JUDGE_API_KEY=sk-...                          ║");
-        eprintln!("║    cargo test --release benchmark_judge -- --nocapture      ║");
-        eprintln!("║                                                             ║");
-        eprintln!("║  Cost: ~$0.10 per full run (150 titles)                    ║");
-        eprintln!("╚══════════════════════════════════════════════════════════════╝\n");
-        "".to_string()
-    });
+    // ── API key: env var first, then .bench-key file, then error ──
+    let api_key = std::env::var("BENCH_JUDGE_API_KEY").ok()
+        .or_else(|| {
+            let key_path = Path::new("../../.bench-key");
+            if key_path.exists() {
+                std::fs::read_to_string(key_path).ok().map(|s| s.trim().to_string())
+            } else { None }
+        })
+        .unwrap_or_else(|| {
+            eprintln!("\n╔══════════════════════════════════════════════════════════════╗");
+            eprintln!("║  BENCH_JUDGE_API_KEY not set                                ║");
+            eprintln!("║                                                             ║");
+            eprintln!("║  Option A: Run in a single PowerShell command:               ║");
+            eprintln!("║    $env:BENCH_JUDGE_API_KEY='sk-...'; cargo test ...        ║");
+            eprintln!("║                                                             ║");
+            eprintln!("║  Option B: Put your key in ../../.bench-key (no env needed):║");
+            eprintln!("║    echo sk-... > ../../.bench-key                           ║");
+            eprintln!("║                                                             ║");
+            eprintln!("║  Then run:                                                  ║");
+            eprintln!("║    cargo test --release benchmark_judge -- --nocapture      ║");
+            eprintln!("║                                                             ║");
+            eprintln!("║  Cost: ~$0.10 per full run (150 titles)                     ║");
+            eprintln!("╚══════════════════════════════════════════════════════════════╝\n");
+            "".to_string()
+        });
     if api_key.is_empty() { return; }
 
     let conn = init_db();

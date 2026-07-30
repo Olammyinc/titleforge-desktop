@@ -5,3 +5,5 @@ target/
 *:Zone.Identifier
 models/*.gguf
 llama/
+.bench-key
+bench-cache.json
