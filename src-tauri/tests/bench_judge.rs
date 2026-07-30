@@ -116,19 +116,41 @@ fn call_judge(title: &str, keyword: &str, category: &str, api_key: &str) -> Opti
         "max_tokens": 10,
     });
 
-    let client = reqwest::blocking::Client::builder()
+    let client = match reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
-        .build().ok()?;
+        .build() {
+        Ok(c) => c,
+        Err(e) => { eprintln!("  [judge] client build error: {:?}", e); return None; }
+    };
 
-    let resp = client
+    let resp = match client
         .post("https://api.deepseek.com/v1/chat/completions")
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&body)
-        .send().ok()?;
+        .send() {
+        Ok(r) => r,
+        Err(e) => { eprintln!("  [judge] HTTP error: {:?}", e); return None; }
+    };
 
-    let data: serde_json::Value = resp.json().ok()?;
-    let text = data["choices"][0]["message"]["content"].as_str()?;
+    if !resp.status().is_success() {
+        eprintln!("  [judge] API error {} for '{}'", resp.status(), title);
+        return None;
+    }
+
+    let data: serde_json::Value = match resp.json() {
+        Ok(d) => d,
+        Err(e) => { eprintln!("  [judge] JSON parse error: {:?}", e); return None; }
+    };
+
+    let text = match data["choices"][0]["message"]["content"].as_str() {
+        Some(t) => t,
+        None => {
+            eprintln!("  [judge] unexpected response shape: {}", data);
+            return None;
+        }
+    };
+
     let score: u32 = text.trim().chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0);
     Some(score.min(100))
 }
@@ -138,11 +160,15 @@ fn benchmark_judge() {
     // ── API key: env var first, then .bench-key file, then error ──
     let api_key = std::env::var("BENCH_JUDGE_API_KEY").ok()
         .or_else(|| {
-            // Resolve path at compile time — test binary runs from build dir, not src-tauri/
             let key_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".bench-key");
+            eprintln!("API key env var not set, trying file: {:?}", key_path);
             if key_path.exists() {
+                eprintln!("  Found .bench-key file, reading key...");
                 std::fs::read_to_string(&key_path).ok().map(|s| s.trim().to_string())
-            } else { None }
+            } else { 
+                eprintln!("  .bench-key file NOT found at that path");
+                None 
+            }
         })
         .unwrap_or_else(|| {
             eprintln!("\n╔══════════════════════════════════════════════════════════════╗");
@@ -162,6 +188,24 @@ fn benchmark_judge() {
             "".to_string()
         });
     if api_key.is_empty() { return; }
+
+    // ── Pre-flight: verify API key works before burning compute ──
+    eprintln!("Verifying API key with test call...");
+    match call_judge("Test Title", "test", "book", &api_key) {
+        Some(s) => eprintln!("Pre-flight OK (test score: {})", s),
+        None => {
+            eprintln!("╔══════════════════════════════════════════════════════════════╗");
+            eprintln!("║  PRE-FLIGHT FAILED: API call returned no score               ║");
+            eprintln!("║                                                             ║");
+            eprintln!("║  Check:                                                      ║");
+            eprintln!("║  1. Is your DeepSeek API key valid?                          ║");
+            eprintln!("║  2. Is the key in .bench-key at the project root?           ║");
+            eprintln!("║  3. Is DeepSeek reachable from this machine?                ║");
+            eprintln!("║  4. Check console output above for [judge] error messages   ║");
+            eprintln!("╚══════════════════════════════════════════════════════════════╝");
+            return;
+        }
+    }
 
     let conn = init_db();
     let generator = titleforge_lib::title_gen::Generator::build(&conn);
@@ -285,7 +329,7 @@ fn benchmark_judge() {
 
     // Write CSV
     let csv_path = csv_path();
-    std::fs::write(&csv_path, &csv).expect("write CSV");
+    std::fs::write(csv_path, &csv).expect("write CSV");
     eprintln!("Results written to {:?}", csv_path);
     eprintln!("Cache written to bench-cache.json");
 }
