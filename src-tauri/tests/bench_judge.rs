@@ -81,8 +81,16 @@ fn sha256_short(s: &str) -> String {
     format!("{:016x}", h.finish())
 }
 
+fn cache_path() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("bench-cache.json")
+}
+
+fn csv_path() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("bench-usability.csv")
+}
+
 fn load_cache() -> HashMap<String, serde_json::Value> {
-    let path = Path::new("../../bench-cache.json");
+    let path = cache_path();
     if !path.exists() { return HashMap::new(); }
     std::fs::read_to_string(path).ok()
         .and_then(|s| serde_json::from_str(&s).ok())
@@ -91,7 +99,7 @@ fn load_cache() -> HashMap<String, serde_json::Value> {
 
 fn save_cache(cache: &HashMap<String, serde_json::Value>) {
     let json = serde_json::to_string_pretty(cache).unwrap_or_default();
-    let _ = std::fs::write("../../bench-cache.json", &json);
+    let _ = std::fs::write(cache_path(), &json);
 }
 
 fn call_judge(title: &str, keyword: &str, category: &str, api_key: &str) -> Option<u32> {
@@ -130,9 +138,10 @@ fn benchmark_judge() {
     // ── API key: env var first, then .bench-key file, then error ──
     let api_key = std::env::var("BENCH_JUDGE_API_KEY").ok()
         .or_else(|| {
-            let key_path = Path::new("../../.bench-key");
+            // Resolve path at compile time — test binary runs from build dir, not src-tauri/
+            let key_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".bench-key");
             if key_path.exists() {
-                std::fs::read_to_string(key_path).ok().map(|s| s.trim().to_string())
+                std::fs::read_to_string(&key_path).ok().map(|s| s.trim().to_string())
             } else { None }
         })
         .unwrap_or_else(|| {
@@ -275,7 +284,7 @@ fn benchmark_judge() {
     println!();
 
     // Write CSV
-    let csv_path = Path::new("../../bench-usability.csv");
+    let csv_path = csv_path();
     std::fs::write(csv_path, &csv).expect("write CSV");
     eprintln!("Results written to {:?}", csv_path);
     eprintln!("Cache written to bench-cache.json");
