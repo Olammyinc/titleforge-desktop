@@ -285,7 +285,7 @@ fn benchmark_judge() {
 
     // Write CSV
     let csv_path = csv_path();
-    std::fs::write(csv_path, &csv).expect("write CSV");
+    std::fs::write(&csv_path, &csv).expect("write CSV");
     eprintln!("Results written to {:?}", csv_path);
     eprintln!("Cache written to bench-cache.json");
 }
