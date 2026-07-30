@@ -14,7 +14,6 @@
 ///   bench-usability.csv  — 150 rows (50 keywords × 3 engines) with judge scores
 ///   bench-cache.json     — cached judge responses (re-run costs $0 on same data)
 
-use std::path::Path;
 use std::time::Instant;
 use std::collections::HashMap;
 use rusqlite::Connection;
@@ -57,9 +56,10 @@ fn init_db() -> Connection {
 }
 
 fn keyword_present(title: &str, kw: &str) -> bool {
-    let tl = title.to_lowercase();
+    let tl = format!(" {} ", title.to_lowercase());
     let kl = kw.to_lowercase();
-    tl.contains(&kl) || kl.split_whitespace().any(|w| tl.contains(w))
+    tl.contains(&format!(" {} ", &kl))
+        || kl.split_whitespace().any(|w| tl.contains(&format!(" {} ", w)))
 }
 
 fn is_readable(title: &str) -> bool {
@@ -113,46 +113,70 @@ fn call_judge(title: &str, keyword: &str, category: &str, api_key: &str) -> Opti
             {"role": "user", "content": rubric}
         ],
         "temperature": 0.0,
-        "max_tokens": 10,
+        "max_tokens": 64,
+        "thinking": {"type": "disabled"},
     });
 
     let client = match reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
+        .timeout(std::time::Duration::from_secs(30))
         .build() {
         Ok(c) => c,
         Err(e) => { eprintln!("  [judge] client build error: {:?}", e); return None; }
     };
 
-    let resp = match client
-        .post("https://api.deepseek.com/v1/chat/completions")
-        .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .json(&body)
-        .send() {
-        Ok(r) => r,
-        Err(e) => { eprintln!("  [judge] HTTP error: {:?}", e); return None; }
-    };
+    // Retry up to 3 times for transient failures
+    for attempt in 1..=3u32 {
+        let resp = match client
+            .post("https://api.deepseek.com/v1/chat/completions")
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .json(&body)
+            .send() {
+            Ok(r) => r,
+            Err(e) => { eprintln!("  [judge] HTTP error (attempt {}): {:?}", attempt, e); continue; }
+        };
 
-    if !resp.status().is_success() {
-        eprintln!("  [judge] API error {} for '{}'", resp.status(), title);
-        return None;
-    }
+        if resp.status() == 429 {
+            eprintln!("  [judge] rate limited, backing off...");
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            continue;
+        }
 
-    let data: serde_json::Value = match resp.json() {
-        Ok(d) => d,
-        Err(e) => { eprintln!("  [judge] JSON parse error: {:?}", e); return None; }
-    };
-
-    let text = match data["choices"][0]["message"]["content"].as_str() {
-        Some(t) => t,
-        None => {
-            eprintln!("  [judge] unexpected response shape: {}", data);
+        if !resp.status().is_success() {
+            eprintln!("  [judge] API error {} for '{}'", resp.status(), title);
             return None;
         }
-    };
 
-    let score: u32 = text.trim().chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0);
-    Some(score.min(100))
+        let data: serde_json::Value = match resp.json() {
+            Ok(d) => d,
+            Err(e) => { eprintln!("  [judge] JSON parse error: {:?}", e); continue; }
+        };
+
+        let finish_reason = data["choices"][0]["finish_reason"].as_str().unwrap_or("unknown");
+        let content = data["choices"][0]["message"]["content"].as_str();
+
+        match content {
+            Some(t) if !t.is_empty() => {
+                let score: u32 = t
+                    .split(|c: char| !c.is_ascii_digit())
+                    .filter(|s| !s.is_empty())
+                    .next()
+                    .and_then(|s| s.parse::<u32>().ok())
+                    .unwrap_or(0)
+                    .min(100);
+                return Some(score);
+            }
+            Some(t) => {
+                eprintln!("  [judge] empty content (finish={}) for '{}'. raw response: {}", finish_reason, title, data);
+                continue;
+            }
+            None => {
+                eprintln!("  [judge] no content field (finish={}) for '{}'. raw response: {}", finish_reason, title, data);
+                return None;
+            }
+        }
+    }
+    None
 }
 
 #[test]
@@ -191,20 +215,11 @@ fn benchmark_judge() {
 
     // ── Pre-flight: verify API key works before burning compute ──
     eprintln!("Verifying API key with test call...");
-    match call_judge("Test Title", "test", "book", &api_key) {
-        Some(s) => eprintln!("Pre-flight OK (test score: {})", s),
-        None => {
-            eprintln!("╔══════════════════════════════════════════════════════════════╗");
-            eprintln!("║  PRE-FLIGHT FAILED: API call returned no score               ║");
-            eprintln!("║                                                             ║");
-            eprintln!("║  Check:                                                      ║");
-            eprintln!("║  1. Is your DeepSeek API key valid?                          ║");
-            eprintln!("║  2. Is the key in .bench-key at the project root?           ║");
-            eprintln!("║  3. Is DeepSeek reachable from this machine?                ║");
-            eprintln!("║  4. Check console output above for [judge] error messages   ║");
-            eprintln!("╚══════════════════════════════════════════════════════════════╝");
-            return;
-        }
+    let pre = call_judge("Test Title", "test", "book", &api_key);
+    match pre {
+        Some(s) if s > 0 => eprintln!("Pre-flight OK (test score: {})", s),
+        Some(s) => panic!("Pre-flight returned score {} — API is responding but producing zeros. Check thinking mode / max_tokens / response format.", s),
+        None => panic!("PRE-FLIGHT FAILED: API call returned no score at all. Check [judge] error messages above for HTTP/parse errors."),
     }
 
     let conn = init_db();
@@ -213,8 +228,9 @@ fn benchmark_judge() {
 
     // Load Qwen
     let mut llm = None;
+    let models_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("models");
     for name in &["qwen2.5-1.5b-instruct-q4_k_m.gguf", "SmolLM2-360M-Instruct-Q4_K_M.gguf", "SmolLM2-135M-Instruct-Q4_K_M.gguf"] {
-        let p = Path::new("../models").join(name);
+        let p = models_dir.join(name);
         if p.exists() {
             eprintln!("Loading {}...", name);
             llm = titleforge_lib::local_llm::LocalLlm::load(&p);
@@ -235,7 +251,7 @@ fn benchmark_judge() {
     let mut egcg_s = EngineStats::default();
     let mut cur_s = EngineStats::default();
 
-    let mut csv = String::from("keyword,category,engine,title,mechanical_pass,judge_score,usable,time_ms,cached\n");
+    let mut csv = String::from("keyword,category,engine,title,mechanical_pass,judge_score,usable,cached\n");
 
     let total = BENCH_KEYWORDS.len();
     for (i, (keyword, category)) in BENCH_KEYWORDS.iter().enumerate() {
@@ -272,13 +288,23 @@ fn benchmark_judge() {
             let mech_pass = is_readable(title) && keyword_present(title, keyword);
             let (judge_score, cached) = if mech_pass && !title.is_empty() {
                 let cache_key = sha256_short(&format!("{}|{}|{}", title, keyword, category));
-                match cache.get(&cache_key).and_then(|v| v.as_u64()) {
+                match cache.get(&cache_key).and_then(|v| v.as_u64()).filter(|&s| s > 0) {
                     Some(s) => (s as u32, true),
                     None => {
-                        let s = call_judge(title, keyword, category, &api_key).unwrap_or(0);
-                        cache.insert(cache_key, serde_json::json!(s));
-                        save_cache(&cache);
-                        (s, false)
+                        match call_judge(title, keyword, category, &api_key) {
+                            Some(s) if s > 0 => {
+                                cache.insert(cache_key, serde_json::json!(s));
+                                (s, false)
+                            }
+                            Some(s) => {
+                                eprintln!("  [judge] got score 0 for '{}' — not caching", title);
+                                (0, false)
+                            }
+                            None => {
+                                eprintln!("  [judge] FAILED for '{}' — not cached", title);
+                                (0, false)
+                            }
+                        }
                     }
                 }
             } else {
@@ -296,6 +322,11 @@ fn benchmark_judge() {
                 title.replace('"', "'"),
                 mech_pass as u8, judge_score, usable as u8,
                 cached as u8));
+
+            // Small delay between API calls to avoid rate limits
+            if !cached && judge_score > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(150));
+            }
         }
     }
 
@@ -331,5 +362,11 @@ fn benchmark_judge() {
     let csv_path = csv_path();
     std::fs::write(&csv_path, &csv).expect("write CSV");
     eprintln!("Results written to {:?}", csv_path);
-    eprintln!("Cache written to bench-cache.json");
+    eprintln!("Cache saved to {:?}", cache_path());
+
+    // ── Assertions: validate the benchmark actually produced results ──
+    assert!(qwen_s.sum > 0 || egcg_s.sum > 0 || cur_s.sum > 0,
+        "ALL judge scores are 0 across all engines — API calls are failing silently. Check [judge] errors above.");
+    assert!(qwen_s.usable + egcg_s.usable + cur_s.usable > 0,
+        "ZERO usable titles found (threshold ≥70). Either the engines produce garbage or the judge is broken.");
 }
