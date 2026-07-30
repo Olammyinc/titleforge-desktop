@@ -49,7 +49,7 @@ impl LocalLlm {
         let eos = self.model.token_eos();
         let max_new = 60;
 
-        // Batched prefill: all tokens in one decode (only last requests logits)
+        // Batched prefill
         let max_tokens = n_prompt + max_new as usize;
         {
             let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(max_tokens, 1);
@@ -59,7 +59,7 @@ impl LocalLlm {
             ctx.decode(&mut batch).ok()?;
         }
 
-        // Sample first token
+        // Sample first token greedily
         let mut next: Option<llama_cpp_2::token::LlamaToken> = {
             let mut best_tok = eos;
             let mut best_logit = f32::NEG_INFINITY;
@@ -69,23 +69,23 @@ impl LocalLlm {
             if best_tok == eos { None } else { Some(best_tok) }
         };
 
-        // Track generated tokens for output decoding
+        // Track generated tokens
         let mut gen_tokens: Vec<llama_cpp_2::token::LlamaToken> = Vec::new();
 
         // Autoregressive decode: one token per step
-        for pos in n_prompt as i32..(n_prompt as i32 + max_new) {
+        for pos in n_prompt as i32..(n_prompt + max_new) as i32 {
             let tok = match next { Some(t) => t, None => break };
             gen_tokens.push(tok);
             let mut batch = llama_cpp_2::llama_batch::LlamaBatch::new(1, 1);
             batch.add(tok, pos, &[0], true);
             if ctx.decode(&mut batch).is_err() { break; }
-            let mut best_tok = eos;
-            let mut best_logit = f32::NEG_INFINITY;
+            let mut best = eos;
+            let mut best_l = f32::NEG_INFINITY;
             for cd in ctx.candidates() {
-                if cd.logit() > best_logit { best_logit = cd.logit(); best_tok = cd.id(); }
+                if cd.logit() > best_l { best_l = cd.logit(); best = cd.id(); }
             }
-            if best_tok == eos { break; }
-            next = Some(best_tok);
+            if best == eos { break; }
+            next = Some(best);
         }
 
         if gen_tokens.is_empty() { return None; }

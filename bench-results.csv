@@ -1,51 +1,51 @@
 keyword,category,llm_title,egcg_title,curated_title,llm_format,llm_kw,llm_readable,llm_relevant,llm_ms,egcg_format,egcg_kw,egcg_readable,egcg_relevant,egcg_ms
-"shirt","product","Versatile Shirt: Perfect for Any Occasion","Shirt Is Dead: Here's What's Next","",1,1,1,1,0,1,1,1,1,0
-"laptop","product","","The Peak Truth About Laptop","",0,0,0,0,0,1,1,1,1,0
-"productivity","book","Mastering Productivity: From Jotting to Zen","The Extraordinary Side of Productivity","The Silent Productivity Killer Nobody Talks About",1,1,1,1,0,1,1,1,1,0
-"love","song","Code of Endless Embrace","Why Love Matters More Than Ever","Algorithm of Love",1,0,1,0,0,1,1,1,1,0
-"startup","book","Startup's Guide to Uncovering Hidden Profits","In Search of Startup: A Way's Journey","5 Reasons Why Your Startup Will Fail (And One Way to Avoid It)",1,1,1,1,0,1,1,1,1,0
-"crypto","article","Unleashing Crypto's Power: Exploring the Future of Finance","The Art to Dreaming Crypto That make a difference","Blockchain Beyond Crypto: Practical Applications for Business",1,1,1,1,0,1,1,1,1,0
-"parenting","book","Raising Emotions: A Guide to Parenting Through the Ages","A History of Parenting in 5 Chapters","",1,1,1,1,0,1,1,1,1,0
-"fitness","youtube","","9 Lessons About Fitness That That move the needle","Is the Apple Watch a Fitness Game Changer?",0,0,0,0,0,1,1,1,1,0
-"travel","blog","","I Build Travel for 48 hours and Here's What I Learned","I Quit My Six-Figure Job to Travel the World and Regretted Everything",0,0,0,0,0,1,1,1,1,0
-"cooking","book","Flavors of the Kitchen: A Culinary Journey","Why Do Machine Guide Cooking?","",1,0,1,0,0,1,1,1,1,0
-"meditation","podcast","","Beyond Meditation: The Next of","6 Ways to Reduce Anxiety Without Meditation",0,0,0,0,0,1,1,1,1,0
-"investing","article","","What Makes Investing Feed a City","The ROI of investing in employee wellness",0,0,0,0,0,1,1,1,1,0
-"photography","youtube","","10 Things Change Should Know About Photography","Photography Tips for Beginners: Shooting in Manual Mode",0,0,0,0,0,1,1,1,1,0
-"music","song","","3 Common Music Mistakes and How to Fix Them","What Your Taste in Music Says About You",0,0,0,0,0,1,1,1,1,0
+"shirt","product","","She Stepped Shirt Pale Morning","",0,0,0,0,0,1,1,1,1,0
+"laptop","product","","How to Map Laptop and That deliver results","",0,0,0,0,0,1,1,1,1,0
+"productivity","book","","How to Perfect Productivity in This week","The Silent Productivity Killer Nobody Talks About",0,0,0,0,0,1,1,1,1,0
+"love","song","","The Love Song","Algorithm of Love",0,0,0,0,0,1,1,1,1,0
+"startup","book","","How Startup Is the Way Industry","5 Reasons Why Your Startup Will Fail (And One Way to Avoid It)",0,0,0,0,0,1,1,1,1,0
+"crypto","article","","He Tasted Crypto Fragments of Skin","Blockchain Beyond Crypto: Practical Applications for Business",0,0,0,0,0,1,1,1,1,0
+"parenting","book","","The Day Parenting Changed My Life: A Extraordinary Story","",0,0,0,0,0,1,1,1,1,0
+"fitness","youtube","","The Ultimate Guide to Guideing Fitness","Is the Apple Watch a Fitness Game Changer?",0,0,0,0,0,1,1,1,1,0
+"travel","blog","","I Quit My Travel Here’s the Truth","I Quit My Six-Figure Job to Travel the World and Regretted Everything",0,0,0,0,0,1,1,1,1,0
+"cooking","book","","The Da Cooking Kind of Courage","",0,0,0,0,0,1,1,1,1,0
+"meditation","podcast","","The Journey to Balanceing Meditation That will transform your life","6 Ways to Reduce Anxiety Without Meditation",0,0,0,0,0,1,1,1,1,0
+"investing","article","","The Cultural Significance Investing Urban Safety","The ROI of investing in employee wellness",0,0,0,0,0,1,1,1,1,0
+"photography","youtube","","The Secret to That move the needle? Train Photography","Photography Tips for Beginners: Shooting in Manual Mode",0,0,0,0,0,1,1,1,1,0
+"music","song","","Dirt Road Music Street Blues","What Your Taste in Music Says About You",0,0,0,0,0,1,1,1,1,0
 "AI","article","","","AI Will Never Be Creative: The Human Brain's Irreplaceable Edge",0,0,0,0,0,0,0,0,0,0
-"remote work","blog","Unlocking the Secrets of Remote Success: How to Thrive in the New Work Paradigm","Transforming Remote work: A Step-by-Step Habit","Opinion: Remote Work Is Not for Everyone — And That’s Okay",1,1,1,1,0,1,1,1,1,0
-"mental health","podcast","Unlocking Mental Health: Stories from the Frontline","9 Start That Will Engineer Your Mental health","What Happens When Prisons Become Mental Health Facilities",1,1,1,1,0,1,1,1,1,0
-"gardening","book","Roots to Bloom: A Gardener's Journey","The Gardening Paradox: Why We Can't Get Enough","",1,0,1,0,0,1,1,1,1,0
-"coffee","product","Revitalize Your Day with the Perfect Cup of Coffee","Wake Up Call Coffee Look Taller","Why Monday Morning Coffee Should Be Classified as a Scheduled Substance",1,1,1,1,0,1,1,1,1,0
-"minimalism","book","Minimalism: Shedding the Non-Essential for a Happier, More Fulfilling Life","Where the Light Minimalism Death of Romance","Why Minimalism Isn't About Owning Less But Wanting Less",1,1,1,1,0,1,1,1,1,0
-"creativity","book","","The Lost Art of Creativity","5 Morning Habits That Actually Boosted My Creativity",0,0,0,0,0,1,1,1,1,0
-"sleep","podcast","Unlocking Dreams: A Journey to Perfect Sleep","The World Sleep Us About Democracy","Overthinking Sleep",1,1,1,1,0,1,1,1,1,0
-"negotiation","book","","From Dawn to That move the needle: My Journey to Imagineing Negotiation","The Negotiation Playbook: Getting What You Want Without Selling Out",0,0,0,0,0,1,1,1,1,0
-"writing","book","","Beyond Writing: The Next of","The Unexpected Benefit of Writing by Hand",0,0,0,0,0,1,1,1,1,0
-"marketing","article","","Your Carbon Marketing Four-Day Workweek","Stop Romanticizing Hustle Culture: It's Just Exhaustion with Better Marketing",0,0,0,0,0,1,1,1,1,0
-"data science","article","","10 Common Data science Mistakes and How to Fix Them","The Science of Loneliness: What Isolation Does to the Brain",0,0,0,0,0,1,1,1,1,0
-"blockchain","article","","9 Blockchain Guides That will transform your life","Blockchain Beyond Crypto: Practical Applications for Business",0,0,0,0,0,1,1,1,1,0
-"electric cars","youtube","","The 24 hours Plan to Guide Electric cars","The Truth About Electric Cars: Pros and Cons",0,0,0,0,0,1,1,1,1,0
-"space exploration","article","Unveiling the Mysteries of the Deep Space: Exploring the Unknown","What Space exploration Can Teach Us About Revolution","What Space Exploration Teaches Us About Life on Earth",1,1,1,1,0,1,1,1,1,0
-"wine","blog","Vintage Flavors: A Journey Through Time with Wine","How to Reset Wine and Create That move the needle","Dandelion Wine",1,1,1,1,0,1,1,1,1,0
-"dancing","youtube","Step into the rhythm: Dancing through life's moments","What's the One Dancing Expensive Headphones","Dancing Alone",1,1,1,1,0,1,1,1,1,0
-"podcasting","blog","","A Step-by-Step Guide to Building Podcasting","",0,0,0,0,0,1,1,1,1,0
-"freelancing","blog","Unlocking Freelancing Success: Tips for the Modern Freelancer","5 Freelancing Fixs You Need to Know","",1,1,1,1,0,1,1,1,1,0
-"vegan","blog","Beyond Meat: Exploring the Future of Vegan Cuisine","Do This to Create Vegan in 30 days","The Best Vegan Recipes for Busy Weeknights",1,1,1,1,0,1,1,1,1,0
-"yoga","youtube","Yoga Flow: Unlocking Inner Peace Through Asanas","A Beginner's Guide to Progressing Yoga","Yoga Pants and Pizza",1,1,1,1,0,1,1,1,1,0
-"gaming","youtube","","I Spent 48 Gaming Purr-fect Vlog","Budget Gaming PC",0,0,0,0,0,1,1,1,1,0
-"digital nomad","blog","Nomad Nation: Thriving in the Digital Age","The Rich Truth About Digital nomad","The Rise of 'Digital Nomad' Communities in Southeast Asia",1,1,1,1,0,1,1,1,1,0
-"sourdough bread","blog","From Yeast to Crust: A Journey into the Art of Sourdough Bread","The Morning Routine Sourdough Bread Language Fast","The Art of Making Sourdough Bread at Home",1,1,1,1,0,1,1,1,1,0
-"intermittent fasting","book","","In Search of Intermittent fasting: A Guide's Journey","I Tried Intermittent Fasting for 3 Months — Results Were Surprising",0,0,0,0,0,1,1,1,1,0
-"bitcoin","article","","The Great Bitcoin a Clean Break","",0,0,0,0,0,1,1,1,1,0
-"tennis","youtube","","Top 5 Tennis Hacks That Actually Work","",0,0,0,0,0,1,1,1,1,0
-"skincare","blog","Revitalize Your Skin: 7 Steps to Radiant, Youthful Glow","How to Perfect Skincare Like a Pro","",1,0,1,0,0,1,1,1,1,0
-"virtual reality","youtube","Unleash the Future: Exploring Virtual Reality","The Ultimate Virtual Reality Lessons from Space","",1,1,1,1,0,1,1,1,1,0
-"board games","product","","He Remembered Board Games Still Trembled","",0,0,0,0,0,1,1,1,1,0
-"tea","product","Infuse Your Day with Tea: A Journey to Better Health","Cozy Cloud Tea Peaceful Hearth","Why I Switched From Coffee to Tea (And How It Changed My Afternoons)",1,1,1,1,0,1,1,1,1,0
-"solo travel","blog","","The 2026 Plan to Focus Solo travel","Solo Travel: Escaping Yourself or Finding Yourself?",0,0,0,0,0,1,1,1,1,0
-"home office","product","","How to Design Home office and That make a difference","5 Ways to Make Your Home Office Feel Like a Sanctuary",0,0,0,0,0,1,1,1,1,0
-"jazz","song","Jazz Beats in the Heartbeat","How Jazz Changed the Fix Forever","",1,1,1,1,0,1,1,1,1,0
-"ethical fashion","blog","Ethical Threads: Unveiling the True Cost of Fashion","The Practical Guide for Createing Ethical fashion","The Hidden Cost of Fast Fashion",1,1,1,1,0,1,1,1,1,0
-"climate change","article","Climate Change: The Silent Surge of Our Time","5 Fast Strategies for Climate change","What the Fossil Record Tells Us About Climate Change",1,1,1,1,0,1,1,1,1,0
+"remote work","blog","","Why I Stopped Remote Work Here's What Happened","Opinion: Remote Work Is Not for Everyone — And That’s Okay",0,0,0,0,0,1,1,1,1,0
+"mental health","podcast","","Why Mental health is Actually Creative","What Happens When Prisons Become Mental Health Facilities",0,0,0,0,0,1,1,1,1,0
+"gardening","book","","The Cult Gardening We Never Said","",0,0,0,0,0,1,1,1,1,0
+"coffee","product","","Coffee Is Dead: Here's What's Next","Why Monday Morning Coffee Should Be Classified as a Scheduled Substance",0,0,0,0,0,1,1,1,1,0
+"minimalism","book","","Why Do Change Guide Minimalism?","Why Minimalism Isn't About Owning Less But Wanting Less",0,0,0,0,0,1,1,1,1,0
+"creativity","book","","The Extraordinary and Kind Sides of Creativity","5 Morning Habits That Actually Boosted My Creativity",0,0,0,0,0,1,1,1,1,0
+"sleep","podcast","","9 Bold Reasons to Balance Sleep","Overthinking Sleep",0,0,0,0,0,1,1,1,1,0
+"negotiation","book","","The Difference Between Negotiation and Ocean","The Negotiation Playbook: Getting What You Want Without Selling Out",0,0,0,0,0,1,1,1,1,0
+"writing","book","","Why Do Guide Train Writing?","The Unexpected Benefit of Writing by Hand",0,0,0,0,0,1,1,1,1,0
+"marketing","article","","Why Marketing Is the Effective Science of Our Time","Stop Romanticizing Hustle Culture: It's Just Exhaustion with Better Marketing",0,0,0,0,0,1,1,1,1,0
+"data science","article","","The Future of Data science: What's Coming in 7 days","The Science of Loneliness: What Isolation Does to the Brain",0,0,0,0,0,1,1,1,1,0
+"blockchain","article","","Why Blockchain Is the New Energy","Blockchain Beyond Crypto: Practical Applications for Business",0,0,0,0,0,1,1,1,1,0
+"electric cars","youtube","","The Surprising Reason Electric cars Makes You Still","The Truth About Electric Cars: Pros and Cons",0,0,0,0,0,1,1,1,1,0
+"space exploration","article","","The Hidden Costs Space Exploration Competitive Eating","What Space Exploration Teaches Us About Life on Earth",0,0,0,0,0,1,1,1,1,0
+"wine","blog","","How to Guide Wine: The Practical Routine","Dandelion Wine",0,0,0,0,0,1,1,1,1,0
+"dancing","youtube","","The Learning to Guideing Dancing That make a difference","Dancing Alone",0,0,0,0,0,1,1,1,1,0
+"podcasting","blog","","The Rich Habit for Building Podcasting","",0,0,0,0,0,1,1,1,1,0
+"freelancing","blog","","8 Common Freelancing Mistakes and How to Fix Them","",0,0,0,0,0,1,1,1,1,0
+"vegan","blog","","4 Creative Guide That Will Create Your Vegan","The Best Vegan Recipes for Busy Weeknights",0,0,0,0,0,1,1,1,1,0
+"yoga","youtube","","Why You Should Progress Yoga 2026","Yoga Pants and Pizza",0,0,0,0,0,1,1,1,1,0
+"gaming","youtube","","The Perfect Guide to Training Gaming","Budget Gaming PC",0,0,0,0,0,1,1,1,1,0
+"digital nomad","blog","","5 Signs Digital Nomad It's Not Technical","The Rise of 'Digital Nomad' Communities in Southeast Asia",0,0,0,0,0,1,1,1,1,0
+"sourdough bread","blog","","Why Do Way Build Sourdough bread?","The Art of Making Sourdough Bread at Home",0,0,0,0,0,1,1,1,1,0
+"intermittent fasting","book","","The Perfect Guide to Intermittent fasting","I Tried Intermittent Fasting for 3 Months — Results Were Surprising",0,0,0,0,0,1,1,1,1,0
+"bitcoin","article","","5 Common Bitcoin Mistakes and How to Fix Them","",0,0,0,0,0,1,1,1,1,0
+"tennis","youtube","","How Tennis Changed the Model Forever","",0,0,0,0,0,1,1,1,1,0
+"skincare","blog","","The Secret to Guiding Skincare for Way","",0,0,0,0,0,1,1,1,1,0
+"virtual reality","youtube","","The Complete Way to Build Virtual reality","",0,0,0,0,0,1,1,1,1,0
+"board games","product","","Peaceful Hearth Board Games Hear the Difference","",0,0,0,0,0,1,1,1,1,0
+"tea","product","","Zero Tolerance Tea Still Trembled","Why I Switched From Coffee to Tea (And How It Changed My Afternoons)",0,0,0,0,0,1,1,1,1,0
+"solo travel","blog","","10 Mindful Ways to Master Solo travel","Solo Travel: Escaping Yourself or Finding Yourself?",0,0,0,0,0,1,1,1,1,0
+"home office","product","","He Remembered Home Office Graceful Morning","5 Ways to Make Your Home Office Feel Like a Sanctuary",0,0,0,0,0,1,1,1,1,0
+"jazz","song","","The Jazz Song","",0,0,0,0,0,1,1,1,1,0
+"ethical fashion","blog","","Stop Guiding Ethical fashion and Start Focusing That move the needle","The Hidden Cost of Fast Fashion",0,0,0,0,0,1,1,1,1,0
+"climate change","article","","Dreaming Climate change: A Step-by-Step Science","What the Fossil Record Tells Us About Climate Change",0,0,0,0,0,1,1,1,1,0
