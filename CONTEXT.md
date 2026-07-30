@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-30 (benchmark evidence + usability plan)
+> **Last updated:** 2026-07-30 (post grammar-attempt failure, priorities reordered)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -139,7 +139,7 @@ All tables have Row Level Security enabled with per-user policies.
 **Landing page sections:** Hero → Benefits → Why TitleForge (comparison strip) → Desktop App teaser → Tool section → Pricing → FAQ → Footer
 **Floating generator:** Sticky FAB (⚡) on all pages
 **Exit intent modal:** Shows on mouseout for non-logged-in users
-**Analytics:** Plausible script tag on `index.html` and `desktop.html`. Events: `signup`, `generate`, `pro_upgrade_click`, `favorite_add`. **Account not yet created** — script fires no-ops.
+**Analytics:** PostHog on all 3 pages (`index.html`, `desktop.html`, `desktop-download.html`). Free tier (1M events/month). Project key `phc_AeXLRUsRwDu3Gi7CWe7U6fxqcRzCrnGG4NyVp6kyWvmP`. Events: `signup`, `generate`, `pro_upgrade_click`, `favorite_add`.
 
 ### 2.9 Deployment
 ```
@@ -158,7 +158,7 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 ### 3.1 Tech Stack
 - **Framework:** Tauri v2 (Rust backend + webview frontend)
 - **Frontend:** Vanilla HTML/CSS/JS — single-page app, left sidebar layout
-- **Rust crates:** `tauri 2`, `rusqlite 0.31` (bundled SQLite), `reqwest 0.12` (blocking HTTP), `serde/serde_json`, `rand 0.8`, `chrono 0.4`, `dirs 5`, `hostname 0.4`, `keyring 3`, `candle-core / candle-transformers / candle-nn 0.11` (SEO engine, EGCG), `llama-cpp-2 0.1.153` (Path A LLM), `tokenizers`, `tauri-plugin-shell 2`, `tauri-plugin-updater 2`
+- **Rust crates:** `tauri 2`, `rusqlite 0.31` (bundled SQLite), `reqwest 0.12` (blocking HTTP), `serde/serde_json`, `rand 0.8`, `chrono 0.4`, `dirs 5`, `hostname 0.4`, `keyring 3`, `llama-cpp-2 0.1.153` (Path A LLM), `candle-core / candle-transformers / candle-nn 0.11` + `tokenizers` (dead deps — kept for legacy, imported by nothing), `tauri-plugin-shell 2`, `tauri-plugin-updater 2`
 - **Database:** Local SQLite via `rusqlite` with bundled compilation (no system SQLite needed)
 - **Seed data:** 1,300 templates (30/category × 16), 889 word pool entries across 8 pools, 2,623 curated titles across 16 categories × 9 tones
 - **Build targets:** Windows (NSIS), macOS (.dmg), Linux (.deb + .AppImage)
@@ -182,14 +182,14 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 | `src-tauri/Cargo.toml` | 37 | Rust dependencies |
 | `src-tauri/capabilities/default.json` | 12 | Tauri v2 permissions |
 | `seed-data.json` | 1.0 MB | Same as web seed |
-| `site/` | legacy | Old TitleSmith marketing prototype — **still branded TitleSmith**, needs cleanup or deletion |
+| `site/` | — | **Deleted July 29.** Legacy TitleSmith prototype — all content ported to `desktop.html`/`desktop.css`. |
 
 ### 3.3 Rust Backend — IPC Commands
 
 `AppState` = `Mutex<rusqlite::Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>`
 
 **Generation:**
-- `generate_titles(keyword, categories, style, genre, quantity, state) -> Vec<TitleResult>` — offline 3-pass pipeline. Tier-capped (Core=25, Pro/Studio=100).
+- `generate_titles(keyword, categories, style, genre, quantity, state) -> Vec<TitleResult>` — offline 3-pass pipeline. Tier-capped (Core=25, Pro=100, Studio=500).
 - `generate_with_ai(keyword, categories, style, genre, quantity, provider, api_key, cross_medium, include_subtitles, include_translation, translate_lang, gender, finetune)` — BYO cloud AI. **Pro/Studio only.**
 
 **History / Favorites / Projects:**
@@ -210,9 +210,9 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 
 `engine.rs` orchestrates:
 
-1. **Pass 1 — LLM (lazy).** If model file present and loaded, generate via `local_llm.rs`. **Being rewritten under Path A (§7).**
+1. **Pass 1 — LLM (lazy).** If model file present and loaded, generate via `local_llm.rs` (Qwen2.5-1.5B, llama-cpp-2). 46% pass rate on benchmark — creative when it works, silent on 54% of keywords. See §7 for quality context.
 2. **Pass 2 — EGCG (`title_gen.rs`).** Template-based generation with pairwise-affinity coherence scoring. `strip_placeholders()` guard prevents `{placeholder}` leaks (fixed July 28).
-3. **Pass 3 — Curated fallback.** Retrieval from 2,623 curated titles, keyword-swapped into topic slot.
+3. **Pass 3 — Curated fallback.** Retrieval from 2,623 curated titles, returned as-is (no keyword-swap — titles are human-quality but don't contain user keyword).
 
 All passes: dedup + SEO score sweep post-generation.
 
@@ -288,7 +288,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 - **Config:** `tauri.conf.json` → updater plugin, public key `nMmbyRXVNON1KJT3yWIb0m/2xrfNFRPeZGrsRUEMk2I=`
 - **Endpoint:** `https://titleforge-tool.netlify.app/updates.json`
 - **Permissions:** `updater:default`, `updater:allow-check`, `updater:allow-download-and-install`
-- **Known gap:** `updates.json` has empty signatures — not yet wired to the signed release pipeline
+- **Status:** Signing key regenerated July 29; `TAURI_SIGNING_PRIVATE_KEY` set as GitHub secret; CI deploys `updates.json` with signatures on tag push. **Untested** — first `v*` tag is the trial.
 
 ---
 
@@ -300,7 +300,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 | **Activation** | Supabase auth modal | Full-screen split-panel takeover |
 | **Pages** | `index.html`, `dashboard.html` (separate) | Single page — Generator/Dashboard/Settings are sidebar panels |
 | **Auth** | Supabase (CDN + localStorage fallback) | License key (HTTP + offline cache + 30-min background verify) |
-| **Tier gate** | Guest / Free / Pro | Core / Pro / Studio — backend enforces, **UI still always shows "PRO"** (bug — see §6.2) |
+| **Tier gate** | Guest / Free / Pro | Core / Pro / Studio — backend enforces, frontend reads `currentTier` from `get_usage_stats` and renders actual tier (fixed July 29) |
 | **Data source** | Supabase via Netlify Functions | SQLite via `invoke()` |
 | **Generation** | Cloud AI only | 3-pass local (LLM → EGCG → curated) OR BYO cloud AI |
 | **Favorites/Projects** | Supabase tables | Local SQLite |
@@ -310,6 +310,12 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 ---
 
 ## 5. Change Log (Rolling)
+
+### 2026-07-30 (evening) — Grammar attempt failed, priorities reordered
+- GBNF via `LlamaSampler` failed cleanly (see prior entry, kept for the record). Root cause: `llama-cpp-2 0.1.153`'s `sampled_token_ith(i)` requires the batch position `i` to have been decoded with `logits: true`, but the prefill batch in `generate_chat_raw` only marks the last token. The sampler API can't reach the constrained candidates. Reverted, no regression.
+- **New priority order (mandatory):** Task B (LLM-judge benchmark, §7.2) MUST run before any more Task A work. The current mechanical bench cannot distinguish "48% Qwen good" from "48% Qwen garbage." Making a keep/retire decision on that metric is flying blind. This overrides §7.2's prior ordering.
+- **Preferred grammar approach going forward:** logit biasing via `ctx.candidates()` — ban the specific token sequences that spell "Here is", "Sure!", "As a", markdown fences, etc. Uses working APIs, kills the exact failure mode we see, avoids the sampler compatibility wall. Full GBNF via `LlamaSampler` is not the path.
+- **What was preserved from the attempt:** stronger system prompt (keyword as CRITICAL RULE), relaxed retry QC (strict attempt 1, accept coherent on retries), greedy argmax via `ctx.candidates()`. Left in `local_llm.rs`.
 
 ### 2026-07-30 (later) — GBNF grammar attempted, bottleneck identified
 - **GBNF grammar attempted via `LlamaSampler::grammar()`** — `sampler` feature enabled on llama-cpp-2, grammar sampler attached via `new_context_with_samplers()`. Reverted after finding the `sampled_token_ith()` API unreliable for reading grammar-constrained tokens. Error: "batch.logits[i] != true" regardless of index approach (output index 0, batch position, context position).
