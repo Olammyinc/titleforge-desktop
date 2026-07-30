@@ -311,6 +311,21 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-07-30 (end of day) — Benchmark v2 complete: LLM-judge usability scores
+- **`bench-usability.csv` produced** — 150 titles (50 keywords × 3 engines) scored 0-100 by DeepSeek V4 Flash on "would a real creator publish this without editing?" Results:
+
+| Engine | Mean | Non-Zero | Usable (≥70) |
+|--------|------|----------|---------------|
+| Qwen2.5-1.5B | 81.9 | 16/50 (32%) | **16/50 (32%)** |
+| EGCG | 47.6 | 47/50 (94%) | **10/50 (20%)** |
+| Curated retrieval | 76.3 | 35/50 (70%) | **29/50 (58%)** |
+
+- **Qwen assessment:** When Qwen fires, it's genuinely good (mean 81.9, samples like "Raising Emotions: A Guide to Parenting Through the Ages" scored 75). But 34/50 keywords produce nothing — the model fundamentally cannot respond to most inputs. 32% usable rate is above the 25% "walk away" threshold in the brief, but 68% empty-output rate makes it unreliable as a primary engine.
+- **EGCG assessment:** Produces output 94% of the time (only 3 completely empty), but only 20% is usable. The mean score of 47.6 reflects the gibberish rate — scores range from 15 ("The Hitchhiker's Parenting Woe and Kibble") to 85 ("10 Things Nobody Tells You About Bitcoin"). The results-pool fragment problem is now confirmed by data, not anecdote.
+- **Curated assessment:** Best engine at 58% usable (mean 76.3). All titles are human-written quality. The 42% gap is from keyword absence — many curated titles are simply not about the user's keyword. Keyword-swap would close this gap.
+- **Core finding:** No single engine clears 60% usable. The brief says "both below 60% = local generation at this size is a dead end." Three paths: try Qwen2.5-3B (~2 GB), keyword-swap on curated titles to push 58%→90%+, or retire local LLM and go cloud-first.
+- **Technical note:** DeepSeek V4 defaults to thinking mode. First benchmark run silently returned all zeros because `max_tokens:10` was spent on chain-of-thought with no score output. Fixed by adding `"thinking": {"type": "disabled"}` and `max_tokens:64`.
+
 ### 2026-07-30 (evening) — Grammar attempt failed, priorities reordered
 - GBNF via `LlamaSampler` failed cleanly (see prior entry, kept for the record). Root cause: `llama-cpp-2 0.1.153`'s `sampled_token_ith(i)` requires the batch position `i` to have been decoded with `logits: true`, but the prefill batch in `generate_chat_raw` only marks the last token. The sampler API can't reach the constrained candidates. Reverted, no regression.
 - **New priority order (mandatory):** Task B (LLM-judge benchmark, §7.2) MUST run before any more Task A work. The current mechanical bench cannot distinguish "48% Qwen good" from "48% Qwen garbage." Making a keep/retire decision on that metric is flying blind. This overrides §7.2's prior ordering.
@@ -439,23 +454,23 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ### 6.2 Known Issues (Priority Order)
 
-1. **No engine produces 100% reliable, usable titles.** This is the core product problem. Qwen2.5-1.5B: 46% pass rate, creative when it works but silent on 54% of keywords. EGCG: 98% pass on technical checks but ~75% of titles are semantically garbled or nonsensical. Curated retrieval: 100% quality but 0% keyword relevance. The combined pipeline masks the gaps (Qwen → EGCG → curated) but does not solve them. **Needs: reliable title generation engine. Options: GBNF grammars to force Qwen keyword inclusion, keyword-swap on curated titles, larger model, or accept cloud AI as the quality path.**
+1. **No engine produces 100% usable titles.** Benchmark v2 data (LLM-judge, 0-100 usability): Qwen 32% usable (excellent when it fires, empty on 68% of keywords), EGCG 20% usable (produces output but mostly gibberish), Curated 58% usable (human quality, no keyword relevance). Combined pipeline masks the gaps but doesn't solve them. **Decision needed: try Qwen2.5-3B, keyword-swap curated titles, or accept cloud AI as quality path.**
 
-2. **EGCG results pool entries produce gibberish.** Template fragments like "That move the needle", "That make a difference", "That will transform your life" are used as standalone slot fills, producing titles like "From Dawn to That move the needle." `strip_placeholders` only handles `{word}` brackets, not multi-word filler garbage.
+2. **EGCG results pool entries produce gibberish.** Confirmed by data: scores range 15 ("The Hitchhiker's Parenting Woe and Kibble") to 85 ("10 Things Nobody Tells You About Bitcoin") depending on whether a template lands on a coherent combination by chance. Template fragments like "That move the needle" are used as standalone slot fills.
 
-3. **Qwen model not bundled in production builds.** `tauri.conf.json` resources bundle SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users would fall back to SmolLM2 (worse quality). Decision: bundle in installer or download on first launch.
+3. **Qwen model not bundled in production builds.** `tauri.conf.json` resources bundle SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users fall back to SmolLM2 (worse quality than EGCG).
 
-4. **GBNF grammars blocked on llama-cpp-2 API.** Attempted via `LlamaSampler::grammar()` + `new_context_with_samplers()` — grammar sampler attaches correctly but `sampled_token_ith()` API is unreliable for reading constrained tokens (returns "batch.logits[i] != true"). Options: use `json_schema_to_grammar()` with a different grammar-passing mechanism, call llama.cpp C FFI directly, or try the `llama-gguf` crate which has a simpler grammar API.
+4. **GBNF grammars blocked on llama-cpp-2 API.** `sampled_token_ith()` doesn't work with backend samplers. Logit biasing via `ctx.candidates()` may work — not yet attempted.
 
 5. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
 
 6. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test.
 
-7. **CORS wildcard on POST endpoints.** `licenses.js` uses `Access-Control-Allow-Origin: *`. Low risk because `generate_from_purchase` is secret-protected, but should be restricted.
+7. **CORS wildcard on POST endpoints.** `licenses.js` uses `Access-Control-Allow-Origin: *`. Low risk. Should be restricted.
 
-8. **License key validation endpoint has no rate limiting.** Public endpoint, no per-IP throttle. Could be used for enumeration.
+8. **License key validation endpoint has no rate limiting.** Public endpoint, no per-IP throttle.
 
-9. **Web Pro → free Core desktop license** not implemented. Strategic decision made, no code.
+9. **Web Pro → free Core desktop license** not implemented.
 
 10. **Upgrade pricing (pay the difference) between desktop tiers** not implemented.
 
@@ -467,9 +482,9 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 | # | Decision | Status |
 |---|---|---|
-| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **Implemented** — pending benchmark to become primary engine (§7.2 remaining work) |
-| 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned |
-| 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | Pending benchmark |
+| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **Benchmarked** — 32% usable, 68% empty-output. Larger model or retire decision pending (§7.2). |
+| 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned — only if Qwen path continues |
+| 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | **Reversed** — EGCG (20% usable) is worse than Qwen (32%) and Curated (58%). Neither is primary-engine-ready. |
 | 4 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
 | 5 | One-time purchase + optional update renewal | Planned, not implemented |
 | 6 | Unify brand under TitleForge | **Done** |
@@ -504,20 +519,17 @@ SmolLM2 model files (135M and 360M GGUF) are kept in `models/` as fallbacks if Q
 
 **What remains for Path A (ordered by prerequisite):**
 
-The 2026-07-30 benchmark showed Qwen at 48% "Good" vs EGCG at 98%. That benchmark measures format+keyword only, not usability. Before shipping any Qwen-vs-EGCG decision, do these in order:
+The 2026-07-30 LLM-judge benchmark produced real usability data. Key findings:
 
-**Task A — GBNF grammar constraints (1-2 days).** `llama-cpp-2` supports GBNF via sampler params. Define a grammar that forces `title ::= word (" " word){2,14}` with allowed punctuation. Kills all "empty output" and "instruction echo" failures — Qwen physically cannot emit "Here is a title:" because those tokens aren't in the grammar. Expected jump: Qwen 48% → ~90%.
+- **Qwen:** 32% usable (16/50). When it fires, mean quality is 81.9 — excellent. But 34/50 keywords produce empty output. The 1.5B model cannot respond to most inputs.
+- **EGCG:** 20% usable (10/50). Produces output 94% of the time, but mostly gibberish (scores range 15-85, mean 47.6). Results-pool fragments confirmed as the #1 quality killer.
+- **Curated:** 58% usable (29/50), mean 76.3. Best engine. Quality gap = keyword absence (curated titles are human-written but not about user's keyword).
 
-**Task B — Benchmark v2 with LLM-judge (half day).** Current bench is unfit — it calls "The Peak Truth About Laptop" a good title. Rewrite `tests/bench_path_a.rs` to add a per-title quality score via a cloud AI (DeepSeek/GPT-4o) called with a strict rubric: rate 0-100 on grammar, on-topic, category-fit, clickable, non-template. Cost ~$0.10 per benchmark run. Now Qwen and EGCG can be compared on real usability, not heuristic pass rates. **Usability threshold: ≥70 on the 0-100 scale = usable. <70 = rubbish, doesn't count.**
+**Decision framework (per AI-WORK-BRIEF):** Both Qwen (32%) and EGCG (20%) are below 60% usable. Per the brief: "Local generation at this size is a dead end." Three paths to discuss/converge on:
 
-**Task C — Re-run benchmark, decide.** Three outcomes:
-1. **Qwen-with-GBNF beats EGCG on mean quality:** demote EGCG to Pass 3, promote Qwen to Pass 1. Plan Path B fine-tune to close the last gap.
-2. **EGCG beats Qwen on mean quality:** remove Qwen entirely, remove `llama-cpp-2` + model files. Ship simpler stack. Positioning: "curated + template variation, no local LLM."
-3. **Both mediocre, ~equal:** try Qwen2.5-3B (larger model, ~2 GB install), then re-decide. If still tied, prefer EGCG (simpler, faster, no download).
-
-Do not skip Task B. Making the decision on the current benchmark is making it blind.
-
-**Task D — Once Qwen is confirmed keep-worthy: bundle/download model + demote EGCG.** Otherwise skip.
+1. **Try Qwen2.5-3B** (~2 GB Q4). Expected +15-20pp usable vs 1.5B. Plus keyword-swap on curated titles to close the 42% gap there. Combined target: 80%+ usable pipeline.
+2. **Retire local LLM entirely.** Remove `llama-cpp-2`, delete models/, update `desktop.html`. Position "offline = curated retrieval only, cloud AI when you want quality." Simpler, faster, no download. Curated at 58% is the floor — keyword-swap could push it higher.
+3. **Accept cloud-first with offline fallback.** BYO cloud AI is built and works. Curated retrieval as instant offline fallback. EGCG kept for volume (keyword-reliable even if low-quality). No local LLM complexity.
 
 **Usability bar (canonical for this project):** A title is usable if a human creator would publish it without editing. Grammatically clean, contains the keyword (or a clear stem of it), fits the category's conventions, provokes curiosity or names something concrete. Format-conformant garbage does not count. Users are paying for titles they can ship, not titles that pass a heuristic.
 

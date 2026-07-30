@@ -1,0 +1,151 @@
+keyword,category,engine,title,mechanical_pass,judge_score,usable,cached
+"shirt","product","qwen","Versatile Shirt: Perfect for Any Occasion",0,0,0,0
+"shirt","product","egcg","Can You Shirt Brew Ha Ha",1,30,0,0
+"shirt","product","curated","",0,0,0,0
+"laptop","product","qwen","",0,0,0,0
+"laptop","product","egcg","Bright Story: How Map Optimize My Laptop",1,15,0,0
+"laptop","product","curated","",0,0,0,0
+"productivity","book","qwen","Mastering Productivity: From Jotting to Zen",0,0,0,0
+"productivity","book","egcg","The Simple Productivity Strategy That Boosts Your Way by 12%",1,65,0,0
+"productivity","book","curated","The Silent Productivity Killer Nobody Talks About",1,75,1,0
+"love","song","qwen","Code of Endless Embrace",0,0,0,0
+"love","song","egcg","The Smooth Guide to Accelerateing Love",1,45,0,0
+"love","song","curated","Algorithm of Love",1,75,1,0
+"startup","book","qwen","Startup's Guide to Uncovering Hidden Profits",0,0,0,0
+"startup","book","egcg","Burn the World Startup Never Said",1,45,0,0
+"startup","book","curated","5 Reasons Why Your Startup Will Fail (And One Way to Avoid It)",1,85,1,0
+"crypto","article","qwen","Unleashing Crypto's Power: Exploring the Future of Finance",0,0,0,0
+"crypto","article","egcg","How to Listen Crypto Quiet Algorithm",1,15,0,0
+"crypto","article","curated","Blockchain Beyond Crypto: Practical Applications for Business",0,0,0,0
+"parenting","book","qwen","Raising Emotions: A Guide to Parenting Through the Ages",1,75,1,0
+"parenting","book","egcg","The Hitchhiker's Parenting Woe and Kibble",1,15,0,0
+"parenting","book","curated","",0,0,0,0
+"fitness","youtube","qwen","",0,0,0,0
+"fitness","youtube","egcg","The Surprising Reason Fitness Makes You Forgotten",1,45,0,0
+"fitness","youtube","curated","Is the Apple Watch a Fitness Game Changer?",1,75,1,0
+"travel","blog","qwen","",0,0,0,0
+"travel","blog","egcg","9 Common Travel Mistakes and How to Fix Them",1,85,1,0
+"travel","blog","curated","I Quit My Six-Figure Job to Travel the World and Regretted Everything",1,85,1,0
+"cooking","book","qwen","Flavors of the Kitchen: A Culinary Journey",0,0,0,0
+"cooking","book","egcg","Why Cooking Matters More Than Ever for Ocean",1,45,0,0
+"cooking","book","curated","",0,0,0,0
+"meditation","podcast","qwen","",0,0,0,0
+"meditation","podcast","egcg","Why Meditation Matters More Than Ever in 30 days",1,45,0,0
+"meditation","podcast","curated","6 Ways to Reduce Anxiety Without Meditation",1,45,0,0
+"investing","article","qwen","",0,0,0,0
+"investing","article","egcg","Why Investing Matters More Than Ever",1,85,1,0
+"investing","article","curated","The ROI of investing in employee wellness",1,85,1,0
+"photography","youtube","qwen","",0,0,0,0
+"photography","youtube","egcg","How to Master Photography: The Safe Art",0,0,0,0
+"photography","youtube","curated","Photography Tips for Beginners: Shooting in Manual Mode",1,85,1,0
+"music","song","qwen","",0,0,0,0
+"music","song","egcg","Neon Pulse Music Pawn Shop",1,45,0,0
+"music","song","curated","What Your Taste in Music Says About You",1,65,0,0
+"AI","article","qwen","",0,0,0,0
+"AI","article","egcg","",0,0,0,0
+"AI","article","curated","AI Will Never Be Creative: The Human Brain's Irreplaceable Edge",1,75,1,0
+"remote work","blog","qwen","Unlocking the Secrets of Remote Success: How to Thrive in the New Work Paradigm",1,85,1,0
+"remote work","blog","egcg","The Surprising Reason Habit Should Not Build Remote work",1,15,0,0
+"remote work","blog","curated","Opinion: Remote Work Is Not for Everyone — And That’s Okay",1,85,1,0
+"mental health","podcast","qwen","Unlocking Mental Health: Stories from the Frontline",1,85,1,0
+"mental health","podcast","egcg","Why Does Mental health Make You Feel Real?",1,65,0,0
+"mental health","podcast","curated","What Happens When Prisons Become Mental Health Facilities",1,75,1,0
+"gardening","book","qwen","Roots to Bloom: A Gardener's Journey",0,0,0,0
+"gardening","book","egcg","The Kind and Perfect Sides of Gardening",1,45,0,0
+"gardening","book","curated","",0,0,0,0
+"coffee","product","qwen","Revitalize Your Day with the Perfect Cup of Coffee",1,85,1,0
+"coffee","product","egcg","The Edge Coffee Hushed Tongue",1,15,0,0
+"coffee","product","curated","Why Monday Morning Coffee Should Be Classified as a Scheduled Substance",1,85,1,0
+"minimalism","book","qwen","Minimalism: Shedding the Non-Essential for a Happier, More Fulfilling Life",0,0,0,0
+"minimalism","book","egcg","This Is How You Shape Minimalism: The Definitive Guide",0,0,0,0
+"minimalism","book","curated","Why Minimalism Isn't About Owning Less But Wanting Less",1,85,1,0
+"creativity","book","qwen","",0,0,0,0
+"creativity","book","egcg","The Alchemist Creativity We Never Said",1,45,0,0
+"creativity","book","curated","5 Morning Habits That Actually Boosted My Creativity",1,85,1,0
+"sleep","podcast","qwen","Unlocking Dreams: A Journey to Perfect Sleep",1,75,1,0
+"sleep","podcast","egcg","Why Sleep Matters More Than Ever",1,85,1,0
+"sleep","podcast","curated","Overthinking Sleep",1,65,0,0
+"negotiation","book","qwen","",0,0,0,0
+"negotiation","book","egcg","The Summer Negotiation Fast and Slow",1,45,0,0
+"negotiation","book","curated","The Negotiation Playbook: Getting What You Want Without Selling Out",1,85,1,0
+"writing","book","qwen","",0,0,0,0
+"writing","book","egcg","Why Writing Matters More Than Ever",1,85,1,0
+"writing","book","curated","The Unexpected Benefit of Writing by Hand",1,85,1,0
+"marketing","article","qwen","",0,0,0,0
+"marketing","article","egcg","Rest is Not Marketing Peeling an Apple",1,15,0,0
+"marketing","article","curated","Stop Romanticizing Hustle Culture: It's Just Exhaustion with Better Marketing",1,85,1,0
+"data science","article","qwen","",0,0,0,0
+"data science","article","egcg","What Data science Can Teach Us About Dawn",1,15,0,0
+"data science","article","curated","The Science of Loneliness: What Isolation Does to the Brain",1,30,0,0
+"blockchain","article","qwen","",0,0,0,0
+"blockchain","article","egcg","Why Blockchain Matters More Than Ever",1,85,1,0
+"blockchain","article","curated","Blockchain Beyond Crypto: Practical Applications for Business",1,85,1,0
+"electric cars","youtube","qwen","",0,0,0,0
+"electric cars","youtube","egcg","10 Common Electric cars Mistakes and How to Fix Them",1,75,1,0
+"electric cars","youtube","curated","The Truth About Electric Cars: Pros and Cons",1,75,1,0
+"space exploration","article","qwen","Unveiling the Mysteries of the Deep Space: Exploring the Unknown",0,0,0,0
+"space exploration","article","egcg","12 Ways Space exploration Will Transform Your Guide",1,45,0,0
+"space exploration","article","curated","What Space Exploration Teaches Us About Life on Earth",1,85,1,0
+"wine","blog","qwen","Vintage Flavors: A Journey Through Time with Wine",1,85,1,0
+"wine","blog","egcg","How to Learn Wine Simple Practice",1,45,0,0
+"wine","blog","curated","Dandelion Wine",1,50,0,0
+"dancing","youtube","qwen","Step into the rhythm: Dancing through life's moments",1,75,1,0
+"dancing","youtube","egcg","The Perfect Science for Training Dancing",1,45,0,0
+"dancing","youtube","curated","Dancing Alone",1,75,1,0
+"podcasting","blog","qwen","",0,0,0,0
+"podcasting","blog","egcg","I Build Podcasting for Tonight and Here's What I Learned",1,15,0,0
+"podcasting","blog","curated","",0,0,0,0
+"freelancing","blog","qwen","Unlocking Freelancing Success: Tips for the Modern Freelancer",1,85,1,0
+"freelancing","blog","egcg","The Practical Way to Guide Freelancing",1,45,0,0
+"freelancing","blog","curated","",0,0,0,0
+"vegan","blog","qwen","Beyond Meat: Exploring the Future of Vegan Cuisine",1,85,1,0
+"vegan","blog","egcg","5 Reasons Why Vegan It's Not Technical",1,30,0,0
+"vegan","blog","curated","The Best Vegan Recipes for Busy Weeknights",1,85,1,0
+"yoga","youtube","qwen","Yoga Flow: Unlocking Inner Peace Through Asanas",1,85,1,0
+"yoga","youtube","egcg","5 Common Yoga Mistakes and How to Fix Them",1,85,1,0
+"yoga","youtube","curated","Yoga Pants and Pizza",1,30,0,0
+"gaming","youtube","qwen","",0,0,0,0
+"gaming","youtube","egcg","Why Gaming Matters More Than Ever",1,85,1,0
+"gaming","youtube","curated","Budget Gaming PC",1,75,1,0
+"digital nomad","blog","qwen","Nomad Nation: Thriving in the Digital Age",1,85,1,0
+"digital nomad","blog","egcg","Do This to Master Digital nomad in 30 days",1,65,0,0
+"digital nomad","blog","curated","The Rise of 'Digital Nomad' Communities in Southeast Asia",0,0,0,0
+"sourdough bread","blog","qwen","From Yeast to Crust: A Journey into the Art of Sourdough Bread",1,85,1,0
+"sourdough bread","blog","egcg","The Creative to Building Sourdough bread Your",1,15,0,0
+"sourdough bread","blog","curated","The Art of Making Sourdough Bread at Home",1,85,1,0
+"intermittent fasting","book","qwen","",0,0,0,0
+"intermittent fasting","book","egcg","How to Perfect Intermittent fasting: The Spirited Dawn",1,45,0,0
+"intermittent fasting","book","curated","I Tried Intermittent Fasting for 3 Months — Results Were Surprising",1,85,1,0
+"bitcoin","article","qwen","",0,0,0,0
+"bitcoin","article","egcg","10 Things Nobody Tells You About Bitcoin",1,85,1,0
+"bitcoin","article","curated","",0,0,0,0
+"tennis","youtube","qwen","",0,0,0,0
+"tennis","youtube","egcg","How to Train Tennis 100 2025",1,30,0,0
+"tennis","youtube","curated","",0,0,0,0
+"skincare","blog","qwen","Revitalize Your Skin: 7 Steps to Radiant, Youthful Glow",0,0,0,0
+"skincare","blog","egcg","The Mindful Journey of Mastering Skincare",1,75,1,0
+"skincare","blog","curated","",0,0,0,0
+"virtual reality","youtube","qwen","Unleash the Future: Exploring Virtual Reality",1,75,1,0
+"virtual reality","youtube","egcg","The Future of Virtual reality: What's Coming in This year",1,65,0,0
+"virtual reality","youtube","curated","",0,0,0,0
+"board games","product","qwen","",0,0,0,0
+"board games","product","egcg","Does This Board Games Pure Glide",1,45,0,0
+"board games","product","curated","",0,0,0,0
+"tea","product","qwen","Infuse Your Day with Tea: A Journey to Better Health",0,0,0,0
+"tea","product","egcg","Loving Kindness Tea Eat My Dust",1,45,0,0
+"tea","product","curated","Why I Switched From Coffee to Tea (And How It Changed My Afternoons)",1,85,1,0
+"solo travel","blog","qwen","",0,0,0,0
+"solo travel","blog","egcg","The Productive Guide for Building Solo travel",1,30,0,0
+"solo travel","blog","curated","Solo Travel: Escaping Yourself or Finding Yourself?",1,85,1,0
+"home office","product","qwen","",0,0,0,0
+"home office","product","egcg","The Maximum Truth About Home office",1,45,0,0
+"home office","product","curated","5 Ways to Make Your Home Office Feel Like a Sanctuary",1,85,1,0
+"jazz","song","qwen","Jazz Beats in the Heartbeat",1,75,1,0
+"jazz","song","egcg","Why Jazz Is the New Heart",1,45,0,0
+"jazz","song","curated","",0,0,0,0
+"ethical fashion","blog","qwen","Ethical Threads: Unveiling the True Cost of Fashion",1,85,1,0
+"ethical fashion","blog","egcg","The Productive Guide to Ethical fashion",1,65,0,0
+"ethical fashion","blog","curated","The Hidden Cost of Fast Fashion",1,85,1,0
+"climate change","article","qwen","Climate Change: The Silent Surge of Our Time",1,85,1,0
+"climate change","article","egcg","Beyond Climate change: The Next of",1,15,0,0
+"climate change","article","curated","What the Fossil Record Tells Us About Climate Change",1,85,1,0
