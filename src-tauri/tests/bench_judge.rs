@@ -201,6 +201,19 @@ The keyword is \"{keyword}\". Every title must be about this keyword — not abo
 
 Communication style: normal
 
+FEW-SHOT EXAMPLES — publication-ready titles from the TitleForge corpus. Study their structure and quality — your titles must match this caliber (do not copy these, use them as a quality bar):
+
+Book:    \"The Name of the Wind\" → poetic metaphor creates mystery in 5 words
+Article: \"The Myth of Meritocracy: Why Talent Alone Will Never Beat Inheritance\" → bold thesis + colon + concrete payoff
+YouTube: \"I Spent 48 Hours in a Silent Retreat\" → personal experiment + number + curiosity gap
+Podcast: \"You Don't Actually Care About Climate Change — You Just Like the Aesthetic\" → confronts the listener with an uncomfortable truth
+Newsletter: \"What's the one metric most teams overlook?\" → question + FOMO + insider knowledge tease
+Product: \"Vivid\" → single word, instantly brand-able, emotional
+Song:    \"Cigarette Smoke and Honey\" → sensory contrast, vivid, memorable
+Speech:  \"How to Raise a Generation of Critical Thinkers\" → aspirational, how-to format without being generic
+
+Notice: every example creates an open question or sparks curiosity. They use concrete, specific words. None are clichés. None are generic.
+
 QUALITY RULES:
 - EMOTIONAL PULL: Make the reader feel something. Curiosity, surprise, aspiration, or urgency.
 - SPECIFICITY: Use concrete details — numbers, names, vivid specifics.
