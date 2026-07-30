@@ -56,8 +56,16 @@ fn init_db() -> Connection {
 }
 
 fn keyword_present(title: &str, kw: &str) -> bool {
-    let tl = format!(" {} ", title.to_lowercase());
-    let kl = kw.to_lowercase();
+    // Strip punctuation so "Shirt:" / "Startup's" / "coffee." match their keywords.
+    // Previously failed because " shirt " wasn't found in " shirt: " (colon glued to word).
+    let clean = |s: &str| -> String {
+        s.to_lowercase()
+            .chars()
+            .map(|c| if c.is_alphanumeric() || c.is_whitespace() { c } else { ' ' })
+            .collect()
+    };
+    let tl = format!(" {} ", clean(title));
+    let kl = clean(kw).trim().to_string();
     tl.contains(&format!(" {} ", &kl))
         || kl.split_whitespace().any(|w| tl.contains(&format!(" {} ", w)))
 }
