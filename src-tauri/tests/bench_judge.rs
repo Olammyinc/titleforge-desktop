@@ -209,26 +209,13 @@ The keyword is \"{keyword}\". Every title must be about this keyword — not abo
 
 Communication style: normal
 
-FEW-SHOT EXAMPLES — publication-ready titles from the TitleForge corpus. Study their structure and quality — your titles must match this caliber (do not copy these, use them as a quality bar):
-
-Book:    \"The Name of the Wind\" → poetic metaphor creates mystery in 5 words
-Article: \"The Myth of Meritocracy: Why Talent Alone Will Never Beat Inheritance\" → bold thesis + colon + concrete payoff
-YouTube: \"I Spent 48 Hours in a Silent Retreat\" → personal experiment + number + curiosity gap
-Podcast: \"You Don't Actually Care About Climate Change — You Just Like the Aesthetic\" → confronts the listener with an uncomfortable truth
-Newsletter: \"What's the one metric most teams overlook?\" → question + FOMO + insider knowledge tease
-Product: \"Vivid\" → single word, instantly brand-able, emotional
-Song:    \"Cigarette Smoke and Honey\" → sensory contrast, vivid, memorable
-Speech:  \"How to Raise a Generation of Critical Thinkers\" → aspirational, how-to format without being generic
-
-Notice: every example creates an open question or sparks curiosity. They use concrete, specific words. None are clichés. None are generic.
-
-QUALITY RULES:
-- EMOTIONAL PULL: Make the reader feel something. Curiosity, surprise, aspiration, or urgency.
-- SPECIFICITY: Use concrete details — numbers, names, vivid specifics.
-- CURIOSITY GAP: The reader should NEED to click to satisfy an open question.
+QUALITY RULES (these are what separate a great title from a forgettable one):
+- EMOTIONAL PULL: Make the reader feel something. Curiosity, surprise, aspiration, or urgency. A title that evokes nothing is wasted.
+- SPECIFICITY: Use concrete details — numbers, names, vivid specifics. \"7 Habits\" beats \"Good Habits.\" \"The $1.2 Million Typo\" beats \"An Expensive Mistake.\" Always choose the specific over the abstract.
+- CURIOSITY GAP: The reader should NEED to click to satisfy an open question. If the reader can guess the full story from the title, rewrite it.
 - NO FILLER: Every title must be genuinely strong.
-- VARIETY: Mix structures — question, declaration, numbered list, story hook, counterintuitive.
-- NO CLICHÉS: Never use 'unlock the secrets', 'ultimate guide', 'game changer', 'revolutionize', etc.
+- VARIETY: Mix structures — a question, a declaration, a numbered list, a story hook, a counterintuitive statement.
+- NO CLICHÉS: Never use: \"unlock the secrets,\" \"ultimate guide,\" \"everything you need to know,\" \"game changer,\" \"mind-blowing,\" \"life-changing,\" \"revolutionize,\" \"master the art,\" \"unleash your potential,\" \"X is the new Y.\"
 
 Respond with exactly: {{\"titles\":[{{\"title\":\"Your Title Here\",\"score\":85,\"breakdown\":{{\"curiosityGap\":\"High\",\"emotionalTrigger\":\"aspiration\",\"powerWords\":[\"word1\",\"word2\"],\"lengthAnalysis\":\"Optimal (8 words)\",\"specificity\":\"Concrete\"}}}}]}}",
         cat_label = cat_label, keyword = keyword
@@ -282,10 +269,34 @@ fn benchmark_judge() {
             eprintln!("API key env var not set, trying file: {:?}", key_path);
             if key_path.exists() {
                 eprintln!("  Found .bench-key file, reading key...");
-                std::fs::read_to_string(&key_path).ok().map(|s| s.trim().to_string())
-            } else { 
+                // PowerShell's `echo key > file` writes UTF-16LE with a BOM on Windows,
+                // which is NOT valid UTF-8 — read_to_string silently returns Err and the
+                // key looks "unset". Decode defensively: UTF-16 LE/BE, UTF-8 BOM, or plain.
+                let key = std::fs::read(&key_path).ok().and_then(|bytes| {
+                    let s = match bytes.as_slice() {
+                        [0xFF, 0xFE, rest @ ..] => {
+                            let u16s: Vec<u16> = rest.chunks_exact(2)
+                                .map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+                            String::from_utf16(&u16s).ok()
+                        }
+                        [0xFE, 0xFF, rest @ ..] => {
+                            let u16s: Vec<u16> = rest.chunks_exact(2)
+                                .map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+                            String::from_utf16(&u16s).ok()
+                        }
+                        [0xEF, 0xBB, 0xBF, rest @ ..] => String::from_utf8(rest.to_vec()).ok(),
+                        other => String::from_utf8(other.to_vec()).ok(),
+                    }?;
+                    let t = s.trim().to_string();
+                    if t.is_empty() { None } else { Some(t) }
+                });
+                if key.is_none() {
+                    eprintln!("  .bench-key found but could not be decoded or was empty.");
+                }
+                key
+            } else {
                 eprintln!("  .bench-key file NOT found at that path");
-                None 
+                None
             }
         })
         .unwrap_or_else(|| {
@@ -296,7 +307,9 @@ fn benchmark_judge() {
             eprintln!("║    $env:BENCH_JUDGE_API_KEY='sk-...'; cargo test ...        ║");
             eprintln!("║                                                             ║");
             eprintln!("║  Option B: Put your key in ../../.bench-key (no env needed):║");
-            eprintln!("║    echo sk-... > ../../.bench-key                           ║");
+            eprintln!("║    Set-Content -Path ../../.bench-key -Value 'sk-...' `     ║");
+            eprintln!("║      -Encoding utf8 -NoNewline                              ║");
+            eprintln!("║    (plain `echo >` writes UTF-16 on Windows)                 ║");
             eprintln!("║                                                             ║");
             eprintln!("║  Then run:                                                  ║");
             eprintln!("║    cargo test --release benchmark_judge -- --nocapture      ║");
@@ -346,7 +359,7 @@ fn benchmark_judge() {
     let mut egcg_s = EngineStats::default();
     let mut cur_s = EngineStats::default();
 
-    let mut csv = String::from("keyword,category,engine,title,mechanical_pass,judge_score,usable,cached\n");
+    let mut csv = String::from("keyword,category,engine,title,mechanical_pass,kw_literal,judge_score,usable,cached\n");
 
     let total = BENCH_KEYWORDS.len();
     for (i, (keyword, category)) in BENCH_KEYWORDS.iter().enumerate() {
@@ -384,7 +397,15 @@ fn benchmark_judge() {
                 _ => &mut cur_s,
             };
 
-            let mech_pass = is_readable(title) && keyword_present(title, keyword);
+            // Gate on READABILITY ONLY. Keyword relevance is a semantic judgement and the
+            // judge rubric already penalises off-topic titles ("Deduct heavily for: not
+            // on-topic for the keyword"). A string match cannot tell that "VR" means
+            // "virtual reality", that "100 Workouts" is a fitness title, or that
+            // "Meditate" is the verb form of "meditation" — and in the 2026-07-31 run it
+            // wrongly rejected 17/50 excellent cloud titles, understating the ceiling by
+            // roughly 25 points. Literal keyword presence is now advisory only.
+            let mech_pass = is_readable(title);
+            let kw_literal = keyword_present(title, keyword);
             let (judge_score, cached) = if mech_pass && !title.is_empty() {
                 let cache_key = sha256_short(&format!("{}|{}|{}", title, keyword, category));
                 match cache.get(&cache_key).and_then(|v| v.as_u64()).filter(|&s| s > 0) {
@@ -416,10 +437,10 @@ fn benchmark_judge() {
             stats.sum_sq += (judge_score as u64).pow(2);
             if usable { stats.usable += 1; }
 
-            csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",{},{},{},{}\n",
+            csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",{},{},{},{},{}\n",
                 keyword, category, engine_name,
                 title.replace('"', "'"),
-                mech_pass as u8, judge_score, usable as u8,
+                mech_pass as u8, kw_literal as u8, judge_score, usable as u8,
                 cached as u8));
 
             // Small delay between API calls to avoid rate limits
