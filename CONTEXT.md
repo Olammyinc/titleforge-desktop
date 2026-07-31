@@ -363,6 +363,30 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 Core is acceptable. Pro/Studio are still product problems — surface to user before optimising. Context reuse across a batch (allocate one KV cache, reuse for all titles in a category) is the obvious first win, but is NOT needed for Core.
 
+### 2026-07-31 (late night, later) — Task 1 result: quality rules REVERTED. Qwen 1.5B can't follow multi-constraint prompts.
+
+**Task 1 (port web QUALITY RULES to desktop prompt) was attempted and REVERTED.** The brief's success gate: "Qwen mean rises above 83.7 with usable at or near 100%. Cliché count drops materially. If the mean falls, revert."
+
+**Two variants tested, one variable at a time (both at T=0.8, BENCH_ENGINE=qwen):**
+
+| Variant | Usable | Mean | Cliché titles |
+|---|---|---|---|
+| **Baseline (one-sentence prompt)** | **96%** (48/50) | **81.0** | ~25/50 |
+| Full 6-rule block (verbatim from generate.js) | 80% (40/50) | 75.2 | 21/50 |
+| Condensed 3-line rules | 90% (45/50) | 77.6 | 27/50 |
+
+**Both rule variants measured WORSE.** Mean fell 75.2 / 77.6 vs baseline 81.0. Cliché count did NOT drop — the model used "Unlock/Unleash/Secrets" 27 times despite an explicit ban. 5 titles scored <70 including "Finding Your Noddy: A Journey Through Parenting's Mysteries" (25) and "Negotiating With Shadows" (42) — the rules pushed the model into over-creativity that drifted off-topic.
+
+**Root cause: model capacity, not prompt quality.** Qwen 1.5B cannot hold a multi-constraint instruction ("MUST contain keyword" + specificity + curiosity gap + no-clichés + variety) simultaneously. Each added rule dilutes the others. The SAME 6-rule block works on DeepSeek V4 Flash (98-100% usable, mean ~90) — the web app benefits because its model is ~100x larger. Prompt engineering has hit the 1.5B ceiling.
+
+**Also tested and reverted (same session):** softening "MUST contain keyword" → "clearly about X" + relaxing the attempt-1 QC filter. Made it worse (off-topic drift: investing → "High-Retention Fundraising" scored 12). The strict keyword instruction + strict QC filter stay.
+
+**Decision: keep the original one-sentence prompt.** It scores 81.0 mean / 96% usable — the best Qwen 1.5B can do with this prompt engineering. The path to web-level quality is a bigger model (Qwen2.5-3B, ~2 GB), NOT more prompt rules. **Template diversity within a batch (7/25 "From X to Y") remains unsolved for offline** — but the fix is a model upgrade, not a prompt tweak.
+
+**Files changed then reverted:** `local_llm.rs` (system prompt, keyword QC), `diag_prompt_len.rs` (prompt mirror). `bench-usability-task1-regression.csv` kept as evidence (2 runs: full-rules 75.2, condensed 77.6).
+
+**Task 1 status: CLOSED as not-shippable.** Recorded in §6.2 #1 (replaces "port web quality rules" — the plan was wrong for this model size). The n_ctx=1024 bump was NOT reverted — it's harmless and future-proof (prompts were 351-405 tokens at the old 512 window, dangerously close with 60 new tokens; the bump to 1024 costs ~nothing for CPU inference).
+
 ### 2026-07-31 (night, later) — Qwen's sampler is deterministic. Batch generation cannot work.
 
 **Found while assessing readiness to bundle the model. This blocks bundling.**
@@ -719,7 +743,7 @@ Full 4-engine comparison with all fixes applied:
 
 0. **DESKTOP: Qwen sampler is deterministic — batch generation produces one unique title.** Pure argmax in `generate_chat_raw`; identical output across runs, users, and calls. The 100% usable figure holds only at k=1. **✅ FIXED 2026-07-31 (late night): temperature + top-k sampling (T=0.8, top-k 40, inverse-CDF via `rand::thread_rng()`). Same keyword now yields different titles every call (5/5 unique verified). Qwen usable 96% at T=0.8, mean 81.0. See §5 change log for the full temperature sweep.**
 
-0b. **DESKTOP: batch generation measured — uniqueness FIXED, timing & diversity still open.** Real 25-title batch (2026-07-31, Task 0b): **25/25 unique** (was 1), 169.6s (6.79s/title), 100% LLM. Core tier is fine. **Pro (100) ≈ 22 min and Studio (500) ≈ 110 min are still product problems** — needs parallelism or context reuse (reuse one KV cache across a batch), or lower per-tier caps. **Template diversity within a batch is weak** (7/25 share "From X to Y") — desktop prompt lacks web's "no shared opening 3 words / no shared template" rule (Task 1 target).
+0b. **DESKTOP: batch generation measured — uniqueness FIXED, timing & diversity still open.** Real 25-title batch (2026-07-31, Task 0b): **25/25 unique** (was 1), 169.6s (6.79s/title), 100% LLM. Core tier is fine. **Pro (100) ≈ 22 min and Studio (500) ≈ 110 min are still product problems** — needs parallelism or context reuse (reuse one KV cache across a batch), or lower per-tier caps. **Template diversity within a batch is weak** (7/25 share "From X to Y") — **Task 1 (port web quality rules) TESTED AND REVERTED: rules made it worse (77.6-75.2 mean vs 81.0 baseline). Qwen 1.5B can't hold multi-constraint prompts. Fix requires a bigger model, not a prompt tweak.**
 
 1. **WEB: sampling penalties suppress the keyword.** `frequency_penalty: 0.6` + `presence_penalty: 0.4` in [generate.js:293-294](titleforge/netlify/functions/generate.js:293) penalise tokens the more often they appear. Every title in a batch must contain the same keyword, so the keyword is progressively suppressed — worse the larger the batch. Contradicts the prompt's own instruction. **✅ FIXED July 31: freq reduced to 0.15, presence removed entirely. Anthropic temperature unified to 0.85.**
 

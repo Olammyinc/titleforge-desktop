@@ -1,0 +1,51 @@
+keyword,category,engine,title,mechanical_pass,kw_literal,judge_score,usable,cached
+"shirt","product","qwen","Embark on Fashion's Journey: The Perfect Shirt for Every Style",1,1,45,0,0
+"laptop","product","qwen","Unleash Your Inspiring Gaming Experience on the Go",1,0,35,0,0
+"productivity","book","qwen","Zen Habits of High-Productivity Heroes",1,1,85,1,0
+"love","song","qwen","Echoes of Endless Night",1,0,42,0,0
+"startup","book","qwen","Startup's Secret Sauce: Unleashing Innovation in Your Next Venture",1,1,92,1,0
+"crypto","article","qwen","Unlock Crypto's Full Potential with 7 Essential Tools",1,1,92,1,0
+"parenting","book","qwen","Curious Minds: Unleashing the Adventure of Parenting",1,1,78,1,0
+"fitness","youtube","qwen","Unlock Your Fitness Future: 7 Secrets to Unlocking Peak Performance Today",1,1,42,0,0
+"travel","blog","qwen","Uncharted Journeys: Exploring the World from Your Couch",1,0,78,1,0
+"cooking","book","qwen","Salt and Pepper: The Craft of Culinary Mastery",1,0,92,1,0
+"meditation","podcast","qwen","Unlocking Zen: Navigate Your Mind With Meditation",1,1,87,1,0
+"investing","article","qwen","Unlock the Secrets of High-Retention Fundraising",1,0,12,0,0
+"photography","youtube","qwen","Mastering Photography: From Novice to Pro",1,1,85,1,0
+"music","song","qwen","Echoes of Yesterday: Awakening Our Inner Melodies",1,0,87,1,0
+"AI","article","qwen","Is AI Learning Faster Than You? The Breakthrough Program That Proves It",1,1,72,1,0
+"remote work","blog","qwen","Step Out of the Office: The New Rules of Remote Work",1,1,92,1,0
+"mental health","podcast","qwen","Unlocking the Hidden Layers of Mental Resilience",1,1,78,1,0
+"gardening","book","qwen","Plant Power: Cultivating Garden Success",1,0,85,1,0
+"coffee","product","qwen","Revive Your Mind, Upgrade Your Morning: The Secret to Perfect Coffee",1,1,78,1,0
+"minimalism","book","qwen","Minimalism: The Art of Wanting Less",1,1,92,1,0
+"creativity","book","qwen","Unlocking Genius: Unleash Your Creativity in 7 Steps",1,1,78,1,0
+"sleep","podcast","qwen","Unlocking the Secrets of Dream-Lightening Sleep",1,1,78,1,0
+"negotiation","book","qwen","Shifting Sands: Negotiation Tactics That Turn the Game",1,1,85,1,0
+"writing","book","qwen","Unlocking the Power of Creative Writing",1,1,78,1,0
+"marketing","article","qwen","Unlock Secrets of Remarkable Growth: The Marketing Miracle You've Been Missing",1,1,72,1,0
+"data science","article","qwen","Unlocking the Secrets of Data Science: What Makes Great Predictions",1,1,92,1,0
+"blockchain","article","qwen","Revolutionizing Privacy: How Blockchain Drastically Changes Your Data",1,1,78,1,0
+"electric cars","youtube","qwen","Revolutionizing Roads: Explore the Future of Electric Vehicles",1,1,85,1,0
+"space exploration","article","qwen","Unveiling Earth's Secrets Through Cosmic Mirages",1,0,42,0,0
+"wine","blog","qwen","Vintage Visions: The Story of Red and White",1,0,92,1,0
+"dancing","youtube","qwen","Step Into The Dancefloor: 7 Thrilling Party Moves",1,0,92,1,0
+"podcasting","blog","qwen","Episodes of Emotion: A Journey into Podcasting's Heart",1,1,87,1,0
+"freelancing","blog","qwen","Freelancing: The Art of Flexible Independence",1,1,87,1,0
+"vegan","blog","qwen","Beyond Meatloaf: A Vegan's Guide to Delicious Dinner Options",1,1,87,1,0
+"yoga","youtube","qwen","Awkward Yoga Poses for Serious Dancers",1,1,85,1,0
+"gaming","youtube","qwen","Unleash Your Gaming Mastery: Tips & Tricks",1,1,78,1,0
+"digital nomad","blog","qwen","Nomad Nation: Navigating the Thriving World of Remote Work Abroad",1,1,92,1,0
+"sourdough bread","blog","qwen","Crafting Perfect Sourdough: From Rise to Rise",1,1,87,1,0
+"intermittent fasting","book","qwen","Intermittent Fasting: The 7-Day Journey That Changed My Life",1,1,78,1,0
+"bitcoin","article","qwen","Bitcoin: The Future of Finance or Just a Dream?",1,1,78,1,0
+"tennis","youtube","qwen","Striking Breaks: The Power of Tennis Skills",1,1,42,0,0
+"skincare","blog","qwen","Discover the Power of Natural Skincare Routine",1,1,78,1,0
+"virtual reality","youtube","qwen","Beyond Imagination: Exploring VR's Future",1,0,92,1,0
+"board games","product","qwen","Unleash Your Inner Strategist: The Ultimate Guide to Winning with Board Games",1,1,78,1,0
+"tea","product","qwen","Is There Life After Tea? Discover the Culinary Journey",1,1,42,0,0
+"solo travel","blog","qwen","Escape in Style: Solo Travel's Journey to Self-Discovery",1,1,78,1,0
+"home office","product","qwen","Transform Your Home into a Work Sanctuary",1,1,92,1,0
+"jazz","song","qwen","Notes from the Sidewalk Jazz",1,1,42,0,0
+"ethical fashion","blog","qwen","Unveiling the True Cost of Fast Ethical Fashion",1,1,42,0,0
+"climate change","article","qwen","From Carbon to Climate: The Urgent Quest to Save Our Planet",1,1,92,1,0
