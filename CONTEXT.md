@@ -381,6 +381,26 @@ Core is acceptable. Pro/Studio are still product problems — surface to user be
 
 **Task 1 status: CLOSED as not-shippable.** Recorded in §6.2 #1 (replaces "port web quality rules" — the plan was wrong for this model size). The n_ctx=1024 bump was NOT reverted — it's harmless and future-proof (prompts were 351-405 tokens at the old 512 window, dangerously close with 60 new tokens; the bump to 1024 costs ~nothing for CPU inference).
 
+### 2026-07-31 (late night, later) — Task 3 complete: few-shot RE-APPLIED to web prompt. The original revert was wrong.
+
+**Task 3 (re-test the web few-shot revert against the FIXED metric) — DONE. Few-shot is KEPT this time.**
+
+The original revert (2026-07-31 afternoon) was based on the **broken keyword gate** that scored any title lacking the literal keyword as 0. Re-tested against the fixed metric (readability gate only; judge handles relevance):
+
+| Metric | Baseline (no few-shot) | Few-shot |
+|---|---|---|
+| Usable ≥70 | 100% (50/50) | **100% (50/50)** |
+| Mean | ~89.5-90 | **90.7** (+0.7) |
+| Titles <70 | 0 | **0** |
+
+**The decisive evidence — 19/50 titles lack the literal keyword and they are the BEST titles in the dataset** (all ≥85, mean ~91): "The $2,000 Mistake I Made in Tokyo" (travel, 95), "The Silence Between Thoughts" (meditation, 92), "I Lost 1,000 Games So You Don't Have To" (gaming, 92), "The $2.87 Tomato: Why Your Garden Will Never Feed You" (gardening, 92). The old gate scored every one as 0 — which is exactly why the original "poisoned keyword compliance" measurement was wrong.
+
+**Conclusion: the recorded lesson ("few-shot only helps when examples contain the target keyword") is NOT supported by valid evidence — it was an artefact of the broken metric.** The 8 REFERENCE TITLES block is now in the production web prompt (`generate.js`) and the benchmark cloud prompt.
+
+**Evidence:** `bench-usability-fewshot.csv` (desktop repo). `BENCH_ENGINE=cloud` filter added for cloud-only A/B runs.
+
+**Task 3 status: COMPLETE — few-shot stays in production.**
+
 ### 2026-07-31 (late night, later) — Task 2 complete: EGCG retired from the production pipeline
 
 **Pass 2 (EGCG generation) removed from `engine.rs`.** The pipeline is now Qwen (Pass 1) → curated retrieval (Pass 2, instant fallback + batch top-up). Rationale: EGCG measured 20-24% usable on the corrected metric (mean ~37) — it produced output 98% of the time and garbage 80% of the time. Qwen now fires 50/50 at ~96% usable, so EGCG's only reason for existing (batch fill) is gone.
@@ -749,7 +769,7 @@ Full 4-engine comparison with all fixes applied:
 
 1. **WEB: sampling penalties suppress the keyword.** `frequency_penalty: 0.6` + `presence_penalty: 0.4` in [generate.js:293-294](titleforge/netlify/functions/generate.js:293) penalise tokens the more often they appear. Every title in a batch must contain the same keyword, so the keyword is progressively suppressed — worse the larger the batch. Contradicts the prompt's own instruction. **✅ FIXED July 31: freq reduced to 0.15, presence removed entirely. Anthropic temperature unified to 0.85.**
 
-2. **WEB: few-shot revert is UNSAFE and must be re-tested.** Few-shot was added, appeared to drop "keyword compliance" 68%→62%, and was reverted July 31. **That measurement came from the broken keyword gate.** Few-shot teaches the model to write natural, creative titles — which is exactly what the old metric scored 0. Corrected data shows titles lacking the literal keyword average 88.4 and are 100% usable. The "lesson" recorded earlier (*"few-shot only helps when examples contain the target keyword"*) is **not supported** by valid evidence. Re-run the A/B against the fixed metric before treating the revert as final.
+2. **WEB: few-shot RE-APPLIED (Task 3, July 31).** The original revert was based on the broken keyword gate. Re-tested against the fixed metric: **100% usable (50/50), mean 90.7** vs baseline ~90 — few-shot is KEPT. The 8 REFERENCE TITLES block is in production. 19/50 titles lack the literal keyword and they are the best output (mean ~91) — "The $2,000 Mistake I Made in Tokyo" (95), "The Silence Between Thoughts" (92). The recorded lesson "few-shot only helps when examples contain the target keyword" was an artefact of the broken metric.
 
 3. **WEB: appeal score is self-graded and inflated.** Model writes and scores in one pass. Evidence: EGCG self-scored 60-100 on titles the independent judge scored 15-30. The 0-100 score is a headline Pro feature; if users learn to distrust it the feature is worthless. Fix: separate scoring pass, or force "identify your weakest title and score it below 60."
 
@@ -769,7 +789,7 @@ Full 4-engine comparison with all fixes applied:
 
 11. **WEB: temperature inconsistent across providers.** 0.85 on OpenAI-compatible ([generate.js:291](titleforge/netlify/functions/generate.js:291)), 0.7 on Anthropic ([:323](titleforge/netlify/functions/generate.js:323)). **✅ FIXED July 31: Anthropic now 0.85.**
 
-12. **Cloud AI benchmarked — corrected 2026-07-31 (late).** DeepSeek V4 Flash with the production prompt: **100% usable (50/50), mean 89.8, σ 4.9.** The earlier "68%" and "62%" figures were artefacts of the broken keyword gate, not real quality differences. **Open follow-up: the few-shot revert (issue #2) was decided on that broken measure and must be re-tested.** Few-shot produces natural, creative titles — precisely what the old metric scored 0.
+12. **Cloud AI benchmarked — corrected 2026-07-31 (late), few-shot A/B resolved (Task 3).** DeepSeek V4 Flash with the production prompt: **100% usable (50/50), mean 89.8-90.7** (90.7 with few-shot, 89.5-90 without — few-shot is a small mean gain and is kept). The earlier "68%" and "62%" figures were artefacts of the broken keyword gate, not real quality differences. Few-shot produces natural, creative titles — precisely what the old metric scored 0.
 
 13. **Qwen model not bundled in production builds.** `tauri.conf.json` bundles SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users fall back to SmolLM2 — worse than EGCG.
 
