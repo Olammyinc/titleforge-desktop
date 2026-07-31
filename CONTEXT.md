@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-31 (benchmark audit + engine role reassessment + web prompt review)
+> **Last updated:** 2026-07-31 (Qwen fixed at k=1, but sampler is deterministic — batch generation is broken)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -311,7 +311,160 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-07-31 (late night) — Task 0 complete: Qwen non-deterministic + temperature sweep
+
+**Task 0 (make Qwen non-deterministic) — DONE.** Replaced both argmax loops in `generate_chat_raw` with `sample_token()`: top-k 40, softmax temperature, inverse-CDF sampling via `rand::thread_rng()`.
+
+- **Determinism bug fixed:** same keyword now yields different titles every call (test `qwen_non_deterministic.rs` asserts ≥2 unique from 5 runs — got 5/5 unique for "coffee").
+- **EOS handling corrected vs the brief's sketch:** the brief's `sample_token` filtered EOS entirely, which leaked `<|im_start|>` junk at max_new=60 (verified in smoke test). Fixed: EOS stays sampleable at continuation positions; decode loop breaks when EOS is sampled. EOS is banned only at position 0 (added to `banned_first` at load).
+- **Performance:** echo-prefix ban list precomputed ONCE at load into `HashSet<LlamaToken>` (ID compare) instead of `token_to_str` on all 151,936 candidates per token. Natural EOS termination also cut generation time (~20s → ~8s per title in smoke test).
+- **Sweep harness:** `TF_LLM_TEMP` env override (no rebuild between runs); `BENCH_ENGINE=qwen` filter (one-variable runs, zero cloud API calls).
+
+**Temperature sweep (50 keywords, Qwen only, all re-judged fresh):**
+
+| T | Fires | Usable ≥70 | Mean | Verdict |
+|---|---|---|---|---|
+| **0.6** | 50/50 | **100%** (50/50) | 83.7 | Quality matches argmax but titles ≈ deterministic ("Revolutionize Your Workstation with the Ultimate Laptop" identical to old run) — defeats Task 0's purpose |
+| **0.8** | 50/50 | **96%** (48/50) | 81.0 | Visible diversity ("Code Breaks the Heart" for love; "PowerUp Your Tech with the Ultimate Laptop!"). 2 misses: a brand-slogan-style shirt title (22) and a redundant 'future' title (42) |
+| **1.0** | 50/50 | **84%** (42/50) | 76.6 | Too hot: "Your Perfect Castorama", "Mornings Get Coffee Kick", "Crashing Mystartup Dreams" — 8 failures |
+
+**Decision: T=0.8 (the current default).** Brief's rule: "pick the highest temperature that keeps usable ≥ 95%". 0.8 gives 96% + real diversity; 1.0 fails the gate; 0.6 is deterministic in disguise. Mean 81.0 vs 83.7 at argmax is the accepted cost of variety. If batch diversity proves insufficient, revisit 0.9 with a fresh run — one variable at a time.
+
+**Success gate status:**
+- [x] Same keyword twice → different titles (5/5 unique)
+- [x] Qwen usable ≥ 95% (96% at T=0.8)
+- [x] Qwen mean ≥ 78 (81.0)
+- [x] `cargo test --release --lib` 19/19
+- [x] Sweep table recorded here
+
+**Note on Qwen usable rate:** the fixed benchmark (keyword gate removed) shows Qwen at 100% usable at k=1; at T=0.8 with sampling it is 96%. Both exceed the 95% bar.
+
+### 2026-07-31 (night, later) — Qwen's sampler is deterministic. Batch generation cannot work.
+
+**Found while assessing readiness to bundle the model. This blocks bundling.**
+
+**The problem:** `generate_chat_raw` samples with pure argmax — no temperature, no top-k, no top-p:
+```rust
+if cd.logit() > best_logit { best_logit = cd.logit(); best_tok = tok_id; }
+```
+Same prompt → same title, deterministically, for every user and every call.
+
+**Evidence:** two independent full benchmark runs produced byte-identical titles.
+
+| Keyword | Both runs |
+|---|---|
+| laptop | "Revolutionize Your Workstation with the Ultimate Laptop" |
+| fitness | "Unlock Your Fitness Potential: The Ultimate Guide to Achieving Your Goals" |
+| tennis | "Mastering the Game: The Ultimate Guide to Tennis" |
+| bitcoin | "Unleashing the Future: Bitcoin Revolutionizes Finance" |
+
+**What this means:** the **100% usable figure is 100% usable at k=1.** The product sells 25 / 100 / 500 titles per batch. A user requesting 25 titles for "coffee" receives the same title 25 times, which dedup in `engine.rs` collapses to one. This is the same structural failure already documented for curated retrieval (§6.2) — it was simply not suspected of a language model.
+
+**Compounding issue — batch generation has never been measured.** [engine.rs:35](titleforge-desktop/src-tauri/src/engine.rs:35) loops `target_per_cat * 2` LLM calls to allow for dedup. At the measured 3.5 s/title:
+
+| Tier | Titles | Worst-case calls | Wall clock |
+|---|---|---|---|
+| Core | 25 | 50 | ~3 min |
+| Pro | 100 | 200 | ~12 min |
+| Studio | 500 | 1000 | **~58 min** |
+
+Every benchmark to date is k=1. No real batch has ever been run.
+
+**Secondary inefficiency:** `generate_chat_raw` calls `self.model.new_context()` on every invocation, so a 25-title batch allocates and destroys 25 KV caches. Reusing one context across a batch is a straightforward win once batching is addressed.
+
+**Required before bundling the model (see AI-WORK-BRIEF §4 Task 0):**
+1. Temperature + top-k sampling, then re-benchmark — quality at temperature ≠ quality at argmax
+2. Measure a real 25-title batch for uniqueness and wall-clock time
+3. Cross-platform verification — Qwen has only ever been built and run on this Windows machine; macOS and Linux are unverified
+4. Confirm redistribution terms for the specific GGUF quant (Qwen2.5 base is Apache 2.0; the quantised file is third-party)
+5. Then choose delivery: 986 MB in-installer (22 MB → ~1 GB) vs first-launch download
+
+**Do not bundle before item 1 lands.** A deterministic generator cannot fulfil the core product promise regardless of per-title quality.
+
+### 2026-07-31 (night) — Qwen's "68% empty output" was a buffer bug. Offline is now 100% usable at k=1.
+
+**Root cause found and fixed. Every prior conclusion about Qwen's capability was measuring a defect, not the model.**
+
+**The bug:** [local_llm.rs](titleforge-desktop/src-tauri/src/local_llm.rs) ended `generate_chat_raw` with a single deprecated call:
+```rust
+#[allow(deprecated)]
+let result = self.model.tokens_to_str(&gen_tokens, Special::Tokenize).ok()?;
+```
+`tokens_to_str` sizes its internal buffer too small and returns `InsufficientBufferSpace`. `.ok()?` swallowed it and returned `None`. **The model generated the title successfully every time; the string conversion threw it away.**
+
+**Evidence (`TF_LLM_DIAG=1` trace over the 23 silent keywords):** 13 of 14 traced calls bailed at that line with `InsufficientBufferSpace(-9)` / `(-10)`. Prompts were 100–166 tokens against a 512 window — no overflow. First-token sampling was healthy: 151,936 candidates, only 114 banned, best_logit ≈ 25. Generation was fine end-to-end until the final conversion.
+
+**The fix:** decode token-by-token into a byte buffer, then convert once.
+```rust
+let mut buf: Vec<u8> = Vec::with_capacity(gen_tokens.len() * 4);
+for &t in &gen_tokens {
+    if let Ok(b) = self.model.token_to_bytes(t, Special::Tokenize) { buf.extend_from_slice(&b); }
+}
+let result = String::from_utf8_lossy(&buf).to_string();
+```
+Bytes rather than per-token `String`s: BPE tokens can split a multi-byte UTF-8 character, so per-token decoding would corrupt non-ASCII output.
+
+**Also fixed:** both `batch.add()` calls were discarding their `Result` (live compiler warnings). Now handled and traced.
+
+**Result — full 4-engine re-benchmark:**
+
+| Engine | Fires | Mean | **Usable ≥70** | Change |
+|---|---|---|---|---|
+| Cloud (DeepSeek) | 50/50 | 89.5 | 98% | — |
+| **Qwen2.5-1.5B** | **50/50** | **83.7** | **100%** | **was 52%** |
+| Curated | 37/50 | 76.8 | 62% | — |
+| EGCG | 49/50 | 38.5 | 24% | — |
+
+Qwen distribution: min 72, p25 78, median 85, max 92. **Zero titles below the 70 threshold.** 23/23 previously-silent keywords recovered.
+
+**Qwen now matches cloud on usable rate (100% vs 98%) and trails by ~6 points on mean.** Offline is a defensible product claim, with no GPU, no larger model, no fine-tune, and no install-size change.
+
+**Superseded claims — do not cite:**
+- "1.5B cannot respond to most inputs" — it responded to all of them
+- "68% empty-output rate is the model ceiling" — plumbing defect
+- "Fire rate is the constraint; needs Qwen-3B or a LoRA fine-tune" — neither is needed
+- Every Qwen percentage recorded before this entry
+
+**Remaining quality gap (next work, not a blocker):** the desktop prompt is one sentence and lacks the web prompt's six QUALITY RULES — notably the cliché blocklist. 25/50 Qwen titles use banned vocabulary ("Ultimate", "Unlock", "Unleash", "Revolutionize"). Measured impact is small (cliché titles mean 83.3 vs clean 84.0) but they cluster in the bottom quartile (72–75). Porting `generate.js`'s quality rules into `local_llm.rs` should lift the floor.
+
+**Diagnostics added (read-only, no production behaviour change):** `tests/diag_qwen_silence.rs` attributes each failure to a specific filter; `tests/diag_prompt_len.rs` checks context-window overflow without generating; `TF_LLM_DIAG=1` traces all bail-out points A–L in `generate_chat_raw`.
+
+### 2026-07-31 (late) — Benchmark metric fixed. ALL PRIOR ENGINE NUMBERS WERE WRONG.
+
+**Two bugs found in the benchmark harness. Both fixed. Benchmark re-run. The strategic picture changed.**
+
+**Bug 1 — `keyword_present` was gating the judge.** `mech_pass = is_readable && keyword_present` meant any title lacking the *literal* keyword token was scored 0 without ever reaching the judge. A string match cannot know that "VR" ≈ "virtual reality", "100 Workouts" ≈ fitness, "Meditate" ≈ meditation, or "Freelancer" ≈ freelancing. Fixed: gate on readability only; keyword relevance is left to the judge, whose rubric already penalises off-topic titles. Literal presence is retained as a new advisory `kw_literal` CSV column.
+
+**Bug 2 — `.bench-key` was never actually read.** The file is UTF-16LE with a BOM (PowerShell's `echo key > file` default on Windows). `read_to_string` requires UTF-8, returned `Err`, and the code silently fell through to "API key not set." The reader now decodes UTF-16 LE/BE, UTF-8 BOM, and plain UTF-8, and reports loudly when a present file can't be decoded. The banner instructions that caused this were corrected to `Set-Content -Encoding utf8 -NoNewline`.
+
+**Bug 3 — the benchmark's cloud prompt did not match production.** It carried an 8-example few-shot block that the web app had already reverted, so "cloud = our ceiling" measured a prompt we do not ship. Replaced with the production QUALITY RULES from `generate.js`.
+
+**Corrected results (50 keywords × 4 engines, all re-judged):**
+
+| Engine | Fires | Mean (judged) | **Usable ≥70** | Literal keyword present |
+|---|---|---|---|---|
+| **Cloud (DeepSeek)** | 50/50 | **~90** (σ 4.9) | **98-100%** | 35/50 |
+| Curated | 37/50 | 76.8 | 62% (31/50) | 37/50 |
+| Qwen2.5-1.5B | 27/50 | 81.8 | 52% (26/50) | 23/50 |
+| EGCG | 49/50 | ~37 | 20% (10/50) | 49/50 |
+
+Reproduced across two independent full runs. Cloud scored 100% (mean 89.8) and 98% (mean 90.4); curated and Qwen were identical both times (deterministic retrieval / cached judge scores); EGCG held at 20% with mean 36.7–37.5 (it samples stochastically). `cargo test --release` — 23/23 pass.
+
+**The finding that matters: literal keyword presence is inversely correlated with quality.** Titles *without* the literal keyword (n=19, all engines) average **88.4** and are **100% usable** — the best titles in the entire dataset. Examples the old gate scored 0: "The 2-Hour Rule: How to Do Less and Achieve More" (productivity, 92), "The $10,000 Photo Mistake Beginners Make" (photography, 92), "The Silent Song That Screams" (music, 92). Forcing literal keyword inclusion actively degrades output.
+
+**What this changes:**
+
+1. **Cloud is at 100% usable, mean 89.8, σ 4.9.** The web app is performing essentially at ceiling and is far stronger than any prior entry in this log claimed. The previously-recorded "62%" and "68%" ceilings were pure metric artefact.
+2. **The offline gap is much wider than believed** — 100% cloud vs 62% curated vs 52% Qwen. Cloud-first positioning for desktop Pro/Studio is better supported than "close the gap with a fine-tune."
+3. **The Task 3 few-shot revert must be re-tested.** It was reverted because it "poisoned keyword compliance" — measured by the broken gate. Few-shot teaches natural, creative titles, which is exactly what the broken metric punished. The revert may have removed a genuine improvement.
+4. **Qwen improved to 52%** (logit biasing + gate fix), 96% usable when it fires. Fire rate 27/50 remains the constraint.
+5. **EGCG confirmed at 20%** with the highest literal-keyword rate (49/50) and the worst quality. Retire decision stands and is strengthened.
+
+**Superseded:** every engine percentage recorded in this log before this entry. Do not cite them.
+
 ### 2026-07-31 — Sprint complete: 7 tasks, all engines benchmarked, final decision
+> **SUPERSEDED by the entry above** — the numbers in this entry were produced with the broken keyword gate and an unshipped cloud prompt. Retained for history only.
+
 
 **Task 1 (web fix):** `frequency_penalty 0.6→0.15`, `presence_penalty 0.4→0` in `generate.js`. The old penalties were suppressing the required keyword in large batches. Also unified Anthropic temperature to `0.85` (was `0.7`). Strengthened variety rule: "no two titles may share opening 3 words or structural template."
 
@@ -540,19 +693,23 @@ Full 4-engine comparison with all fixes applied:
 
 ### 6.2 Known Issues (Priority Order)
 
+0. **DESKTOP: Qwen sampler is deterministic — batch generation produces one unique title.** Pure argmax in `generate_chat_raw`; identical output across runs, users, and calls. The 100% usable figure holds only at k=1. **✅ FIXED 2026-07-31 (late night): temperature + top-k sampling (T=0.8, top-k 40, inverse-CDF via `rand::thread_rng()`). Same keyword now yields different titles every call (5/5 unique verified). Qwen usable 96% at T=0.8, mean 81.0. See §5 change log for the full temperature sweep.**
+
+0b. **DESKTOP: batch generation never measured.** `engine.rs` loops `target_per_cat * 2` LLM calls at ~3.5 s each — Core 25 titles ≈ 3 min, Pro 100 ≈ 12 min, Studio 500 ≈ 58 min. Needs measurement and likely a rethink (parallelism, context reuse, or lower per-tier caps).
+
 1. **WEB: sampling penalties suppress the keyword.** `frequency_penalty: 0.6` + `presence_penalty: 0.4` in [generate.js:293-294](titleforge/netlify/functions/generate.js:293) penalise tokens the more often they appear. Every title in a batch must contain the same keyword, so the keyword is progressively suppressed — worse the larger the batch. Contradicts the prompt's own instruction. **✅ FIXED July 31: freq reduced to 0.15, presence removed entirely. Anthropic temperature unified to 0.85.**
 
-2. **WEB: no few-shot examples in the prompt** — **TESTED AND REVERTED July 31.** Few-shot examples (curated titles without user keywords) made the model a better writer but a worse instruction follower: cloud keyword compliance dropped from 68%→62% as the model learned to imitate standalone titles like "The Name of the Wind" and "Vivid" that contain no user keyword. The quality rules alone deliver 68% — better than with examples. **Lesson:** few-shot only helps when examples contain the target keyword. Generic great titles make the model abandon keyword requirements.
+2. **WEB: few-shot revert is UNSAFE and must be re-tested.** Few-shot was added, appeared to drop "keyword compliance" 68%→62%, and was reverted July 31. **That measurement came from the broken keyword gate.** Few-shot teaches the model to write natural, creative titles — which is exactly what the old metric scored 0. Corrected data shows titles lacking the literal keyword average 88.4 and are 100% usable. The "lesson" recorded earlier (*"few-shot only helps when examples contain the target keyword"*) is **not supported** by valid evidence. Re-run the A/B against the fixed metric before treating the revert as final.
 
 3. **WEB: appeal score is self-graded and inflated.** Model writes and scores in one pass. Evidence: EGCG self-scored 60-100 on titles the independent judge scored 15-30. The 0-100 score is a headline Pro feature; if users learn to distrust it the feature is worthless. Fix: separate scoring pass, or force "identify your weakest title and score it below 60."
 
-4. **No engine produces 100% usable titles — and none ever will.** Benchmark v2 (LLM-judge, 4 engines): Cloud (DeepSeek) 68%, Curated 58%, Qwen 32%, EGCG 12%. Cloud is the quality ceiling at 68%. Realistic targets: logit-biased Qwen ~55-70%, fine-tuned ~70-85%. **Target 80%, not 100%.** Qwen is 100% usable *when it fires* — its problem is recall, not quality.Qwen 32% (≈42% after fixing issue #5), EGCG 20%, Curated 58% (≈62%). Realistic ceilings: logit-biased Qwen ~55-70%, fine-tuned ~70-85%, cloud AI ~85-95%. **Target 80%, not 100%.** Qwen is 100% usable *when it fires* — its problem is recall, not quality.
+4. **Offline engines are ~40 points behind cloud.** Corrected benchmark (metric fixed 2026-07-31): **Cloud 100% usable, mean 89.8, σ 4.9.** Curated 62%. Qwen 52% (96% usable when it fires; 27/50 fire rate is the constraint). EGCG 20%. Cloud is not "the ceiling we're chasing" — it is already essentially perfect on this rubric. The strategic question is no longer "how do we reach cloud quality offline" but "what is offline actually for."
 
-5. **Benchmark keyword check is punctuation-blind.** [bench_judge.rs:58-63](titleforge-desktop/src-tauri/tests/bench_judge.rs:58) matches `" keyword "` with literal spaces, so `"Shirt:"` and `"Startup's"` fail. **9 titles wrongly rejected, 5 of them Qwen.** All engine numbers are understated until fixed. Fix before any further engine decisions.
+5. ~~Benchmark keyword check is punctuation-blind.~~ **FIXED 2026-07-31, then superseded by a deeper fix.** `keyword_present` no longer gates the judge at all — it wrongly scored 0 on any title lacking the literal keyword token. Titles *without* the literal keyword average **88.4** and are **100% usable** (n=19); they were the best output in the dataset and were all being discarded. Literal presence is now an advisory `kw_literal` CSV column. See §5 change log.
 
 6. **Curated cannot fill a batch.** Median 2 titles per keyword. 1/50 keywords can fill 25 titles; 0/50 can fill 100 or 500. `retrieve_similar()` is fully deterministic — same keyword always yields the same titles, for every user, every time. It is a lookup table over a fixed corpus, not a generator. Do not plan around it as a primary engine.
 
-7. **EGCG confirmed dead — 6% usable after final benchmark.** Produces output 98% of the time (49/50), but only 3 titles are publishable. Mean judge score 44.8. Results-pool fragments like "That move the needle" produce "From Dawn to That move the needle" — `strip_placeholders` only handles `{word}` brackets. **Decision: retire EGCG from the pipeline. It was the only engine that could fill a 25-title batch, and it's producing garbage. Replace with Qwen + curated fallback.**
+7. **EGCG confirmed dead — 20% usable on the corrected metric.** Produces output 98% of the time (49/50) with the *highest* literal-keyword rate of any engine (49/50) and the *lowest* quality (mean 37.5). It is the clearest demonstration that keyword presence and usability are inversely related. Results-pool fragments like "That move the needle" produce "From Dawn to That move the needle" — `strip_placeholders` only handles `{word}` brackets. **Decision: retire EGCG from the pipeline. It was the only engine that could fill a 25-title batch, and it's producing garbage. Replace with Qwen + curated fallback.**
 
 8. **Studio "500 titles" is not deliverable by any local engine.** At 3.5s/title a 500-title batch is ~30 minutes. [desktop.html:453](titleforge/desktop.html:453) needs a non-numeric promise. Same class of issue as the previously-fixed "unlimited batch" claim.
 
@@ -562,7 +719,7 @@ Full 4-engine comparison with all fixes applied:
 
 11. **WEB: temperature inconsistent across providers.** 0.85 on OpenAI-compatible ([generate.js:291](titleforge/netlify/functions/generate.js:291)), 0.7 on Anthropic ([:323](titleforge/netlify/functions/generate.js:323)). **✅ FIXED July 31: Anthropic now 0.85.**
 
-12. **Cloud AI benchmarked (July 31).** DeepSeek V4 Flash with web app prompt: **68% usable (34/50)** with quality-rules-only prompt. Mean score 83. Cloud + few-shot examples dropped to 62% (model imitated keyword-absent curated titles). **Quality rules alone are the proven 68% ceiling.** Curated best offline at 62%, Qwen 44%, EGCG 6%.
+12. **Cloud AI benchmarked — corrected 2026-07-31 (late).** DeepSeek V4 Flash with the production prompt: **100% usable (50/50), mean 89.8, σ 4.9.** The earlier "68%" and "62%" figures were artefacts of the broken keyword gate, not real quality differences. **Open follow-up: the few-shot revert (issue #2) was decided on that broken measure and must be re-tested.** Few-shot produces natural, creative titles — precisely what the old metric scored 0.
 
 13. **Qwen model not bundled in production builds.** `tauri.conf.json` bundles SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users fall back to SmolLM2 — worse than EGCG.
 
