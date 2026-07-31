@@ -6,8 +6,11 @@ use crate::seo;
 use crate::title_gen::Generator;
 use crate::TitleResult;
 
-/// Orchestrate title generation: local LLM first, then EGCG fallback,
-/// then curated-title retrieval as last resort.
+/// Orchestrate title generation: local LLM first, then curated-title
+/// retrieval as the quality fallback. EGCG generation was retired from the
+/// pipeline (2026-07-31): 20-24% usable on the corrected metric, mean ~37 —
+/// it produced output 98% of the time and garbage 80% of the time. Qwen now
+/// fires 50/50, so the only reason to keep EGCG (batch fill) is gone.
 pub fn generate(
     conn: &Connection,
     generator: &Generator,
@@ -62,14 +65,7 @@ pub fn generate(
         }
     }
 
-    // ── Pass 2: EGCG generation for remaining slots ──
-    let remaining = (quantity as usize).saturating_sub(results.len());
-    if remaining > 0 && keyword.len() > 2 {
-        let egcg_results = generator.generate(keyword, categories, style, genre, remaining as u32);
-        results.extend(egcg_results);
-    }
-
-    // ── Pass 3: Instant curated-title retrieval fallback ──
+    // ── Pass 2: Instant curated-title retrieval fallback ──
     let remaining = (quantity as usize).saturating_sub(results.len());
     if remaining > 0 {
         let curated_results = retrieve_curated_fallback(
@@ -78,7 +74,7 @@ pub fn generate(
         results.extend(curated_results);
     }
 
-    // ── SEO scoring sweep for EGCG + curated results ──
+    // ── SEO scoring sweep for curated results ──
     // LLM-pass titles were scored inline above; this fills remaining.
     for r in results.iter_mut() {
         if r.seo_score.is_some() { continue; }

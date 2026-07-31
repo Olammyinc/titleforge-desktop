@@ -206,24 +206,18 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 - `background_verify(key, email)` — silent refresh, 5s timeout, refresh-only (never revokes)
 - `deactivate_license()` — clears license settings
 
-### 3.4 Engine — 3-Pass Pipeline
+### 3.4 Engine — 2-Pass Pipeline
 
 `engine.rs` orchestrates:
 
-1. **Pass 1 — LLM (lazy).** If model file present and loaded, generate via `local_llm.rs` (Qwen2.5-1.5B, llama-cpp-2). 46% pass rate on benchmark — creative when it works, silent on 54% of keywords. See §7 for quality context.
-2. **Pass 2 — EGCG (`title_gen.rs`).** Template-based generation with pairwise-affinity coherence scoring. `strip_placeholders()` guard prevents `{placeholder}` leaks (fixed July 28).
-3. **Pass 3 — Curated fallback.** Retrieval from 2,623 curated titles, returned as-is (no keyword-swap — titles are human-quality but don't contain user keyword).
+1. **Pass 1 — LLM (lazy).** If model file present and loaded, generate via `local_llm.rs` (Qwen2.5-1.5B, llama-cpp-2, T=0.8 sampling). Fires 50/50, ~96% usable.
+2. **Pass 2 — Curated fallback.** Retrieval from 2,623 curated titles for remaining slots, returned as-is (no keyword-swap).
+
+**EGCG was retired from the pipeline July 31 (Task 2)** — 20% usable, mean ~37. `title_gen.rs` still holds `retrieve_similar()` (Qwen few-shot + curated retrieval) and the EGCG generator used only by benchmark tests.
 
 All passes: dedup + SEO score sweep post-generation.
 
-**EGCG modes (still live despite earlier plan to remove):**
-- **A — Exemplar-Guided Template Fill (70%):** Fill template slots by scoring candidates against left context + keyword affinity + category naturalness. Softmax sample. Retries up to 6× per slot if below `MIN_COHERENCE=0.05`.
-- **B — Phrase Stitching (20%):** Mined intro fragments + keyword + closer fragments from curated titles.
-- **C — Keyword-Embedded Exemplar (10%):** Find highest-affinity curated title, swap its topic token with the keyword.
-
-**Scoring:** `raw = 2.0 × avg_pairwise_affinity + 0.5 × ln(1 + unigram_sum) - 1.5 × repeat_penalty` → normalized 0–65 base + heuristic bonuses → capped at 100.
-
-**Post Path A:** EGCG will be demoted to Pass 3 fallback only. See §7.
+**Scoring:** `raw = 2.0 × avg_pairwise_affinity + 0.5 × ln(1 + unigram_sum) - 1.5 × repeat_penalty` → normalized 0–65 base + heuristic bonuses → capped at 100. *(Legacy EGCG scoring, retained in title_gen.rs for benchmark parity.)*
 
 ### 3.5 SEO Scoring (`seo.rs`)
 
@@ -386,6 +380,14 @@ Core is acceptable. Pro/Studio are still product problems — surface to user be
 **Files changed then reverted:** `local_llm.rs` (system prompt, keyword QC), `diag_prompt_len.rs` (prompt mirror). `bench-usability-task1-regression.csv` kept as evidence (2 runs: full-rules 75.2, condensed 77.6).
 
 **Task 1 status: CLOSED as not-shippable.** Recorded in §6.2 #1 (replaces "port web quality rules" — the plan was wrong for this model size). The n_ctx=1024 bump was NOT reverted — it's harmless and future-proof (prompts were 351-405 tokens at the old 512 window, dangerously close with 60 new tokens; the bump to 1024 costs ~nothing for CPU inference).
+
+### 2026-07-31 (late night, later) — Task 2 complete: EGCG retired from the production pipeline
+
+**Pass 2 (EGCG generation) removed from `engine.rs`.** The pipeline is now Qwen (Pass 1) → curated retrieval (Pass 2, instant fallback + batch top-up). Rationale: EGCG measured 20-24% usable on the corrected metric (mean ~37) — it produced output 98% of the time and garbage 80% of the time. Qwen now fires 50/50 at ~96% usable, so EGCG's only reason for existing (batch fill) is gone.
+
+- **`title_gen.rs` NOT deleted** — it holds `retrieve_similar()` (Qwen few-shot + curated retrieval) and the EGCG machinery that benchmark tests still compare against (`bench_judge.rs`, `bench_path_a.rs`, `egcg_sanity.rs`). EGCG stays as a benchmark column, not a production engine.
+- **Verification:** `cargo test --release --lib` 19/19. `egcg_sanity` still passes (196 titles, 0 placeholder leaks — title_gen.rs intact). Batch measurement confirms the new pipeline: 25/25 unique, 100% local-llm, zero EGCG/curated fallback needed.
+- **New pipeline:** `engine.rs` = LLM pass + curated fallback only. Benchmarks unchanged (EGCG column retained for regression comparison).
 
 ### 2026-07-31 (night, later) — Qwen's sampler is deterministic. Batch generation cannot work.
 
@@ -757,7 +759,7 @@ Full 4-engine comparison with all fixes applied:
 
 6. **Curated cannot fill a batch.** Median 2 titles per keyword. 1/50 keywords can fill 25 titles; 0/50 can fill 100 or 500. `retrieve_similar()` is fully deterministic — same keyword always yields the same titles, for every user, every time. It is a lookup table over a fixed corpus, not a generator. Do not plan around it as a primary engine.
 
-7. **EGCG confirmed dead — 20% usable on the corrected metric.** Produces output 98% of the time (49/50) with the *highest* literal-keyword rate of any engine (49/50) and the *lowest* quality (mean 37.5). It is the clearest demonstration that keyword presence and usability are inversely related. Results-pool fragments like "That move the needle" produce "From Dawn to That move the needle" — `strip_placeholders` only handles `{word}` brackets. **Decision: retire EGCG from the pipeline. It was the only engine that could fill a 25-title batch, and it's producing garbage. Replace with Qwen + curated fallback.**
+7. **EGCG confirmed dead — 20% usable on the corrected metric.** Produces output 98% of the time (49/50) with the *highest* literal-keyword rate of any engine (49/50) and the *lowest* quality (mean 37.5). It is the clearest demonstration that keyword presence and usability are inversely related. Results-pool fragments like "That move the needle" produce "From Dawn to That move the needle" — `strip_placeholders` only handles `{word}` brackets. **✅ RETIRED July 31 (Task 2): removed from the production pipeline (`engine.rs` Pass 2 deleted). Pipeline is now Qwen → curated. `title_gen.rs` kept for `retrieve_similar()` + benchmark comparison.**
 
 8. **Studio "500 titles" is not deliverable by any local engine.** At 3.5s/title a 500-title batch is ~30 minutes. [desktop.html:453](titleforge/desktop.html:453) needs a non-numeric promise. Same class of issue as the previously-fixed "unlimited batch" claim.
 
