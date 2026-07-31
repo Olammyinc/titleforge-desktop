@@ -93,9 +93,13 @@ echo "Downloading ${MODEL_LABEL[$WHICH]}..."
 echo "URL: $MODEL_URL"
 
 if command -v curl &>/dev/null; then
-    curl -L -o "$MODEL_FILE" "$MODEL_URL" --progress-bar
+    # --retry 5 with backoff: HF CDN throttles large parallel downloads and
+    # transient 5xx/connects are common on CI runners. --retry-all-errors
+    # also covers 429/5xx that plain --retry skips by default.
+    curl -L -o "$MODEL_FILE" "$MODEL_URL" --progress-bar \
+        --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 30
 elif command -v wget &>/dev/null; then
-    wget -O "$MODEL_FILE" "$MODEL_URL" -q --show-progress
+    wget -O "$MODEL_FILE" "$MODEL_URL" -q --show-progress --tries=5
 else
     echo "ERROR: Neither curl nor wget found. Please install one."
     exit 1
