@@ -209,6 +209,17 @@ The keyword is \"{keyword}\". Every title must be about this keyword — not abo
 
 Communication style: normal
 
+REFERENCE TITLES — publication-ready titles from the TitleForge corpus. Study their structure, specificity, and quality bar — your titles must match this caliber:
+
+Book:    \"The Name of the Wind\" → poetic metaphor creates mystery in 5 words
+Article: \"The Myth of Meritocracy: Why Talent Alone Will Never Beat Inheritance\" → bold thesis + colon + concrete payoff
+YouTube: \"I Spent 48 Hours in a Silent Retreat\" → personal experiment + number + curiosity gap
+Podcast: \"You Don't Actually Care About Climate Change — You Just Like the Aesthetic\" → confronts the listener with an uncomfortable truth
+Newsletter: \"What's the one metric most teams overlook?\" → question + FOMO + insider knowledge tease
+Product: \"Vivid\" → single word, instantly brand-able, emotional
+Song:    \"Cigarette Smoke and Honey\" → sensory contrast, vivid, memorable
+Speech:  \"How to Raise a Generation of Critical Thinkers\" → aspirational, how-to format without being generic
+
 QUALITY RULES (these are what separate a great title from a forgettable one):
 - EMOTIONAL PULL: Make the reader feel something. Curiosity, surprise, aspiration, or urgency. A title that evokes nothing is wasted.
 - SPECIFICITY: Use concrete details — numbers, names, vivid specifics. \"7 Habits\" beats \"Good Habits.\" \"The $1.2 Million Typo\" beats \"An Expensive Mistake.\" Always choose the specific over the abstract.
@@ -375,7 +386,9 @@ fn benchmark_judge() {
         } else { String::new() };
 
         // ── Qwen ──
-        let qwen_title = if let Some(ref mut m) = llm {
+        let qwen_title = if only.as_deref() == Some("cloud") {
+            String::new()
+        } else if let Some(ref mut m) = llm {
             let ex = generator.retrieve_similar(keyword, category, 3);
             let start = Instant::now();
             let t = m.generate_one_clean(keyword, category, "normal", &ex);
@@ -385,14 +398,18 @@ fn benchmark_judge() {
         } else { String::new() };
 
         // ── EGCG ──
-        let egcg_title = if only.as_deref() != Some("qwen") {
+        let egcg_title = if only.as_deref() == Some("cloud") {
+            String::new()
+        } else if only.as_deref() != Some("qwen") {
             let cats = vec![category.to_string()];
             let results = generator.generate(keyword, &cats, "normal", "any", 1);
             results.first().map(|r| r.title.clone()).unwrap_or_default()
         } else { String::new() };
 
         // ── Curated ──
-        let cur_title = if only.as_deref() != Some("qwen") {
+        let cur_title = if only.as_deref() == Some("cloud") {
+            String::new()
+        } else if only.as_deref() != Some("qwen") {
             generator.retrieve_similar(keyword, category, 1).first().cloned().unwrap_or_default()
         } else { String::new() };
 
