@@ -311,22 +311,53 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
-### 2026-07-31 — Web prompt fix + cloud AI benchmark + sprint reorder
+### 2026-07-31 — Sprint complete: 7 tasks, all engines benchmarked, final decision
 
-- **Web prompt fix (Task 1):** `frequency_penalty 0.6→0.15`, `presence_penalty 0.4→0` in `generate.js`. The old penalties were suppressing the required keyword in large batches — after ~12 titles the model actively avoided the word it was required to use. Also unified Anthropic temperature to `0.85` (was `0.7`). Strengthened variety rule: "no two titles may share opening 3 words or structural template."
-- **Cloud AI benchmark (Task 2):** Added `generate_title_cloud()` to `bench_judge.rs` — calls DeepSeek with the web app's actual prompt format (`response_format: json_object`, same quality rules). Full 4-engine comparison:
+**Task 1 (web fix):** `frequency_penalty 0.6→0.15`, `presence_penalty 0.4→0` in `generate.js`. The old penalties were suppressing the required keyword in large batches. Also unified Anthropic temperature to `0.85` (was `0.7`). Strengthened variety rule: "no two titles may share opening 3 words or structural template."
 
-| Engine | Mean | Non-Zero | Usable (≥70) |
-|--------|------|----------|---------------|
-| Cloud (DeepSeek V4 Flash) | 83.0 | 35/50 (70%) | **34/50 (68%)** |
-| Curated retrieval | 76.3 | 35/50 (70%) | **29/50 (58%)** |
-| Qwen2.5-1.5B (local) | 81.9 | 16/50 (32%) | **16/50 (32%)** |
-| EGCG (template) | 47.5 | 42/50 (84%) | **6/50 (12%)** |
+**Task 2 (cloud benchmark):** Added `generate_title_cloud()` to `bench_judge.rs` — DeepSeek with web app's prompt format. First measurement of our quality ceiling.
 
-- **Key finding:** Cloud AI at 68% usable is our quality ceiling — the best we can do with the current prompt and model. The web app ships this today. The offline gap is 36pp to match cloud quality.
-- **Cloud failure rate:** 15/50 cloud outputs were empty or zero — the JSON parse in the benchmark's response extraction is brittle (some responses include markdown fences or malformed JSON the simple strip_prefix can't handle). Cloud quality would likely be higher with the web app's full 4-layer JSON repair pipeline.
-- **EGCG emergency:** 12% usable (6/50). Mean score 47.5 — barely half of the judged titles clear the "publishable" bar. The pipeline that fills 84% of output is producing garbage 88% of the time. This is now critical — not a nice-to-have fix.
-- **New sprint order (per AI-WORK-BRIEF):** Web first (revenue-generating surface) → desktop engine. Tasks: fix sampling penalties ✅ → benchmark cloud AI ✅ → add few-shot to web prompt → A/B verify → fix benchmark punctuation → logit biasing on Qwen → re-benchmark and decide.
+**Task 3 (few-shot attempt):** Injected 8 curated titles (score 100 each) into web prompt's standard mode. Beautiful titles, taught model to write better — but **poisoned keyword compliance.** Reverted same session.
+
+**Task 4 (A/B verify):** Mirrored benchmark cloud prompt to web app. Enabled before/after comparison.
+
+**Task 5 (punctuation fix):** `keyword_present()` in `bench_judge.rs` stripped punctuation before matching. Rescued ~7-10 wrongly-rejected titles (colon-glued words, apostrophes). All engine numbers were understated.
+
+**Task 6 (logit biasing):** First-token echo suppression on Qwen via `ctx.candidates()` + `token_to_str()`. Bans tokens starting with: here, sure, cert, please, write, note, based, using, ```. Smoke test confirmed: "Revolutionize Your Morning with Coffee" instead of "Here is a title..."
+
+**Task 7 (final benchmark + decision):**
+
+Full 4-engine comparison with all fixes applied:
+
+| Engine | Usable (≥70) | Mean | Mechanical | Verdict |
+|--------|-------------|------|------------|---------|
+| Cloud (DeepSeek) | **62%** (31/50) | 83.2 | 33/50 | Quality ceiling (was 68% before few-shot poisoned it) |
+| Curated | **62%** (31/50) | 76.8 | 37/50 | Best offline — but batch-limited (median 2/keyword) |
+| Qwen2.5-1.5B | **44%** (22/50) | 81.1 | 23/50 | Logit biasing: +37.5% fire rate. 96% usable when fires |
+| EGCG | **6%** (3/50) | 44.8 | 49/50 | **Dead. Produces output 98% of time, garbage 94%. Retire.** |
+
+**Key findings from the sprint:**
+- Cloud at 68% (pre-few-shot) = proven quality ceiling with quality rules only
+- Few-shot examples: better writing, worse instruction-following. **Reverted from production.** Category error — examples that don't contain a user keyword teach the wrong lesson
+- Logit biasing on Qwen: **proven win** — 32%→44% usable, 46% fire rate, 96% of fired titles publishable
+- EGCG confirmed irredeemable at 6% — should be removed from the pipeline
+- Qwen fire rate gap (54% silent) is the remaining desktop engine problem
+
+**Sprint decisions:**
+1. **Revert few-shot from web** — keyword compliance > creative quality. The quality rules alone deliver 68%.
+2. **Keep logit biasing** — proven +37.5% improvement on Qwen fire rate.
+3. **Retire EGCG** — 6% usable is unacceptable for any tier, let alone a fallback.
+4. **Keep Qwen as primary local generator** — 44% usable, excellent when it fires. Next step: Qwen2.5-3B or more aggressive biasing to close the 54% silent gap.
+5. **Curated as quality fallback** — 62% usable, best offline quality, but single-title only (batch = repeat).
+
+**What was NOT done:**
+- Qwen2.5-3B trial — the obvious next step to improve fire rate
+- Keyword-swap on curated titles — would push 62%→~90% usable but still single-title
+- Fully retire local LLM for cloud-first — Qwen at 44% is good enough to ship, not good enough to be the only engine
+
+**New sprint order (original July 31 brief):** Web first (revenue-generating surface) → desktop engine. Tasks: fix sampling penalties ✅ → benchmark cloud AI ✅ → add few-shot to web prompt ✅ (then reverted) → A/B verify ✅ → fix benchmark punctuation ✅ → logit biasing on Qwen ✅ → re-benchmark and decide ✅.
+
+### 2026-07-31 — Web prompt fix + cloud AI benchmark + sprint reorder (earlier session)
 
 ### 2026-07-31 — Benchmark audit, engine roles corrected, web prompt reviewed
 
@@ -511,7 +542,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 1. **WEB: sampling penalties suppress the keyword.** `frequency_penalty: 0.6` + `presence_penalty: 0.4` in [generate.js:293-294](titleforge/netlify/functions/generate.js:293) penalise tokens the more often they appear. Every title in a batch must contain the same keyword, so the keyword is progressively suppressed — worse the larger the batch. Contradicts the prompt's own instruction. **✅ FIXED July 31: freq reduced to 0.15, presence removed entirely. Anthropic temperature unified to 0.85.**
 
-2. **WEB: no few-shot examples in the prompt.** `titleforge/seed-data.json` holds 2,623 curated titles — the same corpus the desktop app uses for RAG few-shot. The web prompt describes quality but never demonstrates it. Models imitate better than they follow instructions.
+2. **WEB: no few-shot examples in the prompt** — **TESTED AND REVERTED July 31.** Few-shot examples (curated titles without user keywords) made the model a better writer but a worse instruction follower: cloud keyword compliance dropped from 68%→62% as the model learned to imitate standalone titles like "The Name of the Wind" and "Vivid" that contain no user keyword. The quality rules alone deliver 68% — better than with examples. **Lesson:** few-shot only helps when examples contain the target keyword. Generic great titles make the model abandon keyword requirements.
 
 3. **WEB: appeal score is self-graded and inflated.** Model writes and scores in one pass. Evidence: EGCG self-scored 60-100 on titles the independent judge scored 15-30. The 0-100 score is a headline Pro feature; if users learn to distrust it the feature is worthless. Fix: separate scoring pass, or force "identify your weakest title and score it below 60."
 
@@ -521,7 +552,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 6. **Curated cannot fill a batch.** Median 2 titles per keyword. 1/50 keywords can fill 25 titles; 0/50 can fill 100 or 500. `retrieve_similar()` is fully deterministic — same keyword always yields the same titles, for every user, every time. It is a lookup table over a fixed corpus, not a generator. Do not plan around it as a primary engine.
 
-7. **EGCG results-pool entries produce gibberish.** Fragments like "That move the needle", "That make a difference" are used as standalone slot fills, producing "From Dawn to That move the needle." `strip_placeholders` only handles `{word}` brackets. EGCG is the only engine that can currently fill a 25-title batch, and it is 20% usable — this is the reason offline batches are poor.
+7. **EGCG confirmed dead — 6% usable after final benchmark.** Produces output 98% of the time (49/50), but only 3 titles are publishable. Mean judge score 44.8. Results-pool fragments like "That move the needle" produce "From Dawn to That move the needle" — `strip_placeholders` only handles `{word}` brackets. **Decision: retire EGCG from the pipeline. It was the only engine that could fill a 25-title batch, and it's producing garbage. Replace with Qwen + curated fallback.**
 
 8. **Studio "500 titles" is not deliverable by any local engine.** At 3.5s/title a 500-title batch is ~30 minutes. [desktop.html:453](titleforge/desktop.html:453) needs a non-numeric promise. Same class of issue as the previously-fixed "unlimited batch" claim.
 
@@ -531,11 +562,11 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 11. **WEB: temperature inconsistent across providers.** 0.85 on OpenAI-compatible ([generate.js:291](titleforge/netlify/functions/generate.js:291)), 0.7 on Anthropic ([:323](titleforge/netlify/functions/generate.js:323)). **✅ FIXED July 31: Anthropic now 0.85.**
 
-12. **Cloud AI benchmarked (July 31).** DeepSeek V4 Flash with web app prompt: **68% usable (34/50).** Mean score 83 when it fires. This is our quality ceiling — 15/50 outputs failed (empty/malformed JSON from simple extraction, not model failures). Curated is the best offline engine at 58%; EGCG is 12%. Cloud quality gap for offline: 56pp. **Quality target for any offline improvement: close the gap to cloud's 68%.**
+12. **Cloud AI benchmarked (July 31).** DeepSeek V4 Flash with web app prompt: **68% usable (34/50)** with quality-rules-only prompt. Mean score 83. Cloud + few-shot examples dropped to 62% (model imitated keyword-absent curated titles). **Quality rules alone are the proven 68% ceiling.** Curated best offline at 62%, Qwen 44%, EGCG 6%.
 
 13. **Qwen model not bundled in production builds.** `tauri.conf.json` bundles SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users fall back to SmolLM2 — worse than EGCG.
 
-14. **GBNF grammars blocked on llama-cpp-2 API.** `sampled_token_ith()` doesn't work with backend samplers. Logit biasing via `ctx.candidates()` is the recommended alternative — not yet attempted.
+14. **GBNF grammars blocked on llama-cpp-2 API** — `sampled_token_ith()` doesn't work with backend samplers. **✅ RESOLVED via logit biasing July 31:** Instead of GBNF, use `ctx.candidates()` + `token_to_str()` to ban echo-prefix tokens at the first autoregressive position. Works, no sampler API needed. Qwen fire rate improved 32%→46%.**
 
 15. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
 

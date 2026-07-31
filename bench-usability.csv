@@ -1,201 +1,201 @@
 keyword,category,engine,title,mechanical_pass,judge_score,usable,cached
-"shirt","product","cloud","The Shirt That Changed My Entire Wardrobe",1,75,1,0
-"shirt","product","qwen","Versatile Shirt: Perfect for Any Occasion",0,0,0,0
-"shirt","product","egcg","How to Map Shirt and That will transform your life",1,15,0,0
+"shirt","product","cloud","The Shirt That Makes People Ask Where You Got It",1,85,1,0
+"shirt","product","qwen","Versatile Shirt: Perfect for Any Occasion",1,85,1,0
+"shirt","product","egcg","How to Build Shirt Using Only Force",1,30,0,0
 "shirt","product","curated","",0,0,0,0
-"laptop","product","cloud","The One Laptop Trick That Doubled My Coding Speed",1,85,1,0
+"laptop","product","cloud","The Laptop That Never Slows Down: Why Most Computers Fail After Year One",1,85,1,0
 "laptop","product","qwen","",0,0,0,0
-"laptop","product","egcg","How to Map Laptop Using Only Dawn",1,30,0,0
+"laptop","product","egcg","How I Master Laptop and That deliver results",1,45,0,0
 "laptop","product","curated","",0,0,0,0
-"productivity","book","cloud","The 5-Hour Workday That Doubled My Output",0,0,0,0
-"productivity","book","qwen","Mastering Productivity: From Jotting to Zen",0,0,0,0
-"productivity","book","egcg","The Fifth Season Productivity Bright and Beautiful",1,15,0,0
+"productivity","book","cloud","The Hidden Trap of Productivity: Why Doing More Often Means Achieving Less",1,85,1,0
+"productivity","book","qwen","Mastering Productivity: From Jotting to Zen",1,75,1,0
+"productivity","book","egcg","The Perfect Truth About Productivity That Will Guide Your Mind",1,45,0,0
 "productivity","book","curated","The Silent Productivity Killer Nobody Talks About",1,75,1,1
-"love","song","cloud","The Unseen Geometry of Love",1,75,1,0
+"love","song","cloud","The Weight of a Single Word",0,0,0,0
 "love","song","qwen","Code of Endless Embrace",0,0,0,0
-"love","song","egcg","Why Love Is the Ultimate Journey of Our Time",1,65,0,0
+"love","song","egcg","Why Love Is the Unstoppable Journey of Our Time",1,65,0,0
 "love","song","curated","Algorithm of Love",1,75,1,1
-"startup","book","cloud","The Startup That Lost Its Way and Found a Billion-Dollar Pivot",1,85,1,0
-"startup","book","qwen","Startup's Guide to Uncovering Hidden Profits",0,0,0,0
-"startup","book","egcg","Startup: A Novel About and",0,0,0,0
+"startup","book","cloud","The Startup That Never Slept: What 100 Founders Learned in the Trenches",1,85,1,0
+"startup","book","qwen","Startup's Guide to Uncovering Hidden Profits",1,75,1,0
+"startup","book","egcg","The Still of Startup: How to Imagine Without Losing Your Way",1,65,0,0
 "startup","book","curated","5 Reasons Why Your Startup Will Fail (And One Way to Avoid It)",1,85,1,1
-"crypto","article","cloud","Why Crypto Whales Are Betting Against Bitcoin Right Now",1,85,1,0
-"crypto","article","qwen","Unleashing Crypto's Power: Exploring the Future of Finance",0,0,0,0
-"crypto","article","egcg","How to Grow Crypto: The Creative Revolution",0,0,0,0
-"crypto","article","curated","Blockchain Beyond Crypto: Practical Applications for Business",0,0,0,0
-"parenting","book","cloud","The 5-Minute Parenting Fix That Actually Works",1,85,1,0
+"crypto","article","cloud","Why the Crypto Crash Might Be the Best Thing That Ever Happened",1,85,1,0
+"crypto","article","qwen","Unleashing Crypto's Power: Exploring the Future of Finance",1,85,1,0
+"crypto","article","egcg","A Beginner's Guide to Progressing Crypto",1,45,0,0
+"crypto","article","curated","Blockchain Beyond Crypto: Practical Applications for Business",1,85,1,0
+"parenting","book","cloud","The Art of Letting Go: Why Good Parenting Means Loosening Your Grip",1,85,1,0
 "parenting","book","qwen","Raising Emotions: A Guide to Parenting Through the Ages",1,75,1,1
-"parenting","book","egcg","What Happened Parenting Final Empire",1,15,0,0
+"parenting","book","egcg","Why You Should Train Parenting 24 hours",1,45,0,0
 "parenting","book","curated","",0,0,0,0
-"fitness","youtube","cloud","Why Your Workout Routine Isn't Working (And How to Fix It in 7 Days)",0,0,0,0
+"fitness","youtube","cloud","I Did 100 Workouts in 100 Days — Here's What Changed",0,0,0,0
 "fitness","youtube","qwen","",0,0,0,0
-"fitness","youtube","egcg","The Still Truth About Fitness",1,65,0,0
+"fitness","youtube","egcg","The Secret Fitness First Week",1,65,0,0
 "fitness","youtube","curated","Is the Apple Watch a Fitness Game Changer?",1,75,1,1
-"travel","blog","cloud","The Solo Trip That Changed How I Navigate Every City",0,0,0,0
+"travel","blog","cloud","Why You Should Travel to the Most Boring Place on Earth",1,85,1,0
 "travel","blog","qwen","",0,0,0,0
-"travel","blog","egcg","The 7 days Plan to Balance Travel",1,45,0,0
+"travel","blog","egcg","7 Lessons About Travel That That move the needle",1,65,0,0
 "travel","blog","curated","I Quit My Six-Figure Job to Travel the World and Regretted Everything",1,85,1,1
-"cooking","book","cloud","The One-Pot Method That Cut My Cooking Time in Half",1,85,1,0
+"cooking","book","cloud","The One Knife You'll Use Every Day",0,0,0,0
 "cooking","book","qwen","Flavors of the Kitchen: A Culinary Journey",0,0,0,0
-"cooking","book","egcg","The Lost of Cooking: How to Imagine Without Losing Your Art",0,0,0,0
+"cooking","book","egcg","The Spirited Truth About Cooking That Will Architect Your Mind",1,45,0,0
 "cooking","book","curated","",0,0,0,0
-"meditation","podcast","cloud","Why 10 Minutes of Meditation Reshapes Your Brain Like a Workout",1,85,1,0
+"meditation","podcast","cloud","Why Most People Meditate Wrong (And How to Fix It)",0,0,0,0
 "meditation","podcast","qwen","",0,0,0,0
-"meditation","podcast","egcg","Have You Ever Wondered How to Balance Meditation?",0,0,0,0
+"meditation","podcast","egcg","The Science That Gives You That get results Without Fuel Meditation",1,15,0,0
 "meditation","podcast","curated","6 Ways to Reduce Anxiety Without Meditation",1,45,0,1
-"investing","article","cloud","The One Investing Mistake That Cost Me $50,000",1,85,1,0
+"investing","article","cloud","The Hidden Cost of Safe Investments: What You're Really Missing",0,0,0,0
 "investing","article","qwen","",0,0,0,0
-"investing","article","egcg","The Creative to Wining Investing Your",1,15,0,0
+"investing","article","egcg","The Existential Crisis Investing Rules of War",1,45,0,0
 "investing","article","curated","The ROI of investing in employee wellness",1,85,1,1
-"photography","youtube","cloud","Why Your Photos Look Boring (and How to Fix It in 10 Minutes)",0,0,0,0
+"photography","youtube","cloud","The Photo That Changed How I See Light",0,0,0,0
 "photography","youtube","qwen","",0,0,0,0
-"photography","youtube","egcg","How Photography Changed the Start Forever",1,45,0,0
+"photography","youtube","egcg","The Beginner's Guide to Preparing Photography",1,45,0,0
 "photography","youtube","curated","Photography Tips for Beginners: Shooting in Manual Mode",1,85,1,1
-"music","song","cloud","The Song That Changed How I Hear Music",1,75,1,0
+"music","song","cloud","The Sound of Silence Between Notes",0,0,0,0
 "music","song","qwen","",0,0,0,0
-"music","song","egcg","9 Music Machines You Need to Know",1,65,0,0
+"music","song","egcg","Why Don't You Music Same Blue",1,30,0,0
 "music","song","curated","What Your Taste in Music Says About You",1,65,0,1
-"AI","article","cloud","Why AI Is Better at Predicting Your Future Than You Are",1,85,1,0
+"AI","article","cloud","Why AI Still Can't Tie a Shoelace",1,85,1,0
 "AI","article","qwen","",0,0,0,0
 "AI","article","egcg","",0,0,0,0
 "AI","article","curated","AI Will Never Be Creative: The Human Brain's Irreplaceable Edge",1,75,1,1
-"remote work","blog","cloud","Why Remote Work Is Secretly Making You Lonelier (And What to Do About It)",1,85,1,0
+"remote work","blog","cloud","Why Remote Work Is Making You Lonelier (and How to Fix It)",1,85,1,0
 "remote work","blog","qwen","Unlocking the Secrets of Remote Success: How to Thrive in the New Work Paradigm",1,85,1,1
-"remote work","blog","egcg","Remote work: Fast or Practical?",1,65,0,0
+"remote work","blog","egcg","3 Remote work Secrets Guide Need to Know",1,45,0,0
 "remote work","blog","curated","Opinion: Remote Work Is Not for Everyone — And That’s Okay",1,85,1,1
-"mental health","podcast","cloud","Why Your Mental Health Routine Might Be Backfiring",1,85,1,0
+"mental health","podcast","cloud","Why Your Mental Health Isn't Broken — It's Adapting",1,85,1,0
 "mental health","podcast","qwen","Unlocking Mental Health: Stories from the Frontline",1,85,1,1
-"mental health","podcast","egcg","How Mental health Is the Art Industry",1,15,0,0
+"mental health","podcast","egcg","The Proven Side of Mental health: Embracing Untold",1,45,0,0
 "mental health","podcast","curated","What Happens When Prisons Become Mental Health Facilities",1,75,1,1
-"gardening","book","cloud","The 5-Minute Garden: My Secret to a Blooming Yard Without the Back Pain",0,0,0,0
+"gardening","book","cloud","The Seed That Outlived the Gardener",0,0,0,0
 "gardening","book","qwen","Roots to Bloom: A Gardener's Journey",0,0,0,0
-"gardening","book","egcg","11 Common Gardening Mistakes and How to Fix Them",1,85,1,0
+"gardening","book","egcg","In Search of Gardening: A Art's Journey",1,45,0,0
 "gardening","book","curated","",0,0,0,0
-"coffee","product","cloud","The 30-Second Coffee Ritual That Changed My Mornings",1,85,1,0
+"coffee","product","cloud","The Last Coffee You'll Ever Need",1,85,1,0
 "coffee","product","qwen","Revitalize Your Day with the Perfect Cup of Coffee",1,85,1,1
-"coffee","product","egcg","How to Map Coffee Using Only Way",1,15,0,0
+"coffee","product","egcg","The Absolute Truth About Coffee",1,75,1,0
 "coffee","product","curated","Why Monday Morning Coffee Should Be Classified as a Scheduled Substance",1,85,1,1
-"minimalism","book","cloud","The Joy of Owning Less: How Minimalism Uncluttered My Life",1,85,1,0
-"minimalism","book","qwen","Minimalism: Shedding the Non-Essential for a Happier, More Fulfilling Life",0,0,0,0
-"minimalism","book","egcg","A Quiet Minimalism We Leave Behind",1,75,1,0
+"minimalism","book","cloud","The One Thing You Must Give Up to Live a Minimalist Life",0,0,0,0
+"minimalism","book","qwen","Minimalism: Shedding the Non-Essential for a Happier, More Fulfilling Life",1,85,1,0
+"minimalism","book","egcg","The Da Vinci Minimalism Chased the Moon",1,15,0,0
 "minimalism","book","curated","Why Minimalism Isn't About Owning Less But Wanting Less",1,85,1,1
-"creativity","book","cloud","The Hidden Pattern: Why Creative Geniuses Think Differently",0,0,0,0
+"creativity","book","cloud","The Night the Muse Came to Dinner",0,0,0,0
 "creativity","book","qwen","",0,0,0,0
-"creativity","book","egcg","Outliers the Story Creativity Small Mercies",1,45,0,0
+"creativity","book","egcg","How to Imagine Creativity: The Spirited Change",1,65,0,0
 "creativity","book","curated","5 Morning Habits That Actually Boosted My Creativity",1,85,1,1
-"sleep","podcast","cloud","The Nap That Changed Everything",0,0,0,0
+"sleep","podcast","cloud","You're Sleeping Wrong — Here's What Your Brain Actually Needs",0,0,0,0
 "sleep","podcast","qwen","Unlocking Dreams: A Journey to Perfect Sleep",1,75,1,1
-"sleep","podcast","egcg","The Proven Sleep Science That That will change your life",1,55,0,0
+"sleep","podcast","egcg","How to Deal with Lost When Fuel Sleep",1,15,0,0
 "sleep","podcast","curated","Overthinking Sleep",1,65,0,1
-"negotiation","book","cloud","The 7-Minute Negotiation That Saved a Million-Dollar Deal",1,85,1,0
+"negotiation","book","cloud","The Power of No: Why Walking Away Is Your Greatest Negotiation Tool",1,85,1,0
 "negotiation","book","qwen","",0,0,0,0
-"negotiation","book","egcg","When Negotiation Speaks: Stories of and",1,15,0,0
+"negotiation","book","egcg","In Search of Negotiation: A Machine's Journey",1,45,0,0
 "negotiation","book","curated","The Negotiation Playbook: Getting What You Want Without Selling Out",1,85,1,1
-"writing","book","cloud","The One Sentence That Saved My Writing Career",1,85,1,0
+"writing","book","cloud","The Unwritten Rules: What Your English Teacher Never Taught You About Writing",1,85,1,0
 "writing","book","qwen","",0,0,0,0
-"writing","book","egcg","Beyond Writing: The Next of",0,0,0,0
+"writing","book","egcg","How to Perfect Writing in 24 hours",1,45,0,0
 "writing","book","curated","The Unexpected Benefit of Writing by Hand",1,85,1,1
-"marketing","article","cloud","Why 90% of Marketing Budgets Fail (And How to Avoid It)",1,85,1,0
+"marketing","article","cloud","Why Most Marketing Budgets Are 90% Waste",1,85,1,0
 "marketing","article","qwen","",0,0,0,0
-"marketing","article","egcg","How Marketing Changed the Art Forever",1,65,0,0
+"marketing","article","egcg","4 Common Marketing Mistakes and How to Fix Them",1,85,1,0
 "marketing","article","curated","Stop Romanticizing Hustle Culture: It's Just Exhaustion with Better Marketing",1,85,1,1
-"data science","article","cloud","Why Data Science Is Failing Half the Companies That Try It",1,85,1,0
+"data science","article","cloud","Why Your Data Science Project Will Fail (And It's Not the Algorithm)",1,85,1,0
 "data science","article","qwen","",0,0,0,0
-"data science","article","egcg","11 Lessons About Data science That That will change your life",1,55,0,0
+"data science","article","egcg","The Promise to Dreaming Data science That actually work",1,15,0,0
 "data science","article","curated","The Science of Loneliness: What Isolation Does to the Brain",1,30,0,1
-"blockchain","article","cloud","Why Blockchain Will Survive the Crypto Crash",1,85,1,0
+"blockchain","article","cloud","Why Blockchain Will Outlive Bitcoin: The Real Revolution Nobody's Talking About",1,85,1,0
 "blockchain","article","qwen","",0,0,0,0
-"blockchain","article","egcg","Why Blockchain Matters More Than Ever",1,85,1,1
+"blockchain","article","egcg","The Future of Blockchain: What's Coming in 7 days",1,65,0,0
 "blockchain","article","curated","Blockchain Beyond Crypto: Practical Applications for Business",1,85,1,1
-"electric cars","youtube","cloud","Why Electric Cars Still Can't Beat Gas for Road Trips",1,75,1,0
+"electric cars","youtube","cloud","Why Electric Cars Are Failing in Winter (And How to Fix It)",1,85,1,0
 "electric cars","youtube","qwen","",0,0,0,0
-"electric cars","youtube","egcg","Unlock That will transform your life with This Simple Electric cars Hack",1,55,0,0
+"electric cars","youtube","egcg","Unlock That will transform your life with This Simple Electric cars Hack",1,55,0,1
 "electric cars","youtube","curated","The Truth About Electric Cars: Pros and Cons",1,75,1,1
-"space exploration","article","cloud","Why NASA's Next Mission Could Find Alien Life by 2030",0,0,0,0
-"space exploration","article","qwen","Unveiling the Mysteries of the Deep Space: Exploring the Unknown",0,0,0,0
-"space exploration","article","egcg","6 Lessons About Space exploration That That will change your life",1,45,0,0
+"space exploration","article","cloud","The Silent Crisis: Why Space Exploration Is More Urgent Than You Think",1,85,1,0
+"space exploration","article","qwen","Unveiling the Mysteries of the Deep Space: Exploring the Unknown",1,65,0,0
+"space exploration","article","egcg","Why You Should Shape Space exploration One weekend",1,15,0,0
 "space exploration","article","curated","What Space Exploration Teaches Us About Life on Earth",1,85,1,1
-"wine","blog","cloud","Why Aged Wine Tastes Better (and the Science Behind It)",1,85,1,0
+"wine","blog","cloud","Why Natural Wine Is a Lie You've Been Sold",1,85,1,0
 "wine","blog","qwen","Vintage Flavors: A Journey Through Time with Wine",1,85,1,1
-"wine","blog","egcg","How to Perfect Wine Without Science",1,65,0,0
+"wine","blog","egcg","The Mindful Way to Master Wine",1,85,1,0
 "wine","blog","curated","Dandelion Wine",1,50,0,1
-"dancing","youtube","cloud","I Tried Dancing Every Day for 30 Days — Here's What Happened",1,85,1,0
+"dancing","youtube","cloud","I Tried Dancing for 30 Days — Here's What Happened to My Body and Mind",1,85,1,0
 "dancing","youtube","qwen","Step into the rhythm: Dancing through life's moments",1,75,1,1
-"dancing","youtube","egcg","Perfect Your Dancing in Today with This Method",1,45,0,0
+"dancing","youtube","egcg","How I Prepare Dancing and Changed My Life",1,45,0,0
 "dancing","youtube","curated","Dancing Alone",1,75,1,1
-"podcasting","blog","cloud","Why Your Podcast Has Fewer Listeners Than a Hamster's Squeak",0,0,0,0
+"podcasting","blog","cloud","Why Your Podcast Won't Grow Until You Stop Trying to Be Interesting",0,0,0,0
 "podcasting","blog","qwen","",0,0,0,0
-"podcasting","blog","egcg","The Future of Podcasting: What's Coming in 2026",0,0,0,0
+"podcasting","blog","egcg","Why Do Journey Balance Podcasting?",1,15,0,0
 "podcasting","blog","curated","",0,0,0,0
-"freelancing","blog","cloud","I Quit My 9-to-5 for Freelancing — Here’s What Nobody Told Me About the First 90 Days",1,85,1,0
+"freelancing","blog","cloud","The $5,000 Mistake I Made My First Month as a Freelancer",0,0,0,0
 "freelancing","blog","qwen","Unlocking Freelancing Success: Tips for the Modern Freelancer",1,85,1,1
-"freelancing","blog","egcg","Beyond Freelancing: The Next of",0,0,0,0
+"freelancing","blog","egcg","Never Dream Freelancing Before You Read This",1,45,0,0
 "freelancing","blog","curated","",0,0,0,0
-"vegan","blog","cloud","Why This Vegan Cheese Fooled My Non-Vegan Friends (Recipe Inside)",1,85,1,0
+"vegan","blog","cloud","Why Every Vegan Needs a Carnivore Friend",1,65,0,0
 "vegan","blog","qwen","Beyond Meat: Exploring the Future of Vegan Cuisine",1,85,1,1
-"vegan","blog","egcg","Why I Stopped Vegan it Without Reading",1,45,0,0
+"vegan","blog","egcg","How to Learn Vegan Send—and Regretted it",1,15,0,0
 "vegan","blog","curated","The Best Vegan Recipes for Busy Weeknights",1,85,1,1
-"yoga","youtube","cloud","Why Yoga is the Best Kept Secret for Building Real Strength",1,85,1,0
+"yoga","youtube","cloud","10 Minutes of This Yoga Will Rewire Your Brain (Science Says)",1,75,1,0
 "yoga","youtube","qwen","Yoga Flow: Unlocking Inner Peace Through Asanas",1,85,1,1
-"yoga","youtube","egcg","Why Yoga Is More Safe Than You Think",1,65,0,0
+"yoga","youtube","egcg","Installing Solar Panels Yoga Podcast from Scratch",1,30,0,0
 "yoga","youtube","curated","Yoga Pants and Pizza",1,30,0,1
-"gaming","youtube","cloud","Why Most Gamers Quit Before They Peak",0,0,0,0
+"gaming","youtube","cloud","I Tried Playing Every Game Genre in 24 Hours",0,0,0,0
 "gaming","youtube","qwen","",0,0,0,0
-"gaming","youtube","egcg","The Perfect Guide to Crafting Gaming",1,45,0,0
+"gaming","youtube","egcg","11 Gaming Guides That actually work",1,65,0,0
 "gaming","youtube","curated","Budget Gaming PC",1,75,1,1
-"digital nomad","blog","cloud","I Quit My Office Job to Live on a Laptop: 7 Brutal Truths About Digital Nomad Life",1,85,1,0
+"digital nomad","blog","cloud","I Quit My Apartment to Live in 12 Countries This Year",0,0,0,0
 "digital nomad","blog","qwen","Nomad Nation: Thriving in the Digital Age",1,85,1,1
-"digital nomad","blog","egcg","5 Ways Digital Nomad Made Me Rich",1,65,0,0
-"digital nomad","blog","curated","The Rise of 'Digital Nomad' Communities in Southeast Asia",0,0,0,0
-"sourdough bread","blog","cloud","The One Sourdough Mistake That Ruins Your Crust",1,85,1,0
+"digital nomad","blog","egcg","How to Reset Digital nomad Like a Pro",1,45,0,0
+"digital nomad","blog","curated","The Rise of 'Digital Nomad' Communities in Southeast Asia",1,85,1,0
+"sourdough bread","blog","cloud","The One Mistake That Ruins Your Sourdough Starter (And How to Fix It)",1,85,1,0
 "sourdough bread","blog","qwen","From Yeast to Crust: A Journey into the Art of Sourdough Bread",1,85,1,1
-"sourdough bread","blog","egcg","5 Signs Sourdough Bread What I Learned",1,15,0,0
+"sourdough bread","blog","egcg","How to Negotiate Sourdough Bread 4 is Everywhere",1,15,0,0
 "sourdough bread","blog","curated","The Art of Making Sourdough Bread at Home",1,85,1,1
-"intermittent fasting","book","cloud","Why Eating Less Often Doubled My Energy (and Shrank My Waistline)",0,0,0,0
+"intermittent fasting","book","cloud","Why You're Hungry All the Time on Intermittent Fasting (And How to Fix It)",1,85,1,0
 "intermittent fasting","book","qwen","",0,0,0,0
-"intermittent fasting","book","egcg","7 Fast Ways to Guide Intermittent fasting in Tonight",1,45,0,0
+"intermittent fasting","book","egcg","The Truest Intermittent Fasting Not Perfection",1,45,0,0
 "intermittent fasting","book","curated","I Tried Intermittent Fasting for 3 Months — Results Were Surprising",1,85,1,1
-"bitcoin","article","cloud","Why Bitcoin's Next Halving Could Be Its Last",0,0,0,0
+"bitcoin","article","cloud","The $1 Trillion Question: Will Bitcoin Replace Gold?",1,85,1,0
 "bitcoin","article","qwen","",0,0,0,0
-"bitcoin","article","egcg","The Fast Side of Bitcoin",1,75,1,0
+"bitcoin","article","egcg","Why We Bitcoin College Students",1,65,0,0
 "bitcoin","article","curated","",0,0,0,0
-"tennis","youtube","cloud","The Serve That Changed Everything: How a 16-Year-Old Beat a Pro",0,0,0,0
+"tennis","youtube","cloud","The One-Handed Backhand That Changed Tennis Forever",1,85,1,0
 "tennis","youtube","qwen","",0,0,0,0
-"tennis","youtube","egcg","4 Lessons About Tennis That Worth your time",1,55,0,0
+"tennis","youtube","egcg","The Safe Side of Tennis",1,65,0,0
 "tennis","youtube","curated","",0,0,0,0
-"skincare","blog","cloud","The 3-Second Rule That Saved My Skin (And Why Dermatologists Agree)",0,0,0,0
+"skincare","blog","cloud","The Ingredient Your Skincare Routine Is Missing (and It's Not Retinol)",1,85,1,0
 "skincare","blog","qwen","Revitalize Your Skin: 7 Steps to Radiant, Youthful Glow",0,0,0,0
-"skincare","blog","egcg","The Practical Side of Skincare",1,75,1,0
+"skincare","blog","egcg","The Practical Skincare Guide That That will transform your business",1,45,0,0
 "skincare","blog","curated","",0,0,0,0
-"virtual reality","youtube","cloud","Why Virtual Reality Is About to Change Everything You Know About Travel",1,85,1,0
+"virtual reality","youtube","cloud","I Wore a VR Headset for 24 Hours Straight — Here's What Happened to My Brain",0,0,0,0
 "virtual reality","youtube","qwen","Unleash the Future: Exploring Virtual Reality",1,75,1,1
-"virtual reality","youtube","egcg","I Craft Virtual reality for 48 hours - Here's What Happened",1,85,1,0
+"virtual reality","youtube","egcg","7 Ultimate Reasons to Guide Virtual reality",1,45,0,0
 "virtual reality","youtube","curated","",0,0,0,0
-"board games","product","cloud","Why Board Games Are the New Social Superpower",1,85,1,0
+"board games","product","cloud","The Board Game That Made My Family Stop Fighting",1,75,1,0
 "board games","product","qwen","",0,0,0,0
-"board games","product","egcg","3 Keen Hacks for Board games",1,65,0,0
+"board games","product","egcg","The Night Board Games Soft Return",1,45,0,0
 "board games","product","curated","",0,0,0,0
-"tea","product","cloud","Why Your Morning Tea Should Taste Like Rainforest Soil",1,65,0,0
-"tea","product","qwen","Infuse Your Day with Tea: A Journey to Better Health",0,0,0,0
-"tea","product","egcg","How I Accelerate Tea and Worth your time",1,15,0,0
+"tea","product","cloud","The Perfect Cup: Why Your Tea Tastes Like Dishwater",1,65,0,0
+"tea","product","qwen","Infuse Your Day with Tea: A Journey to Better Health",1,85,1,0
+"tea","product","egcg","The Smart Truth About Tea",1,65,0,0
 "tea","product","curated","Why I Switched From Coffee to Tea (And How It Changed My Afternoons)",1,85,1,1
-"solo travel","blog","cloud","Why I Quit My Job to Travel Alone for a Year",1,85,1,0
+"solo travel","blog","cloud","Why Solo Travel Is the Ultimate Test of Self-Reliance",1,85,1,0
 "solo travel","blog","qwen","",0,0,0,0
-"solo travel","blog","egcg","Everything You Need to Know About Solo travel in Tonight",1,30,0,0
+"solo travel","blog","egcg","How to Handle Solo Travel Peace Each Morning",1,45,0,0
 "solo travel","blog","curated","Solo Travel: Escaping Yourself or Finding Yourself?",1,85,1,1
-"home office","product","cloud","The 5 Neuroscience Hacks to Make Your Home Office Boost Productivity by 30%",1,75,1,0
+"home office","product","cloud","The 5 Most Efficient Home Office Layouts for Maximum Productivity",1,85,1,0
 "home office","product","qwen","",0,0,0,0
-"home office","product","egcg","How I Revolutionize Home office and That move the needle",1,45,0,0
+"home office","product","egcg","How to Master Home office and That will change everything",1,45,0,0
 "home office","product","curated","5 Ways to Make Your Home Office Feel Like a Sanctuary",1,85,1,1
-"jazz","song","cloud","The Night Jazz Found a Lost Soul",1,85,1,0
+"jazz","song","cloud","Smoke at Midnight",0,0,0,0
 "jazz","song","qwen","Jazz Beats in the Heartbeat",1,75,1,1
-"jazz","song","egcg","The Unstoppable Track for Optimizeing Jazz",1,30,0,0
+"jazz","song","egcg","The Promise to Mastering Jazz Worth your time",1,45,0,0
 "jazz","song","curated","",0,0,0,0
-"ethical fashion","blog","cloud","I Stopped Buying Fast Fashion for a Year — Here's What Happened to My Wallet and Wardrobe",1,85,1,0
+"ethical fashion","blog","cloud","The $7 Dress That Changed My View on Ethical Fashion",1,85,1,0
 "ethical fashion","blog","qwen","Ethical Threads: Unveiling the True Cost of Fashion",1,85,1,1
-"ethical fashion","blog","egcg","Why Ethical fashion Is the New Art",1,65,0,0
+"ethical fashion","blog","egcg","The Definitive Guide to Guideing Ethical fashion",1,30,0,0
 "ethical fashion","blog","curated","The Hidden Cost of Fast Fashion",1,85,1,1
-"climate change","article","cloud","The Arctic Is Boiling: What This Means for Your Lifetime",0,0,0,0
+"climate change","article","cloud","Why Climate Change Will Make Your Coffee More Expensive",1,85,1,0
 "climate change","article","qwen","Climate Change: The Silent Surge of Our Time",1,85,1,1
-"climate change","article","egcg","Perfecting Climate change: A Step-by-Step Energy",1,15,0,0
+"climate change","article","egcg","The Fast Art for Guideing Climate change",1,15,0,0
 "climate change","article","curated","What the Fossil Record Tells Us About Climate Change",1,85,1,1
