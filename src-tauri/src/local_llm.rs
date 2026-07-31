@@ -12,7 +12,18 @@ use llama_cpp_2::token::LlamaToken;
 /// Sampling temperature for autoregressive generation.
 /// Argmax produced identical titles for every call — this is what makes
 /// batch generation possible. Tune by measurement: 0.6 / 0.8 / 1.0.
-const TEMPERATURE: f32 = 0.8;
+///
+/// Override at runtime with `TF_LLM_TEMP` (benchmark sweep without rebuilds).
+fn temperature() -> f32 {
+    static TEMP: OnceLock<f32> = OnceLock::new();
+    *TEMP.get_or_init(|| {
+        std::env::var("TF_LLM_TEMP")
+            .ok()
+            .and_then(|v| v.parse::<f32>().ok())
+            .filter(|t| (0.05..=2.0).contains(t))
+            .unwrap_or(0.8)
+    })
+}
 
 /// Top-K candidates by logit before softmax.
 const TOP_K: usize = 40;
@@ -314,9 +325,10 @@ fn sample_token<R: Rng>(
 
     // Softmax with temperature, shifted by max for numerical stability
     let max_l = cands[0].1;
+    let temp = temperature();
     let mut sum = 0.0f32;
     let probs: Vec<f32> = cands.iter().map(|(_, l)| {
-        let p = ((l - max_l) / TEMPERATURE).exp();
+        let p = ((l - max_l) / temp).exp();
         sum += p;
         p
     }).collect();
