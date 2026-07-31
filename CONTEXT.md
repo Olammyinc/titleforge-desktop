@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-31 (Qwen fixed at k=1, but sampler is deterministic — batch generation is broken)
+> **Last updated:** 2026-07-31 (sprint complete: Qwen non-deterministic, EGCG retired, few-shot kept — see §5)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -381,6 +381,14 @@ Core is acceptable. Pro/Studio are still product problems — surface to user be
 
 **Task 1 status: CLOSED as not-shippable.** Recorded in §6.2 #1 (replaces "port web quality rules" — the plan was wrong for this model size). The n_ctx=1024 bump was NOT reverted — it's harmless and future-proof (prompts were 351-405 tokens at the old 512 window, dangerously close with 60 new tokens; the bump to 1024 costs ~nothing for CPU inference).
 
+### 2026-07-31 (late night, later) — Task 2 complete: EGCG retired from the production pipeline
+
+**Pass 2 (EGCG generation) removed from `engine.rs`.** The pipeline is now Qwen (Pass 1) → curated retrieval (Pass 2, instant fallback + batch top-up). Rationale: EGCG measured 20-24% usable on the corrected metric (mean ~37) — it produced output 98% of the time and garbage 80% of the time. Qwen now fires 50/50 at ~96% usable, so EGCG's only reason for existing (batch fill) is gone.
+
+- **`title_gen.rs` NOT deleted** — it holds `retrieve_similar()` (Qwen few-shot + curated retrieval) and the EGCG machinery that benchmark tests still compare against (`bench_judge.rs`, `bench_path_a.rs`, `egcg_sanity.rs`). EGCG stays as a benchmark column, not a production engine.
+- **Verification:** `cargo test --release --lib` 19/19. `egcg_sanity` still passes (196 titles, 0 placeholder leaks — title_gen.rs intact). Batch measurement confirms the new pipeline: 25/25 unique, 100% local-llm, zero EGCG/curated fallback needed.
+- **New pipeline:** `engine.rs` = LLM pass + curated fallback only. Benchmarks unchanged (EGCG column retained for regression comparison).
+
 ### 2026-07-31 (late night, later) — Task 3 complete: few-shot RE-APPLIED to web prompt. The original revert was wrong.
 
 **Task 3 (re-test the web few-shot revert against the FIXED metric) — DONE. Few-shot is KEPT this time.**
@@ -424,14 +432,6 @@ The original revert (2026-07-31 afternoon) was based on the **broken keyword gat
 | 4 | Desktop sales copy | ✅ Qwen claims, honest batch framing, version fix |
 
 **Open items after sprint (see §6.2):** Pro/Studio timing (100 ≈ 22min, 500 ≈ 110min — product decision needed), template diversity within batches (needs bigger model), Qwen bundling (gated on cross-platform verify + redistribution terms + delivery mechanism), Mac/Linux SHA256s, updater trial.
-
-### 2026-07-31 (late night, later) — Task 2 complete: EGCG retired from the production pipeline
-
-**Pass 2 (EGCG generation) removed from `engine.rs`.** The pipeline is now Qwen (Pass 1) → curated retrieval (Pass 2, instant fallback + batch top-up). Rationale: EGCG measured 20-24% usable on the corrected metric (mean ~37) — it produced output 98% of the time and garbage 80% of the time. Qwen now fires 50/50 at ~96% usable, so EGCG's only reason for existing (batch fill) is gone.
-
-- **`title_gen.rs` NOT deleted** — it holds `retrieve_similar()` (Qwen few-shot + curated retrieval) and the EGCG machinery that benchmark tests still compare against (`bench_judge.rs`, `bench_path_a.rs`, `egcg_sanity.rs`). EGCG stays as a benchmark column, not a production engine.
-- **Verification:** `cargo test --release --lib` 19/19. `egcg_sanity` still passes (196 titles, 0 placeholder leaks — title_gen.rs intact). Batch measurement confirms the new pipeline: 25/25 unique, 100% local-llm, zero EGCG/curated fallback needed.
-- **New pipeline:** `engine.rs` = LLM pass + curated fallback only. Benchmarks unchanged (EGCG column retained for regression comparison).
 
 ### 2026-07-31 (night, later) — Qwen's sampler is deterministic. Batch generation cannot work.
 
