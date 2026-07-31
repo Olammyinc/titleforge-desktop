@@ -401,6 +401,30 @@ The original revert (2026-07-31 afternoon) was based on the **broken keyword gat
 
 **Task 3 status: COMPLETE — few-shot stays in production.**
 
+### 2026-07-31 (late night, later) — Task 4 complete: desktop sales copy updated. Full sprint done.
+
+**Task 4 (update desktop sales copy to match measured reality) — DONE.** `desktop.html`, `updates.json`.
+
+- **Engine claims:** SmolLM2-360M/258MB → **Qwen2.5-1.5B** (feature 01, feature 03, pricing table, FAQ). The shipped engine is Qwen via llama.cpp, not SmolLM2.
+- **Studio batch claim:** "Up to 500 titles per batch" → **"Largest batch sizes (up to 500 titles)"** — 500 titles ≈ 2hr at the measured ~12s/title, so the promise is now a range, not a time guarantee. The number stays (honest capability ceiling), the framing is honest.
+- **FAQ engine comparison** rewritten honestly: "strong, publishable results" offline (measured 96% usable, mean 81), BYO-AI key for critical projects.
+- **Stale version 0.2.0 → 1.0.0-beta.1.**
+- **updates.json** note: EGCG/SmolLM2-135M → Qwen2.5 with SmolLM2 fallback.
+- Download page disk requirements (500MB/1GB) already correct for a bundled LLM.
+
+**Sprint complete — all 6 tasks shipped or closed:**
+
+| # | Task | Result |
+|---|---|---|
+| 0 | Qwen non-deterministic (T=0.8, top-k 40) | ✅ 25/25 unique batch |
+| 0b | Real 25-title batch measured | ✅ 169.6s, 100% LLM |
+| 1 | Port web quality rules | ✅ Closed — rules made Qwen 1.5B worse (75-77 vs 81 mean); model capacity is the ceiling |
+| 2 | Retire EGCG | ✅ Removed from pipeline |
+| 3 | Few-shot re-test | ✅ KEPT — 100% usable, mean 90.7; original revert was wrong (broken metric) |
+| 4 | Desktop sales copy | ✅ Qwen claims, honest batch framing, version fix |
+
+**Open items after sprint (see §6.2):** Pro/Studio timing (100 ≈ 22min, 500 ≈ 110min — product decision needed), template diversity within batches (needs bigger model), Qwen bundling (gated on cross-platform verify + redistribution terms + delivery mechanism), Mac/Linux SHA256s, updater trial.
+
 ### 2026-07-31 (late night, later) — Task 2 complete: EGCG retired from the production pipeline
 
 **Pass 2 (EGCG generation) removed from `engine.rs`.** The pipeline is now Qwen (Pass 1) → curated retrieval (Pass 2, instant fallback + batch top-up). Rationale: EGCG measured 20-24% usable on the corrected metric (mean ~37) — it produced output 98% of the time and garbage 80% of the time. Qwen now fires 50/50 at ~96% usable, so EGCG's only reason for existing (batch fill) is gone.
