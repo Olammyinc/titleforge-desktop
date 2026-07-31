@@ -339,6 +339,30 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 **Note on Qwen usable rate:** the fixed benchmark (keyword gate removed) shows Qwen at 100% usable at k=1; at T=0.8 with sampling it is 96%. Both exceed the 95% bar.
 
+### 2026-07-31 (late night, later) — Task 0b complete: real 25-title batch measured for the first time
+
+**First real batch through the production path.** `tests/batch_measure.rs` calls `engine::generate` (the exact path the app uses) for `coffee` × 25 — the Core tier promise.
+
+| Metric | Before Task 0 | After Task 0 |
+|---|---|---|
+| Unique titles / 25 | **1** (deterministic) | **25** |
+| Wall clock | ~3 min (estimate, unbounded) | **169.6s (6.79s/title)** |
+| Source mix | — | 100% local-llm (zero EGCG/curated fallback) |
+
+- All 25 titles keyword-compliant, grammatical, publishable.
+- **New gap found: template diversity within a batch is weak.** 7/25 titles use the "From X to Y" structure ("From Bean to Cup: ..." variants); several share "A Journey Through"/"Uncovering the..." frames. Uniqueness is solved; *formula* repetition is the next problem.
+- This is a prompt-quality-rules issue, not a sampling issue: the desktop system prompt is one sentence, while the web prompt has "No two titles may share their opening three words. No two titles may use the same structural template." → **Task 1 (port web quality rules) directly targets this.**
+
+**Implication for the timing table (was §6.2 #0b):** at 6.79s/title with the *current* single-context-per-call design:
+
+| Tier | Titles | LLM calls (×2 for dedup) | Wall clock |
+|---|---|---|---|
+| Core | 25 | ~30-50 | **~2.8-5.7 min** (measured 169.6s) |
+| Pro | 100 | ~200 | ~22 min |
+| Studio | 500 | ~1000 | ~110 min |
+
+Core is acceptable. Pro/Studio are still product problems — surface to user before optimising. Context reuse across a batch (allocate one KV cache, reuse for all titles in a category) is the obvious first win, but is NOT needed for Core.
+
 ### 2026-07-31 (night, later) — Qwen's sampler is deterministic. Batch generation cannot work.
 
 **Found while assessing readiness to bundle the model. This blocks bundling.**
@@ -695,7 +719,7 @@ Full 4-engine comparison with all fixes applied:
 
 0. **DESKTOP: Qwen sampler is deterministic — batch generation produces one unique title.** Pure argmax in `generate_chat_raw`; identical output across runs, users, and calls. The 100% usable figure holds only at k=1. **✅ FIXED 2026-07-31 (late night): temperature + top-k sampling (T=0.8, top-k 40, inverse-CDF via `rand::thread_rng()`). Same keyword now yields different titles every call (5/5 unique verified). Qwen usable 96% at T=0.8, mean 81.0. See §5 change log for the full temperature sweep.**
 
-0b. **DESKTOP: batch generation never measured.** `engine.rs` loops `target_per_cat * 2` LLM calls at ~3.5 s each — Core 25 titles ≈ 3 min, Pro 100 ≈ 12 min, Studio 500 ≈ 58 min. Needs measurement and likely a rethink (parallelism, context reuse, or lower per-tier caps).
+0b. **DESKTOP: batch generation measured — uniqueness FIXED, timing & diversity still open.** Real 25-title batch (2026-07-31, Task 0b): **25/25 unique** (was 1), 169.6s (6.79s/title), 100% LLM. Core tier is fine. **Pro (100) ≈ 22 min and Studio (500) ≈ 110 min are still product problems** — needs parallelism or context reuse (reuse one KV cache across a batch), or lower per-tier caps. **Template diversity within a batch is weak** (7/25 share "From X to Y") — desktop prompt lacks web's "no shared opening 3 words / no shared template" rule (Task 1 target).
 
 1. **WEB: sampling penalties suppress the keyword.** `frequency_penalty: 0.6` + `presence_penalty: 0.4` in [generate.js:293-294](titleforge/netlify/functions/generate.js:293) penalise tokens the more often they appear. Every title in a batch must contain the same keyword, so the keyword is progressively suppressed — worse the larger the batch. Contradicts the prompt's own instruction. **✅ FIXED July 31: freq reduced to 0.15, presence removed entirely. Anthropic temperature unified to 0.85.**
 
