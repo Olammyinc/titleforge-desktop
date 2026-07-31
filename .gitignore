@@ -7,3 +7,6 @@ models/*.gguf
 llama/
 .bench-key
 bench-cache.json
+# Local-only cargo config (e.g. a dev-machine target-dir override).
+# Never commit this — a hardcoded platform path here breaks CI on other OSes.
+src-tauri/.cargo/
