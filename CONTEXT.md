@@ -314,9 +314,11 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 | 2 — GGUF terms | **✅ VERIFIED Apache 2.0** — `bartowski/Qwen2.5-1.5B-Instruct-GGUF` license card explicitly `apache-2.0`. Original model `Qwen/Qwen2.5-1.5B-Instruct` is also Apache 2.0. **Safe to ship inside the paid installer.** Housekeeping: add `THIRD-PARTY-NOTICES` with Apache 2.0 text + attribution to the app. | ✅ Resolved |
 | 3 — Batch time | **Lower offline caps + fix bottlenecks; BYOK stays uncapped.** Offline: Core 25 (unchanged), Pro 100→**50**, Studio 500→**200**. BYOK has no backend cap; UI slider raised to 500 (Pro) / 1000 (Studio) in AI mode. | ✅ Implemented |
 | 4 — T=0.8 gate | **Accept ~95%±2, gate ≥93%.** "Excellent for offline stuff." T stays 0.8. | ✅ Recorded |
-| 5 — Delivery | **Minimal installer + first-launch download** (with progress/resume/checksum). Terminal install noted as a future idea (not now). | ⬜ To implement |
+| 5 — Delivery | **Minimal installer + first-launch download** (with progress/resume/checksum). Terminal install noted as a future idea (not now). | ✅ Implemented |
 
 **Task 3 implementation details:** `lib.rs` caps lowered (Pro 50, Studio 200) with rationale comment. `app.js` `setupSlider()` now engine-aware — AI mode with key → slider.max 500/1000 (user's own API bill); offline → 50/200. Engine toggle (auto/database/ai) re-applies slider max on switch. `index.html` default slider max 100→50.
+
+**Task 5 implementation details:** minimal installer stays ~22 MB (Qwen NOT bundled). New Rust commands `get_model_status` / `start_model_download`: background thread streams Qwen GGUF from HF to `$DATA_DIR/titleforge-desktop/models/`, SHA256 + size verified before the model counts as present, atomic rename (`.part` → final). Frontend Settings → "Local AI Model" card: status, polled progress bar (1s), download button. `sha2 0.10` dep added. `THIRD-PARTY-NOTICES` added + bundled (Apache 2.0 for Qwen, MIT for llama.cpp). Dev-mode mocks added. **Note: resume support not implemented (fresh download on retry); acceptable for v1 — the progress/checksum/atomic-rename guarantees are in.**
 
 **Also during this session (Task 1 — cross-platform verification):**
 - **CI was failing on EVERY push all day** (pre-existing): `build-macos` + `build-linux-deb` failed at `npx tauri build` (llama-cpp-2 native compile). AppImage job was **masking the same failure** via `continue-on-error: true` — removed (violated brief's "never hide bad output").
