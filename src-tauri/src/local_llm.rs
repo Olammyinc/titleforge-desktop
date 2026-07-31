@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::OnceLock;
 use llama_cpp_2::model::LlamaModel;
 use llama_cpp_2::llama_backend::LlamaBackend;
-use llama_cpp_2::model::{LlamaChatMessage, AddBos};
+use llama_cpp_2::model::{LlamaChatMessage, AddBos, Special};
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::model::params::LlamaModelParams;
 
@@ -59,15 +59,27 @@ impl LocalLlm {
             ctx.decode(&mut batch).ok()?;
         }
 
-        // Sample first token greedily
-        let mut next: Option<llama_cpp_2::token::LlamaToken> = {
+        // Sample first token — but suppress instruction-echo prefixes.
+        // Qwen2.5-1.5B frequently starts with "Here is...", "Sure!...", etc.
+        // By setting banned logits to -inf, we force a creative first word.
+        let banned_first = [
+            "here", "sure", "cert", "please", "write", "note", "based", "using", "```",
+        ];
+        let first_tok: Option<llama_cpp_2::token::LlamaToken> = {
             let mut best_tok = eos;
             let mut best_logit = f32::NEG_INFINITY;
             for cd in ctx.candidates() {
-                if cd.logit() > best_logit { best_logit = cd.logit(); best_tok = cd.id(); }
+                let tok_id = cd.id();
+                if tok_id == eos { continue; }
+                let tok_text = self.model.token_to_str(tok_id, Special::Tokenize)
+                    .unwrap_or_default().to_lowercase();
+                // Skip if this token starts an echo phrase
+                if banned_first.iter().any(|b| tok_text.trim().starts_with(b)) { continue; }
+                if cd.logit() > best_logit { best_logit = cd.logit(); best_tok = tok_id; }
             }
             if best_tok == eos { None } else { Some(best_tok) }
         };
+        let mut next = first_tok;
 
         // Track generated tokens
         let mut gen_tokens: Vec<llama_cpp_2::token::LlamaToken> = Vec::new();
