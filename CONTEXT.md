@@ -305,6 +305,25 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-07-31 (post-sprint shipping decisions) — Tasks 2-5 decisions locked + Task 3 implemented
+
+**User decisions on the shipping sprint (§4):**
+
+| Task | Decision | Status |
+|---|---|---|
+| 2 — GGUF terms | **✅ VERIFIED Apache 2.0** — `bartowski/Qwen2.5-1.5B-Instruct-GGUF` license card explicitly `apache-2.0`. Original model `Qwen/Qwen2.5-1.5B-Instruct` is also Apache 2.0. **Safe to ship inside the paid installer.** Housekeeping: add `THIRD-PARTY-NOTICES` with Apache 2.0 text + attribution to the app. | ✅ Resolved |
+| 3 — Batch time | **Lower offline caps + fix bottlenecks; BYOK stays uncapped.** Offline: Core 25 (unchanged), Pro 100→**50**, Studio 500→**200**. BYOK has no backend cap; UI slider raised to 500 (Pro) / 1000 (Studio) in AI mode. | ✅ Implemented |
+| 4 — T=0.8 gate | **Accept ~95%±2, gate ≥93%.** "Excellent for offline stuff." T stays 0.8. | ✅ Recorded |
+| 5 — Delivery | **Minimal installer + first-launch download** (with progress/resume/checksum). Terminal install noted as a future idea (not now). | ⬜ To implement |
+
+**Task 3 implementation details:** `lib.rs` caps lowered (Pro 50, Studio 200) with rationale comment. `app.js` `setupSlider()` now engine-aware — AI mode with key → slider.max 500/1000 (user's own API bill); offline → 50/200. Engine toggle (auto/database/ai) re-applies slider max on switch. `index.html` default slider max 100→50.
+
+**Also during this session (Task 1 — cross-platform verification):**
+- **CI was failing on EVERY push all day** (pre-existing): `build-macos` + `build-linux-deb` failed at `npx tauri build` (llama-cpp-2 native compile). AppImage job was **masking the same failure** via `continue-on-error: true` — removed (violated brief's "never hide bad output").
+- **Harness bugs fixed:** (1) `download-model.sh` used `declare -A` (associative arrays) which **macOS bash 3.2 cannot parse** — rewritten POSIX-safe with `case`; (2) added OpenMP deps (`brew install libomp` macOS, `libgomp1` Linux) — llama-cpp-2 default `openmp` feature needs them; (3) added `curl --retry 5 --retry-all-errors` for transient HF CDN throttling; (4) matrix reduced to ubuntu-22.04 + macos-latest to conserve free-tier macOS runner minutes.
+- **Qwen download URL verified:** 302 → 200, `content-length: 986048768`, SHA256 `1adf0b11...` matches local model exactly.
+- **Remaining:** macOS ARM `cargo test --release --lib` fails in ~6s (build-script error in llama-cpp-2 0.1.153 — likely Metal feature vs runner Xcode). Compile log captured as artifact; needs auth to view, or user to read it in the Actions UI. Leading hypothesis if log unavailable: disable `metal` feature (CPU-only fine for 1.5B).
+
 ### 2026-07-31 (post-sprint audit) — n_ctx actually applied; full 4-engine baseline restored
 
 **Audit of the completed sprint. Tasks 0, 0b, 1 (closed), 2, 3, 4 all verified against the code — implementations match their change-log claims. `cargo test --release --lib` 19/19. One discrepancy found and fixed.**
@@ -835,8 +854,8 @@ Copy was softened to "Largest batch sizes (up to 500 titles)" but the underlying
 
 #### OPEN — decide, don't drift
 
-**4. T=0.8 sits ON the 95% gate, not above it.**
-Measured 96% (48/50) and 94% (47/50) across two runs. Honest value: **~95% ± 2**. Pick one and record it: (a) accept ~95% and restate the gate as ≥93%, (b) drop to T=0.75 for margin at some diversity cost (T=0.6 was effectively deterministic), or (c) declare sub-95 runs noise. **Do not leave this ambiguous — the next agent will read 96% as settled.**
+**4. T=0.8 gate — SETTLED 2026-07-31 (user decision).**
+Measured 96% (48/50) and 94% (47/50) across two runs. Honest value: **~95% ± 2**. **Decision: option (a) — accept ~95%±2 as the operating point for offline; gate restated as ≥93%.** Rationale (user): "~95%±2 is excellent for offline stuff." Diversity from sampling is worth more than the 1-2 title difference vs a lower temperature. T stays at 0.8. Do not re-litigate.
 
 **5. Stochastic engines need multiple runs before any number is trusted.**
 EGCG has measured 20%, 24%, and 16% across three runs. Qwen 96% and 94%. **One run is an anecdote.** Before acting on any single benchmark figure, run it twice.
