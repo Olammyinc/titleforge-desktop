@@ -591,9 +591,20 @@ function setupTranslateToggle() {
 function setupSlider() {
   var slider = document.getElementById('quantity');
   if (!slider) return;
-  if (currentTier === 'studio') slider.max = 500;
-  else if (currentTier === 'pro') slider.max = 100;
-  else slider.max = 25;
+  // Offline (database) engine caps were lowered 2026-07-31 (user decision):
+  // measured ~7-12s/title made 100 ≈ 22 min and 500 ≈ 110 min unshippable.
+  // BYOK AI mode has NO backend cap — users pay their own API bill, so give
+  // them a generous slider ceiling there (Studio 1000, Pro 500).
+  var aiUncapped = activeEngine === 'ai' && aiApiKey;
+  if (aiUncapped) {
+    if (currentTier === 'studio') slider.max = 1000;
+    else if (currentTier === 'pro') slider.max = 500;
+    else slider.max = 25; // Core has no AI access (backend rejects)
+  } else {
+    if (currentTier === 'studio') slider.max = 200;
+    else if (currentTier === 'pro') slider.max = 50;
+    else slider.max = 25;
+  }
   updateQuantityLabel();
   slider.addEventListener('input', function () {
     updateSliderTrack(slider);
@@ -652,6 +663,7 @@ function setupEngineToggle() {
       dbBtn.classList.remove('active');
       aiBtn.classList.remove('active');
       if (status) status.textContent = aiProvider ? 'AI-first, falls back to local database' : 'No API key — using local database';
+      setupSlider();
     });
   }
 
@@ -661,6 +673,7 @@ function setupEngineToggle() {
     dbBtn.classList.add('active');
     aiBtn.classList.remove('active');
     if (status) status.textContent = 'Local database — always available';
+    setupSlider();
   });
 
   aiBtn.addEventListener('click', function () {
@@ -673,6 +686,7 @@ function setupEngineToggle() {
     dbBtn.classList.remove('active');
     aiBtn.classList.add('active');
     if (status) status.textContent = aiProvider.charAt(0).toUpperCase() + aiProvider.slice(1) + ' — using your key';
+    setupSlider();
   });
 }
 

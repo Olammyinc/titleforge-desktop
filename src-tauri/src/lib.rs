@@ -81,12 +81,17 @@ fn generate_titles(
 ) -> Result<Vec<TitleResult>, String> {
     // Read tier and curated data before releasing DB lock.
     // The DB mutex must never be held during LLM inference (3.5s+/title).
+    //
+    // Offline caps (user decision 2026-07-31): lowered from 100/500 because
+    // measured ~7-12s/title makes 100 ≈ 22 min and 500 ≈ 110 min — unshippable.
+    // 50 ≈ 8 min, 200 ≈ 33 min worst-case. BYOK path (generate_with_ai) has
+    // NO cap — users bring their own key precisely to generate large batches.
     let (_tier, quantity) = {
         let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
         let tier = get_tier(&db);
         let cap: u32 = match tier.as_str() {
-            "pro" => 100,
-            "studio" => 500,
+            "pro" => 50,
+            "studio" => 200,
             _ => 25,
         };
         let quantity = quantity.min(cap);
