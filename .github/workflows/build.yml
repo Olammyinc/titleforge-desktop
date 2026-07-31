@@ -58,7 +58,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with: { workspaces: src-tauri }
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libglib2.0-dev libssl-dev patchelf
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libglib2.0-dev libssl-dev patchelf libgomp1
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: npm install
@@ -77,13 +77,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with: { workspaces: src-tauri }
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libglib2.0-dev libssl-dev patchelf
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libglib2.0-dev libssl-dev patchelf libgomp1
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: npm install
       - run: bash scripts/download-model.sh
       - run: npx @tauri-apps/cli@latest build --bundles appimage
-        continue-on-error: true
       - uses: actions/upload-artifact@v4
         with:
           name: titleforge-linux-appimage
@@ -115,6 +114,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with: { workspaces: src-tauri }
+      - name: Install OpenMP (llama-cpp default feature — not preinstalled on GH runners)
+        run: brew install libomp
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: bash scripts/download-model.sh
