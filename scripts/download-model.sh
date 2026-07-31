@@ -11,47 +11,41 @@
 # Qwen2.5-1.5B is the production engine but is NOT bundled in the installer
 # yet (gated on bundling decisions). CI uses `qwen` to VERIFY cross-platform
 # build + runtime without shipping it.
+#
+# NOTE: macOS runners ship bash 3.2 (2007). NO associative arrays, NO
+# ${var,,} — keep this POSIX-ish or the download step dies on macOS with
+# "declare: -A: invalid option" while working fine on Linux/Windows.
 
 set -euo pipefail
 
 MODEL_DIR="$(dirname "$0")/../models"
 mkdir -p "$MODEL_DIR"
 
-# ── Model definitions ──
-# Qwen2.5-1.5B-Instruct Q4_K_M from bartowski's GGUF quantisation of the
-# Apache-2.0 Qwen2.5 weights. Hash pinned from the HF LFS pointer, verified
-# against the local model file 2026-07-31.
-declare -A MODEL_URL=(
-  [smollm2]="https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf"
-  [qwen]="https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf"
-)
-declare -A MODEL_FILE=(
-  [smollm2]="SmolLM2-360M-Instruct-Q4_K_M.gguf"
-  [qwen]="qwen2.5-1.5b-instruct-q4_k_m.gguf"
-)
-declare -A MODEL_HASH=(
-  [smollm2]="2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2"
-  [qwen]="1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370"
-)
-declare -A MODEL_SIZE=(
-  [smollm2]=270590880
-  [qwen]=986048768
-)
-declare -A MODEL_LABEL=(
-  [smollm2]="SmolLM2-360M-Instruct Q4_K_M (~258 MB)"
-  [qwen]="Qwen2.5-1.5B-Instruct Q4_K_M (~940 MB)"
-)
-
 WHICH="${1:-smollm2}"
-if [ -z "${MODEL_URL[$WHICH]+_}" ]; then
-  echo "ERROR: unknown model '$WHICH'. Choose: smollm2 | qwen"
-  exit 1
-fi
 
-MODEL_FILE="$MODEL_DIR/${MODEL_FILE[$WHICH]}"
-MODEL_URL="${MODEL_URL[$WHICH]}"
-EXPECTED_HASH="${MODEL_HASH[$WHICH]}"
-EXPECTED_SIZE="${MODEL_SIZE[$WHICH]}"
+case "$WHICH" in
+  smollm2)
+    MODEL_URL="https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf"
+    MODEL_FILE="$MODEL_DIR/SmolLM2-360M-Instruct-Q4_K_M.gguf"
+    EXPECTED_HASH="2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2"
+    EXPECTED_SIZE=270590880
+    LABEL="SmolLM2-360M-Instruct Q4_K_M (~258 MB)"
+    ;;
+  qwen)
+    # Qwen2.5-1.5B-Instruct Q4_K_M from bartowski's GGUF quantisation of the
+    # Apache-2.0 Qwen2.5 weights. Hash pinned from the HF LFS pointer, verified
+    # against the local model file 2026-07-31.
+    MODEL_URL="https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf"
+    MODEL_FILE="$MODEL_DIR/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    EXPECTED_HASH="1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370"
+    EXPECTED_SIZE=986048768
+    LABEL="Qwen2.5-1.5B-Instruct Q4_K_M (~940 MB)"
+    ;;
+  *)
+    echo "ERROR: unknown model '$WHICH'. Choose: smollm2 | qwen"
+    exit 1
+    ;;
+esac
 
 verify_hash() {
     local file="$1"
@@ -89,7 +83,7 @@ if [ -f "$MODEL_FILE" ]; then
     fi
 fi
 
-echo "Downloading ${MODEL_LABEL[$WHICH]}..."
+echo "Downloading $LABEL..."
 echo "URL: $MODEL_URL"
 
 if command -v curl &>/dev/null; then
