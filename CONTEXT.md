@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-31 (sprint complete: Qwen non-deterministic, EGCG retired, few-shot kept — see §5)
+> **Last updated:** 2026-07-31 (post-sprint audit: sprint verified, n_ctx fixed, 4-engine baseline restored — see §5)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -121,7 +121,7 @@ All tables have Row Level Security enabled with per-user policies.
 - **7 fine-tune fields:** audience, emotion, length, angle, mustInclude, avoid, beatTitle
 - **JSON repair pipeline (4 layers):** direct parse → `repairJson()` → `repairTruncatedJson()` → last-good-position scan
 - **`response_format: { type: "json_object" }`** used on OpenAI-compatible providers
-- **Sampling:** Temperature 0.85, `frequency_penalty: 0.6`, `presence_penalty: 0.4`
+- **Sampling:** Temperature 0.85, `frequency_penalty: 0.15`, `presence_penalty: 0` (was 0.6/0.4 — suppressed the required keyword in large batches; fixed July 31)
 
 ### 2.8 Frontend Features
 | Feature | Guest | Free | Pro |
@@ -172,9 +172,9 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 | `src/styles.css` | 3556 | Full stylesheet (base + desktop-specific: sidebar, activation overlay, engine toggle) |
 | `src/logo.svg` | — | Same amber logo as web |
 | `src-tauri/src/lib.rs` | 1025 | All IPC commands: generation, history, favorites, projects, settings, license validation, background verify, AI, tier gating. `AppState` = `Mutex<Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>` |
-| `src-tauri/src/engine.rs` | 256 | 3-pass orchestrator: LLM (Pass 1, lazy) → EGCG (Pass 2) → curated fallback (Pass 3). Deduplication + SEO scoring. Passes few-shot examples via `retrieve_similar()`. |
-| `src-tauri/src/title_gen.rs` | 1577 | **EGCG algorithm** — 3 modes (exemplar-guided template fill / phrase stitching / keyword-embedded exemplar). `strip_placeholders()` fix for `{placeholder}` leak. Includes `retrieve_similar(keyword, category, k)` for LLM few-shot. |
-| `src-tauri/src/local_llm.rs` | 183 | llama-cpp-2 wrapper — `LlamaModel`, `generate_chat_raw()` with batched prefill, `generate_one_clean()` with RAG + retry. Prefers Qwen2.5-1.5B then SmolLM2 fallbacks. |
+| `src-tauri/src/engine.rs` | 253 | 2-pass orchestrator: LLM (Pass 1) → curated fallback (Pass 2). EGCG retired July 31. Deduplication + SEO scoring. Passes few-shot examples via `retrieve_similar()`. |
+| `src-tauri/src/title_gen.rs` | 1577 | **EGCG algorithm (retired from pipeline, kept for benchmarks)** — 3 modes (exemplar-guided template fill / phrase stitching / keyword-embedded exemplar). `strip_placeholders()` fix for `{placeholder}` leak. Includes `retrieve_similar(keyword, category, k)` for LLM few-shot + curated retrieval. |
+| `src-tauri/src/local_llm.rs` | 398 | llama-cpp-2 wrapper — `LlamaModel`, `generate_chat_raw()` with batched prefill + T=0.8 top-k sampling, `generate_one_clean()` with RAG + retry. Prefers Qwen2.5-1.5B then SmolLM2 fallbacks. n_ctx=1024. |
 | `src-tauri/src/seo.rs` | 368 | Local SEO scoring — 9 signals (length, keyword presence/density, search patterns, question, number/year, Flesch reading, power words, uniqueness). Zero API calls. |
 | `src-tauri/src/db.rs` | 152 | SQLite schema (8 tables) + seed data import from `seed-data.json` |
 | `src-tauri/src/main.rs` | 5 | Entry point → `titleforge_lib::run()` |
@@ -189,7 +189,7 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 `AppState` = `Mutex<rusqlite::Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>`
 
 **Generation:**
-- `generate_titles(keyword, categories, style, genre, quantity, state) -> Vec<TitleResult>` — offline 3-pass pipeline. Tier-capped (Core=25, Pro=100, Studio=500).
+- `generate_titles(keyword, categories, style, genre, quantity, state) -> Vec<TitleResult>` — offline 2-pass pipeline (LLM → curated fallback). Tier-capped (Core=25, Pro=100, Studio=500).
 - `generate_with_ai(keyword, categories, style, genre, quantity, provider, api_key, cross_medium, include_subtitles, include_translation, translate_lang, gender, finetune)` — BYO cloud AI. **Pro/Studio only.**
 
 **History / Favorites / Projects:**
@@ -296,7 +296,7 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 | **Auth** | Supabase (CDN + localStorage fallback) | License key (HTTP + offline cache + 30-min background verify) |
 | **Tier gate** | Guest / Free / Pro | Core / Pro / Studio — backend enforces, frontend reads `currentTier` from `get_usage_stats` and renders actual tier (fixed July 29) |
 | **Data source** | Supabase via Netlify Functions | SQLite via `invoke()` |
-| **Generation** | Cloud AI only | 3-pass local (LLM → EGCG → curated) OR BYO cloud AI |
+| **Generation** | Cloud AI only | 2-pass local (LLM → curated) OR BYO cloud AI |
 | **Favorites/Projects** | Supabase tables | Local SQLite |
 | **Floating generator** | Yes (FAB) | No |
 | **Engine toggle** | No | Yes (Database / AI) |
@@ -304,6 +304,37 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 ---
 
 ## 5. Change Log (Rolling)
+
+### 2026-07-31 (post-sprint audit) — n_ctx actually applied; full 4-engine baseline restored
+
+**Audit of the completed sprint. Tasks 0, 0b, 1 (closed), 2, 3, 4 all verified against the code — implementations match their change-log claims. `cargo test --release --lib` 19/19. One discrepancy found and fixed.**
+
+**Discrepancy: `n_ctx=1024` was claimed but never applied.** `local_llm.rs` still read `LlamaContextParams::default()` (n_ctx 512) with no setter anywhere in `src/`. Now genuinely applied:
+```rust
+let ctx_params = LlamaContextParams::default()
+    .with_n_ctx(std::num::NonZeroU32::new(1024));
+```
+Not previously causing harm — with the Task 1 rules reverted, prompts are ~100-166 tokens. But the Task 1 experiment ran at 351-405 tokens, which with `max_new=60` reaches 411-465 against a 512 ceiling. Overflow surfaces as a silent `H: prefill decode failed` — the same failure class as the `tokens_to_str` bug. The margin the record claimed did not exist.
+
+**Full 4-engine benchmark re-run** (the previous `bench-usability.csv` had been reduced to cloud-only by the `BENCH_ENGINE` filter, so no current side-by-side existed):
+
+| Engine | Fires | Mean | **Usable ≥70** |
+|---|---|---|---|
+| **Cloud (DeepSeek + few-shot)** | 50/50 | **90.2** | **100%** (50/50) |
+| **Qwen2.5-1.5B (T=0.8)** | 50/50 | **80.0** | **94%** (47/50) |
+| Curated | 37/50 | 76.8 | 62% (31/50) |
+| EGCG | 49/50 | 35.4 | 16% (8/50) |
+
+Qwen distribution: min 42, p10 72, median 78, max 92. 24 titles at 80+, 23 in 70-79.
+
+**Qwen's three failures all scored 42 and are mediocre rather than broken:** "Transform Your Fitness Journey: 5 Secret Workout Secrets Revealed" (redundant), "Minimalism: Sparing the Seldom Used" (awkward), "Never Gained Weight, Always Toned: A Year of Intermittent Fasting" (garbled). No systematic pattern — sampling variance at T=0.8.
+
+**Open question for the next decision-maker: T=0.8 sits on the 95% gate, not above it.** Measured 96% (48/50) in the temperature sweep and 94% (47/50) here — a one-title difference, well within run-to-run noise for a sampled decoder. The honest reading is **~95% ± 2**, not a solid 96%. Three options, none obviously right:
+1. Accept ~95% as the operating point and restate the gate as ≥93%
+2. Drop to T=0.75 for margin, at some cost to batch diversity (T=0.6 was measured as effectively deterministic)
+3. Leave as-is and treat sub-95 runs as noise
+
+This needs a decision rather than drifting. Note that EGCG also moved 20%→24%→16% across runs — stochastic engines need multiple runs before any number is treated as settled.
 
 ### 2026-07-31 (late night) — Task 0 complete: Qwen non-deterministic + temperature sweep
 
@@ -379,7 +410,9 @@ Core is acceptable. Pro/Studio are still product problems — surface to user be
 
 **Files changed then reverted:** `local_llm.rs` (system prompt, keyword QC), `diag_prompt_len.rs` (prompt mirror). `bench-usability-task1-regression.csv` kept as evidence (2 runs: full-rules 75.2, condensed 77.6).
 
-**Task 1 status: CLOSED as not-shippable.** Recorded in §6.2 #1 (replaces "port web quality rules" — the plan was wrong for this model size). The n_ctx=1024 bump was NOT reverted — it's harmless and future-proof (prompts were 351-405 tokens at the old 512 window, dangerously close with 60 new tokens; the bump to 1024 costs ~nothing for CPU inference).
+**Task 1 status: CLOSED as not-shippable.** Recorded in §6.2 #1 (replaces "port web quality rules" — the plan was wrong for this model size).
+
+> **Correction (2026-07-31, audit):** this entry claimed "the n_ctx=1024 bump was NOT reverted." That was inaccurate — `local_llm.rs` still read `LlamaContextParams::default()` (n_ctx 512) with no setter anywhere in `src/`. The bump was either never applied or was rolled back with the Task 1 revert. It has since been applied for real via `.with_n_ctx(NonZeroU32::new(1024))`. The reasoning in the original claim was sound; only the status was wrong.
 
 ### 2026-07-31 (late night, later) — Task 2 complete: EGCG retired from the production pipeline
 
@@ -787,53 +820,70 @@ Full 4-engine comparison with all fixes applied:
 
 ### 6.2 Known Issues (Priority Order)
 
-0. **DESKTOP: Qwen sampler is deterministic — batch generation produces one unique title.** Pure argmax in `generate_chat_raw`; identical output across runs, users, and calls. The 100% usable figure holds only at k=1. **✅ FIXED 2026-07-31 (late night): temperature + top-k sampling (T=0.8, top-k 40, inverse-CDF via `rand::thread_rng()`). Same keyword now yields different titles every call (5/5 unique verified). Qwen usable 96% at T=0.8, mean 81.0. See §5 change log for the full temperature sweep.**
+**Read this before planning anything. Items are ranked by what blocks revenue, not by what is interesting to fix.**
 
-0b. **DESKTOP: batch generation measured — uniqueness FIXED, timing & diversity still open.** Real 25-title batch (2026-07-31, Task 0b): **25/25 unique** (was 1), 169.6s (6.79s/title), 100% LLM. Core tier is fine. **Pro (100) ≈ 22 min and Studio (500) ≈ 110 min are still product problems** — needs parallelism or context reuse (reuse one KV cache across a batch), or lower per-tier caps. **Template diversity within a batch is weak** (7/25 share "From X to Y") — **Task 1 (port web quality rules) TESTED AND REVERTED: rules made it worse (77.6-75.2 mean vs 81.0 baseline). Qwen 1.5B can't hold multi-constraint prompts. Fix requires a bigger model, not a prompt tweak.**
+#### BLOCKING — customers are affected right now
 
-1. **WEB: sampling penalties suppress the keyword.** `frequency_penalty: 0.6` + `presence_penalty: 0.4` in [generate.js:293-294](titleforge/netlify/functions/generate.js:293) penalise tokens the more often they appear. Every title in a batch must contain the same keyword, so the keyword is progressively suppressed — worse the larger the batch. Contradicts the prompt's own instruction. **✅ FIXED July 31: freq reduced to 0.15, presence removed entirely. Anthropic temperature unified to 0.85.**
+**1. The desktop app ships SmolLM2, not Qwen. Every quality number in this document is invisible to customers.**
+`tauri.conf.json` bundles `SmolLM2-360M` (270 MB). Qwen2.5-1.5B (986 MB) is not bundled and not downloaded. Production users fall back to SmolLM2, which is worse than the retired EGCG. **Until this is resolved, the entire offline engine effort has shipped nothing.** Blocked on three decisions the user must make — see §6.4 Bundling Gates.
 
-2. **WEB: few-shot RE-APPLIED (Task 3, July 31).** The original revert was based on the broken keyword gate. Re-tested against the fixed metric: **100% usable (50/50), mean 90.7** vs baseline ~90 — few-shot is KEPT. The 8 REFERENCE TITLES block is in production. 19/50 titles lack the literal keyword and they are the best output (mean ~91) — "The $2,000 Mistake I Made in Tokyo" (95), "The Silence Between Thoughts" (92). The recorded lesson "few-shot only helps when examples contain the target keyword" was an artefact of the broken metric.
+**2. Pro and Studio batch times are unshippable.**
+Measured 6.79 s/title. Core (25) = 169.6 s, acceptable. **Pro (100) ≈ 22 min. Studio (500) ≈ 110 min.** No user waits 110 minutes. Options: reuse one KV cache across a batch (`generate_chat_raw` currently allocates a fresh context per title), parallel contexts, background generation with progress, or lower the per-tier caps. **This is a product decision before it is an engineering one — surface it, do not silently optimise.**
 
-3. **WEB: appeal score is self-graded and inflated.** Model writes and scores in one pass. Evidence: EGCG self-scored 60-100 on titles the independent judge scored 15-30. The 0-100 score is a headline Pro feature; if users learn to distrust it the feature is worthless. Fix: separate scoring pass, or force "identify your weakest title and score it below 60."
+**3. Studio's "up to 500 titles" is still a claim you cannot honour in reasonable time.**
+Copy was softened to "Largest batch sizes (up to 500 titles)" but the underlying 110-minute reality is unchanged. Fix #2 or change the claim.
 
-4. **Offline engines are ~40 points behind cloud.** Corrected benchmark (metric fixed 2026-07-31): **Cloud 100% usable, mean 89.8, σ 4.9.** Curated 62%. Qwen 52% (96% usable when it fires; 27/50 fire rate is the constraint). EGCG 20%. Cloud is not "the ceiling we're chasing" — it is already essentially perfect on this rubric. The strategic question is no longer "how do we reach cloud quality offline" but "what is offline actually for."
+#### OPEN — decide, don't drift
 
-5. ~~Benchmark keyword check is punctuation-blind.~~ **FIXED 2026-07-31, then superseded by a deeper fix.** `keyword_present` no longer gates the judge at all — it wrongly scored 0 on any title lacking the literal keyword token. Titles *without* the literal keyword average **88.4** and are **100% usable** (n=19); they were the best output in the dataset and were all being discarded. Literal presence is now an advisory `kw_literal` CSV column. See §5 change log.
+**4. T=0.8 sits ON the 95% gate, not above it.**
+Measured 96% (48/50) and 94% (47/50) across two runs. Honest value: **~95% ± 2**. Pick one and record it: (a) accept ~95% and restate the gate as ≥93%, (b) drop to T=0.75 for margin at some diversity cost (T=0.6 was effectively deterministic), or (c) declare sub-95 runs noise. **Do not leave this ambiguous — the next agent will read 96% as settled.**
 
-6. **Curated cannot fill a batch.** Median 2 titles per keyword. 1/50 keywords can fill 25 titles; 0/50 can fill 100 or 500. `retrieve_similar()` is fully deterministic — same keyword always yields the same titles, for every user, every time. It is a lookup table over a fixed corpus, not a generator. Do not plan around it as a primary engine.
+**5. Stochastic engines need multiple runs before any number is trusted.**
+EGCG has measured 20%, 24%, and 16% across three runs. Qwen 96% and 94%. **One run is an anecdote.** Before acting on any single benchmark figure, run it twice.
 
-7. **EGCG confirmed dead — 20% usable on the corrected metric.** Produces output 98% of the time (49/50) with the *highest* literal-keyword rate of any engine (49/50) and the *lowest* quality (mean 37.5). It is the clearest demonstration that keyword presence and usability are inversely related. Results-pool fragments like "That move the needle" produce "From Dawn to That move the needle" — `strip_placeholders` only handles `{word}` brackets. **✅ RETIRED July 31 (Task 2): removed from the production pipeline (`engine.rs` Pass 2 deleted). Pipeline is now Qwen → curated. `title_gen.rs` kept for `retrieve_similar()` + benchmark comparison.**
+**6. Batch template diversity is weak.**
+7/25 titles in the measured batch shared a "From X to Y" frame. Uniqueness is solved; formula repetition is not. **Task 1 already tested the obvious fix and it failed** — quality rules dropped Qwen to 75.2/77.6 mean vs 81.0 baseline. Qwen 1.5B cannot hold multi-constraint prompts. **Do not re-attempt prompt rules on the 1.5B.** The path is a larger model (Qwen2.5-3B) or post-generation structural dedup.
 
-8. **Studio "500 titles" is not deliverable by any local engine.** At 3.5s/title a 500-title batch is ~30 minutes. [desktop.html:453](titleforge/desktop.html:453) needs a non-numeric promise. Same class of issue as the previously-fixed "unlimited batch" claim.
+**7. WEB: appeal score is self-graded and inflated.**
+The model writes and scores in one pass. Evidence: EGCG self-scored 60-100 on titles the judge scored 15-30. This is a headline Pro feature; if users learn to distrust it, it is worthless. Fix: separate scoring pass, or force "identify your weakest title and score it below 60."
 
-9. **WEB: style descriptions are circular and example-free.** `shout: 'high-impact words that shout'`. 9 styles, 5 gated behind Pro, zero example titles. Thin for a paid feature.
+**8. Cloud AI has never been tested for batch behaviour.**
+All cloud measurements are k=1. The web app sells 10/100 titles per request. Nobody has checked whether cloud produces 100 *distinct* titles or repeats itself. **This is exactly the mistake that hid Qwen's determinism for weeks.** Assume nothing.
 
-10. **WEB: no per-category length targets in standard mode.** Cross-medium mode specifies char ranges; standard mode doesn't. `seo.rs` scores length-fit that generation never targets.
+#### BACKLOG — real work, not urgent
 
-11. **WEB: temperature inconsistent across providers.** 0.85 on OpenAI-compatible ([generate.js:291](titleforge/netlify/functions/generate.js:291)), 0.7 on Anthropic ([:323](titleforge/netlify/functions/generate.js:323)). **✅ FIXED July 31: Anthropic now 0.85.**
+9. Mac & Linux SHA256s pending production CI builds. Windows published.
+10. Updater signature pipeline wired but never fired on a real `v*` tag.
+11. CORS wildcard on `licenses.js` POST endpoints. Low risk, should be restricted.
+12. No rate limiting on the public license validation endpoint — enumeration risk.
+13. Web Pro → free Core desktop license: decided, never implemented.
+14. Upgrade pricing (pay the difference) between desktop tiers: decided, never implemented.
+15. Annual update renewal / major version upgrade pricing: decided, never implemented.
+16. Waitlist email drip: leads decaying since collection began.
+17. Admin dashboard for support staff: deferred post-launch.
 
-12. **Cloud AI benchmarked — corrected 2026-07-31 (late), few-shot A/B resolved (Task 3).** DeepSeek V4 Flash with the production prompt: **100% usable (50/50), mean 89.8-90.7** (90.7 with few-shot, 89.5-90 without — few-shot is a small mean gain and is kept). The earlier "68%" and "62%" figures were artefacts of the broken keyword gate, not real quality differences. Few-shot produces natural, creative titles — precisely what the old metric scored 0.
+#### RESOLVED — do not re-open, do not re-litigate
 
-13. **Qwen model not bundled in production builds.** `tauri.conf.json` bundles SmolLM2 but not Qwen2.5-1.5B (~940 MB). Production users fall back to SmolLM2 — worse than EGCG.
+- ~~Qwen "68% empty output"~~ — `tokens_to_str` buffer bug. Fixed. Qwen fires 50/50.
+- ~~Qwen sampler deterministic~~ — temperature + top-k. Fixed. 25/25 unique in a real batch.
+- ~~`keyword_present` gating the judge~~ — removed. **Never gate on literal keyword presence again.** It is inversely correlated with quality.
+- ~~Benchmark punctuation-blindness~~ — superseded by the above.
+- ~~`.bench-key` unreadable~~ — UTF-16LE now decoded.
+- ~~EGCG in the pipeline~~ — retired. `title_gen.rs` kept for `retrieve_similar()` and benchmark comparison.
+- ~~Web sampling penalties suppressing the keyword~~ — freq 0.15, presence 0.
+- ~~Web few-shot reverted~~ — re-applied after the metric was fixed. Kept. Mean 90.2, 100% usable.
+- ~~`n_ctx` unset~~ — now 1024.
+- ~~"Port web quality rules to desktop"~~ — tested twice, measured worse, closed. Model capacity is the ceiling.
 
-14. **GBNF grammars blocked on llama-cpp-2 API** — `sampled_token_ith()` doesn't work with backend samplers. **✅ RESOLVED via logit biasing July 31:** Instead of GBNF, use `ctx.candidates()` + `token_to_str()` to ban echo-prefix tokens at the first autoregressive position. Works, no sampler API needed. Qwen fire rate improved 32%→46%.**
+### 6.4 Bundling Gates — ALL FIVE must be green before shipping the model
 
-15. **Download page: Mac & Linux SHA256s pending.** Need production CI builds. Windows SHA256 published.
+The offline engine works. It reaches zero customers until this is done.
 
-16. **Updater signature pipeline wired but untested.** Next `v*` tag push will be the first test.
-
-17. **CORS wildcard on POST endpoints.** `licenses.js` uses `Access-Control-Allow-Origin: *`. Low risk. Should be restricted.
-
-18. **License key validation endpoint has no rate limiting.** Public endpoint, no per-IP throttle.
-
-19. **Web Pro → free Core desktop license** not implemented.
-
-20. **Upgrade pricing (pay the difference) between desktop tiers** not implemented.
-
-21. **Annual update renewal / major version upgrade pricing** not implemented.
-
-22. **Admin dashboard for support staff** — planned, not started. Deferred for post-launch.
+1. ✅ **Qwen non-deterministic** — done (T=0.8, top-k 40)
+2. ✅ **Real batch measured** — done (25/25 unique, 169.6 s)
+3. ⬜ **Cross-platform verification** — `llama-cpp-2` compiles native code. Qwen has only ever been built and run on **one Windows machine**. macOS and Linux are completely unverified. **Do not ship to platforms you have not run on.**
+4. ⬜ **GGUF redistribution terms** — Qwen2.5 base is Apache 2.0, but the quantised file is third-party. Confirm before placing it inside a paid installer.
+5. ⬜ **Delivery mechanism** — 986 MB. Installer goes 22 MB → ~1 GB, or first-launch download with progress, resume, and checksum. **User decides. Not the agent.**
 
 ### 6.3 Strategic Decisions (Active)
 
@@ -841,7 +891,7 @@ Full 4-engine comparison with all fixes applied:
 |---|---|---|
 | 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B, T=0.8 sampling) | **Primary offline engine.** Corrected metric: 96% usable, mean 81.0 (k=1: 100%). Non-deterministic since July 31. Bigger model (3B) = the path to web-level quality (see §5 Task 1). |
 | 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned — only if Qwen path continues |
-| 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | **Reversed** — EGCG (20% usable) is worse than Qwen (32%) and Curated (58%). Neither is primary-engine-ready. |
+| 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | **Replaced — EGCG retired from the pipeline (July 31, Task 2).** Measured 16-24% usable across three runs (mean ~37). Qwen + curated is the pipeline; EGCG kept only as a benchmark column. |
 | 4 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
 | 5 | One-time purchase + optional update renewal | Planned, not implemented |
 | 6 | Unify brand under TitleForge | **Done** |
