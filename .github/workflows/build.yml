@@ -45,9 +45,16 @@ jobs:
       - run: npm install
       - name: Download Qwen2.5-1.5B (pinned hash)
         run: bash scripts/download-model.sh qwen
-      - name: Run lib tests (19/19)
-        run: cargo test --release --lib
+      - name: Run lib tests (19/19) with error capture
+        run: cargo test --release --lib 2>&1 | tee /tmp/lib-test.log; exit ${PIPESTATUS[0]}
         working-directory: src-tauri
+      - name: Upload compile log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-test-log-${{ matrix.os }}
+          path: /tmp/lib-test.log
+          if-no-files-found: ignore
       - name: Smoke test — load Qwen, generate 3 titles, record timing
         run: cargo test --release --test smoke_llm -- --nocapture
         working-directory: src-tauri
