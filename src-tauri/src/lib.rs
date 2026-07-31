@@ -876,6 +876,150 @@ fn generate_with_ai(
     Ok(results.into_iter().take(quantity as usize).collect())
 }
 
+// ── Model Download (first-launch delivery — Task 5, user decision 2026-07-31) ──
+//
+// The installer ships WITHOUT the 940 MB Qwen model (keeps it ~22 MB). On
+// first launch the app detects Qwen is missing and offers to download it to
+// $DATA_DIR/titleforge-desktop/models/qwen2.5-1.5b-instruct-q4_k_m.gguf.
+// Download runs in a background thread; the frontend polls progress.
+// Source: bartowski/Qwen2.5-1.5B-Instruct-GGUF (Apache 2.0 — verified).
+// SHA256 pinned; file verified before the model is considered present.
+
+const QWEN_URL: &str = "https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf";
+const QWEN_FILENAME: &str = "qwen2.5-1.5b-instruct-q4_k_m.gguf";
+const QWEN_EXPECTED_SHA256: &str = "1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370";
+const QWEN_EXPECTED_SIZE: u64 = 986_048_768;
+
+/// Where the Qwen model lives after download.
+fn qwen_model_path() -> std::path::PathBuf {
+    dirs::data_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("titleforge-desktop")
+        .join("models")
+        .join(QWEN_FILENAME)
+}
+
+/// True when Qwen is present AND matches the pinned SHA256.
+fn qwen_present() -> bool {
+    let path = qwen_model_path();
+    if !path.exists() { return false; }
+    // Size check is a fast pre-filter; full hash verify only when close.
+    let size_ok = std::fs::metadata(&path).map(|m| m.len() == QWEN_EXPECTED_SIZE).unwrap_or(false);
+    if !size_ok { return false; }
+    // Full SHA256 verify (one-time ~2s for 940 MB).
+    let digest = sha256_file(&path);
+    digest.map(|d| d == QWEN_EXPECTED_SHA256).unwrap_or(false)
+}
+
+fn sha256_file(path: &std::path::Path) -> Option<String> {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let mut f = std::fs::File::open(path).ok()?;
+    let mut ctx = Sha256::new();
+    let mut buf = [0u8; 64 * 1024];
+    loop {
+        let n = f.read(&mut buf).ok()?;
+        if n == 0 { break; }
+        ctx.update(&buf[..n]);
+    }
+    let digest = ctx.finalize();
+    Some(digest.iter().map(|b| format!("{:02x}", b)).collect())
+}
+
+/// Global download progress: (bytes_done, bytes_total, finished_ok).
+static MODEL_DOWNLOAD: std::sync::OnceLock<Mutex<(u64, u64, Option<bool>)>> = std::sync::OnceLock::new();
+
+fn model_download_state() -> &'static Mutex<(u64, u64, Option<bool>)> {
+    MODEL_DOWNLOAD.get_or_init(|| Mutex::new((0, 0, None)))
+}
+
+#[tauri::command]
+fn get_model_status() -> Result<serde_json::Value, String> {
+    let present = qwen_present();
+    let (done, total, finished) = *model_download_state().lock().unwrap_or_else(|e| e.into_inner());
+    Ok(serde_json::json!({
+        "qwenPresent": present,
+        "qwenSize": QWEN_EXPECTED_SIZE,
+        "downloadDone": done,
+        "downloadTotal": total,
+        "downloadFinished": finished,
+    }))
+}
+
+#[tauri::command]
+fn start_model_download(app: tauri::AppHandle) -> Result<(), String> {
+    // If already present or already downloading, do nothing.
+    if qwen_present() { return Ok(()); }
+    {
+        let (_, _, finished) = *model_download_state().lock().unwrap_or_else(|e| e.into_inner());
+        if finished == Some(false) { return Ok(()); } // a download is in flight
+    }
+
+    let target = qwen_model_path();
+    std::fs::create_dir_all(target.parent().ok_or("no parent dir")?)
+        .map_err(|e| format!("cannot create models dir: {}", e))?;
+
+    *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) = (0, QWEN_EXPECTED_SIZE, None);
+
+    // Spawn a background thread so the command returns immediately and the
+    // UI can poll get_model_status for progress.
+    std::thread::spawn(move || {
+        let result = (|| -> Result<(), String> {
+            let client = reqwest::blocking::Client::builder()
+                .timeout(std::time::Duration::from_secs(60))
+                .build()
+                .map_err(|e| format!("http client: {}", e))?;
+            let mut resp = client
+                .get(QWEN_URL)
+                .header("User-Agent", "TitleForge-Desktop/1.0")
+                .send()
+                .map_err(|e| format!("download start: {}", e))?;
+            if !resp.status().is_success() {
+                return Err(format!("download failed: HTTP {}", resp.status()));
+            }
+
+            // Stream to a temp file then rename (atomic — a partial file never
+            // looks like a complete model).
+            let tmp = target.with_extension("gguf.part");
+            let mut file = std::fs::File::create(&tmp).map_err(|e| format!("create temp: {}", e))?;
+            let mut done: u64 = 0;
+            let mut buf = [0u8; 128 * 1024];
+            loop {
+                use std::io::Read;
+                let n = resp.read(&mut buf).map_err(|e| format!("read: {}", e))?;
+                if n == 0 { break; }
+                use std::io::Write;
+                file.write_all(&buf[..n]).map_err(|e| format!("write: {}", e))?;
+                done += n as u64;
+                *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) = (done, QWEN_EXPECTED_SIZE, None);
+            }
+            drop(file);
+
+            if done != QWEN_EXPECTED_SIZE {
+                let _ = std::fs::remove_file(&tmp);
+                return Err(format!("size mismatch: got {} expected {}", done, QWEN_EXPECTED_SIZE));
+            }
+            // SHA256 verify.
+            let digest = sha256_file(&tmp).ok_or("hash failed")?;
+            if digest != QWEN_EXPECTED_SHA256 {
+                let _ = std::fs::remove_file(&tmp);
+                return Err(format!("checksum mismatch: {}", digest));
+            }
+            std::fs::rename(&tmp, &target).map_err(|e| format!("finalize: {}", e))?;
+            Ok(())
+        })();
+
+        *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) =
+            (0, 0, Some(result.is_ok()));
+        let _ = app; // keep handle for future event emit if needed
+        if let Err(e) = result {
+            eprintln!("[model-download] FAILED: {}", e);
+        }
+    });
+
+    Ok(())
+}
+
 // ── Seed Check ──
 
 #[tauri::command]
@@ -1024,6 +1168,8 @@ pub fn run() {
             validate_license,
             deactivate_license,
             background_verify,
+            get_model_status,
+            start_model_download,
         ])
         .run(tauri::generate_context!())
         .expect("Error running TitleForge");

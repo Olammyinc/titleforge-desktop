@@ -343,6 +343,21 @@
           <p class="toggle-hint">When enabled, TitleForge will check for new versions each time you open the app.</p>
         </div>
         <div class="settings-card">
+          <h3 class="settings-card-title">Local AI Model</h3>
+          <p class="settings-card-desc">The offline title engine runs on Qwen2.5-1.5B (~940 MB). It is downloaded once on first use — you only need to do this once per machine.</p>
+          <div class="settings-field">
+            <label id="modelStatusLabel">Model status: checking…</label>
+            <div id="modelProgressWrap" style="display:none;margin-top:6px;">
+              <div style="height:8px;background:#E8E3D9;border-radius:4px;overflow:hidden;">
+                <div id="modelProgressBar" style="height:100%;width:0%;background:var(--forge);transition:width 0.3s;"></div>
+              </div>
+              <p id="modelProgressText" class="settings-status" style="margin-top:4px;"></p>
+            </div>
+          </div>
+          <button id="downloadModelBtn" class="btn btn-primary btn-small" style="display:none;">Download Offline Model (940 MB)</button>
+          <p id="modelStatusMsg" class="settings-status"></p>
+        </div>
+        <div class="settings-card">
           <h3 class="settings-card-title">AI Integration</h3>
           <p class="settings-card-desc">Bring your own API key for cloud AI-powered titles.</p>
           <div class="settings-field">

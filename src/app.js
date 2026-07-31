@@ -55,6 +55,8 @@ function invoke(cmd, args) {
         if (cmd === 'record_generation' || cmd === 'set_setting' || cmd === 'deactivate_license') return Promise.resolve();
         if (cmd === 'generate_titles') return Promise.resolve([{ title: 'Dev Mode: Sample Title', score: 85, categories: ['book'], breakdown: null, source: 'template', seo_score: 82, seo_breakdown: { platform: 'amazon', length_fit: { score: 90, weight: 20, value: '24 chars', detail: '24 chars — acceptable for amazon' }, keyword_presence: { score: 100, weight: 20, value: 'front-loaded', detail: 'keyword leads the title' }, keyword_density: { score: 100, weight: 10, value: '20%', detail: 'density in sweet spot' }, search_pattern: { score: 60, weight: 15, value: '1 match(es)', detail: 'matched: guide to' }, question_format: { score: 0, weight: 5, value: 'no', detail: 'not a question' }, number_year: { score: 0, weight: 10, value: 'none', detail: 'no numbers present' }, reading_level: { score: 60, weight: 5, value: 'n/a', detail: 'too short' }, power_words: { score: 60, weight: 5, value: '1 power word(s)', detail: '1 power word' }, uniqueness: { score: 85, weight: 10, value: '82% novel', detail: 'low overlap — mostly novel' } } }]);
         if (cmd === 'get_app_info') return Promise.resolve({ version: '0.0.0-devmock', seeded: false, templateCount: 0, localLlmLoaded: false });
+        if (cmd === 'get_model_status') return Promise.resolve({ qwenPresent: true, qwenSize: 986048768, downloadDone: 0, downloadTotal: 0, downloadFinished: null });
+        if (cmd === 'start_model_download') return Promise.resolve();
         return Promise.reject(new Error('Tauri API not available in dev mode for: ' + cmd));
       };
     }
@@ -418,6 +420,7 @@ function initApp() {
   setupSlider();
   setupEngineToggle();
   setupGenerateButton();
+  setupModelDownloadButton();
   setupDashboardTabs();
   setupDashboardSearch();
   setupExportButtons();
@@ -1645,6 +1648,8 @@ function renderSettingsContent() {
     }
   }).catch(function (err) { console.error('get_settings for AI config failed:', err); });
 
+  refreshModelStatus();
+
   var saveBtn = document.getElementById('saveApiKeyBtn');
   if (saveBtn) {
     var newBtn = saveBtn.cloneNode(true);
@@ -1674,6 +1679,106 @@ function renderSettingsContent() {
 
   // Wire up updater controls (Check for Updates button + auto-update toggle)
   setupUpdaterControls();
+}
+
+// ---- LOCAL AI MODEL (first-launch download) ----
+var _modelPollTimer = null;
+
+function refreshModelStatus() {
+  if (!window.__TAURI__) { return; }
+  invoke('get_model_status').then(function (s) {
+    var label = document.getElementById('modelStatusLabel');
+    var btn = document.getElementById('downloadModelBtn');
+    var wrap = document.getElementById('modelProgressWrap');
+    var bar = document.getElementById('modelProgressBar');
+    var ptext = document.getElementById('modelProgressText');
+    var msg = document.getElementById('modelStatusMsg');
+
+    if (s.qwenPresent) {
+      if (label) label.textContent = 'Model status: ✓ Qwen2.5-1.5B ready (' + (s.qwenSize / 1048576).toFixed(0) + ' MB)';
+      if (label) label.style.color = '#16a34a';
+      if (btn) btn.style.display = 'none';
+      if (wrap) wrap.style.display = 'none';
+      if (msg) msg.textContent = '';
+      stopModelPolling();
+      return;
+    }
+
+    // Downloading or failed
+    if (s.downloadFinished === false) {
+      if (label) label.textContent = 'Model status: downloading…';
+      if (btn) btn.style.display = 'none';
+      if (wrap) wrap.style.display = 'block';
+      if (bar && s.downloadTotal > 0) {
+        var pct = Math.min(100, Math.round((s.downloadDone / s.downloadTotal) * 100));
+        bar.style.width = pct + '%';
+      }
+      if (ptext) ptext.textContent = formatBytes(s.downloadDone) + ' / ' + formatBytes(s.downloadTotal);
+      startModelPolling();
+      return;
+    }
+
+    // Not present, not downloading — offer download
+    if (label) label.textContent = 'Model status: not installed';
+    if (label) label.style.color = '';
+    if (btn) btn.style.display = 'block';
+    if (wrap) wrap.style.display = 'none';
+    if (msg && s.downloadFinished === true) {
+      msg.textContent = 'Download finished — click Download again if it still shows not installed.';
+      msg.style.color = '#b91c1c';
+    }
+    stopModelPolling();
+  }).catch(function (err) {
+    console.error('get_model_status failed:', err);
+  });
+}
+
+function startModelPolling() {
+  if (_modelPollTimer) return;
+  _modelPollTimer = setInterval(function () {
+    invoke('get_model_status').then(function (s) {
+      if (s.qwenPresent || s.downloadFinished !== false) {
+        refreshModelStatus();
+        stopModelPolling();
+      } else {
+        var bar = document.getElementById('modelProgressBar');
+        var ptext = document.getElementById('modelProgressText');
+        if (bar && s.downloadTotal > 0) {
+          bar.style.width = Math.min(100, Math.round((s.downloadDone / s.downloadTotal) * 100)) + '%';
+        }
+        if (ptext) ptext.textContent = formatBytes(s.downloadDone) + ' / ' + formatBytes(s.downloadTotal);
+      }
+    }).catch(function () { stopModelPolling(); });
+  }, 1000);
+}
+
+function stopModelPolling() {
+  if (_modelPollTimer) { clearInterval(_modelPollTimer); _modelPollTimer = null; }
+}
+
+function formatBytes(n) {
+  if (!n) return '0 MB';
+  var mb = n / 1048576;
+  if (mb > 1024) return (mb / 1024).toFixed(1) + ' GB';
+  return mb.toFixed(0) + ' MB';
+}
+
+function setupModelDownloadButton() {
+  var btn = document.getElementById('downloadModelBtn');
+  if (!btn || !window.__TAURI__) return;
+  btn.addEventListener('click', function () {
+    var msg = document.getElementById('modelStatusMsg');
+    btn.disabled = true;
+    btn.textContent = 'Downloading… (see progress below)';
+    if (msg) msg.textContent = 'Downloading ~940 MB. You can close this panel; it continues in the background.';
+    invoke('start_model_download').then(function () {
+      refreshModelStatus();
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Download Offline Model (940 MB)';
+      if (msg) { msg.textContent = 'Download error: ' + (err.message || err); msg.style.color = '#b91c1c'; }
+    });
+  });
 }
 
 // ---- UPDATER ----

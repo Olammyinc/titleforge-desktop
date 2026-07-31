@@ -50,7 +50,7 @@
         "depends": []
       }
     },
-    "resources": ["../seed-data.json", "../models/SmolLM2-360M-Instruct-Q4_K_M.gguf", "../models/tokenizer.json"]
+    "resources": ["../seed-data.json", "../THIRD-PARTY-NOTICES", "../models/SmolLM2-360M-Instruct-Q4_K_M.gguf", "../models/tokenizer.json"]
   },
   "plugins": {
     "updater": {

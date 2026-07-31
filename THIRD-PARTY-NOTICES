@@ -1,0 +1,47 @@
+Third-Party Notices
+===================
+
+TitleForge Desktop includes third-party software and models. This file
+attributes them and reproduces the license obligations that apply.
+
+--------------------------------------------------------------------------
+
+1. Qwen2.5-1.5B-Instruct (local language model)
+   License: Apache License 2.0
+   Copyright: Alibaba Group Holding Limited
+   Source: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct
+
+   The offline title engine runs on Qwen2.5-1.5B-Instruct, quantised to
+   GGUF Q4_K_M format by bartowski:
+   https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF
+   (license card: apache-2.0)
+
+   The model is downloaded on first launch to your local data directory
+   and is used entirely on-device. No model weights are transmitted by
+   TitleForge beyond this initial download.
+
+   Apache License 2.0 — full text at:
+   https://www.apache.org/licenses/LICENSE-2.0
+
+   This product includes the Qwen2.5 language model under the Apache
+   License 2.0. "Qwen" is a trademark of Alibaba Group Holding Limited.
+   Use of the model is subject to the terms of the Apache License 2.0.
+
+--------------------------------------------------------------------------
+
+2. llama.cpp / llama-cpp-2 (inference runtime)
+   License: MIT
+   Copyright (c) 2023-2024 Georgi Gerganov and contributors
+   Source: https://github.com/ggerganov/llama.cpp
+
+--------------------------------------------------------------------------
+
+3. Curated title corpus (seed-data.json)
+   Copyright: Olammyinc
+   Generated with the assistance of AI models. Not derived from any
+   copyrighted title lists.
+
+--------------------------------------------------------------------------
+
+For the full Apache License 2.0 text, see:
+https://www.apache.org/licenses/LICENSE-2.0
