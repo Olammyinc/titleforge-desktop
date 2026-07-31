@@ -22,11 +22,12 @@ jobs:
   # Qwen2.5-1.5B has only ever been built and run on ONE Windows machine.
   # This job proves llama-cpp-2 compiles AND Qwen loads + generates on the
   # other platforms, WITHOUT bundling it (bundling stays gated on user
-  # decisions). macos-latest = arm64 (Metal path); macos-13 = x86_64.
+  # decisions). macos-latest = arm64 (Metal path). NOTE: free-tier GitHub
+  # gives limited macOS runner minutes — keep the Mac matrix to ONE job.
   verify-llm:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-latest, macos-13]
+        os: [ubuntu-22.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
