@@ -1,18 +1,57 @@
 #!/usr/bin/env bash
 # download-model.sh
-# Downloads the SmolLM2-360M GGUF model for local LLM inference.
+# Downloads the local LLM GGUF for offline title generation.
 # Called during build (CI) or manually for dev setup.
 # Uses a pinned checksum to prevent silent model drift.
+#
+# Usage:
+#   bash scripts/download-model.sh            # SmolLM2-360M (bundled fallback, 258 MB)
+#   bash scripts/download-model.sh qwen       # Qwen2.5-1.5B (primary engine, 940 MB)
+#
+# Qwen2.5-1.5B is the production engine but is NOT bundled in the installer
+# yet (gated on bundling decisions). CI uses `qwen` to VERIFY cross-platform
+# build + runtime without shipping it.
 
 set -euo pipefail
 
 MODEL_DIR="$(dirname "$0")/../models"
-MODEL_FILE="$MODEL_DIR/SmolLM2-360M-Instruct-Q4_K_M.gguf"
-MODEL_URL="https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf"
-# Pinned from the HuggingFace LFS pointer for this file (bartowski/SmolLM2-360M-Instruct-GGUF,
-# main branch, SmolLM2-360M-Instruct-Q4_K_M.gguf) — verified 2026-07-16.
-EXPECTED_HASH="2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2"
-EXPECTED_SIZE=270590880
+mkdir -p "$MODEL_DIR"
+
+# ── Model definitions ──
+# Qwen2.5-1.5B-Instruct Q4_K_M from bartowski's GGUF quantisation of the
+# Apache-2.0 Qwen2.5 weights. Hash pinned from the HF LFS pointer, verified
+# against the local model file 2026-07-31.
+declare -A MODEL_URL=(
+  [smollm2]="https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf"
+  [qwen]="https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf"
+)
+declare -A MODEL_FILE=(
+  [smollm2]="SmolLM2-360M-Instruct-Q4_K_M.gguf"
+  [qwen]="qwen2.5-1.5b-instruct-q4_k_m.gguf"
+)
+declare -A MODEL_HASH=(
+  [smollm2]="2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2"
+  [qwen]="1adf0b11065d8ad2e8123ea110d1ec956dab4ab038eab665614adba04b6c3370"
+)
+declare -A MODEL_SIZE=(
+  [smollm2]=270590880
+  [qwen]=986048768
+)
+declare -A MODEL_LABEL=(
+  [smollm2]="SmolLM2-360M-Instruct Q4_K_M (~258 MB)"
+  [qwen]="Qwen2.5-1.5B-Instruct Q4_K_M (~940 MB)"
+)
+
+WHICH="${1:-smollm2}"
+if [ -z "${MODEL_URL[$WHICH]+_}" ]; then
+  echo "ERROR: unknown model '$WHICH'. Choose: smollm2 | qwen"
+  exit 1
+fi
+
+MODEL_FILE="$MODEL_DIR/${MODEL_FILE[$WHICH]}"
+MODEL_URL="${MODEL_URL[$WHICH]}"
+EXPECTED_HASH="${MODEL_HASH[$WHICH]}"
+EXPECTED_SIZE="${MODEL_SIZE[$WHICH]}"
 
 verify_hash() {
     local file="$1"
@@ -38,8 +77,6 @@ verify_hash() {
     echo "Checksum OK: $actual_hash"
 }
 
-mkdir -p "$MODEL_DIR"
-
 if [ -f "$MODEL_FILE" ]; then
     FILE_SIZE=$(stat -c%s "$MODEL_FILE" 2>/dev/null || stat -f%z "$MODEL_FILE" 2>/dev/null)
     if [ "$FILE_SIZE" -eq "$EXPECTED_SIZE" ]; then
@@ -52,7 +89,7 @@ if [ -f "$MODEL_FILE" ]; then
     fi
 fi
 
-echo "Downloading SmolLM2-360M-Instruct Q4_K_M (~258 MB)..."
+echo "Downloading ${MODEL_LABEL[$WHICH]}..."
 echo "URL: $MODEL_URL"
 
 if command -v curl &>/dev/null; then

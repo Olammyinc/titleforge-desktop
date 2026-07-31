@@ -84,7 +84,14 @@ impl LocalLlm {
         let prompt = match self.model.apply_chat_template(&tmpl, &messages, true) {
             Ok(p) => p, Err(e) => bail!("C: apply_chat_template: {:?}", e),
         };
-        let ctx_params = LlamaContextParams::default();
+        // n_ctx defaults to 512 in llama.cpp. Current prompts are ~100-166 tokens, but
+        // the Task 1 rules experiment pushed them to 351-405 — and with max_new=60 that
+        // is 411-465, uncomfortably close to the ceiling. Overflow shows up as a silent
+        // `H: prefill decode failed`, which is exactly the class of bug that cost this
+        // project weeks. 1024 costs essentially nothing for CPU inference and removes the
+        // trap for anyone who lengthens the prompt later.
+        let ctx_params = LlamaContextParams::default()
+            .with_n_ctx(std::num::NonZeroU32::new(1024));
         let backend = match BACKEND.get().and_then(|b| b.as_ref()) {
             Some(b) => b, None => bail!("D: backend unavailable"),
         };
