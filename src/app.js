@@ -196,10 +196,10 @@ function escapeHtml(str) {
 // produced a given result instead of guessing from its shape.
 function engineSourceLabel(source) {
   switch (source) {
-    case 'local-llm': return 'AI · offline';
+    case 'local-llm': return 'Offline engine';
     case 'ai': return 'AI · cloud';
-    case 'egcg-a': case 'egcg-b': case 'egcg-c': return 'Database';
-    case 'template': return 'Database (basic)';
+    case 'egcg-a': case 'egcg-b': case 'egcg-c': return 'Offline engine';
+    case 'template': return 'Offline engine (basic)';
     default: return source;
   }
 }
@@ -665,7 +665,7 @@ function setupEngineToggle() {
       autoBtn.classList.add('active');
       dbBtn.classList.remove('active');
       aiBtn.classList.remove('active');
-      if (status) status.textContent = aiProvider ? 'AI-first, falls back to local database' : 'No API key — using local database';
+      if (status) status.textContent = aiProvider ? 'Auto — AI first, falls back to the offline engine' : 'No API key — using the offline engine';
       setupSlider();
     });
   }
@@ -675,7 +675,7 @@ function setupEngineToggle() {
     if (autoBtn) autoBtn.classList.remove('active');
     dbBtn.classList.add('active');
     aiBtn.classList.remove('active');
-    if (status) status.textContent = 'Local database — always available';
+    if (status) status.textContent = 'Offline engine — always available';
     setupSlider();
   });
 
@@ -757,7 +757,7 @@ function handleGenerate() {
       // AI failed — fall back to database
       dumpDebug('AI failed in auto mode, falling back to database: ' + (aiErr.message || aiErr));
       var statusEl = document.getElementById('engineStatus');
-      if (statusEl) statusEl.textContent = 'AI unavailable — using local database';
+      if (statusEl) statusEl.textContent = 'AI unavailable — using the offline engine';
       return invoke('generate_titles', {
         keyword: keyword,
         categories: checkedCategories,
@@ -1695,7 +1695,7 @@ function refreshModelStatus() {
     var msg = document.getElementById('modelStatusMsg');
 
     if (s.qwenPresent) {
-      if (label) label.textContent = 'Model status: ✓ Qwen2.5-1.5B ready (' + (s.qwenSize / 1048576).toFixed(0) + ' MB)';
+      if (label) label.textContent = 'Engine status: ✓ Ready (offline titles available)';
       if (label) label.style.color = '#16a34a';
       if (btn) btn.style.display = 'none';
       if (wrap) wrap.style.display = 'none';
@@ -1706,7 +1706,7 @@ function refreshModelStatus() {
 
     // Downloading or failed
     if (s.downloadFinished === false) {
-      if (label) label.textContent = 'Model status: downloading…';
+      if (label) label.textContent = 'Engine status: downloading…';
       if (btn) btn.style.display = 'none';
       if (wrap) wrap.style.display = 'block';
       if (bar && s.downloadTotal > 0) {
@@ -1719,7 +1719,7 @@ function refreshModelStatus() {
     }
 
     // Not present, not downloading — offer download
-    if (label) label.textContent = 'Model status: not installed';
+    if (label) label.textContent = 'Engine status: not installed';
     if (label) label.style.color = '';
     if (btn) btn.style.display = 'block';
     if (wrap) wrap.style.display = 'none';
@@ -1770,12 +1770,12 @@ function setupModelDownloadButton() {
     var msg = document.getElementById('modelStatusMsg');
     btn.disabled = true;
     btn.textContent = 'Downloading… (see progress below)';
-    if (msg) msg.textContent = 'Downloading ~940 MB. You can close this panel; it continues in the background.';
+    if (msg) msg.textContent = 'Downloading the offline engine (~940 MB). You can close this panel; it continues in the background.';
     invoke('start_model_download').then(function () {
       refreshModelStatus();
     }).catch(function (err) {
       btn.disabled = false;
-      btn.textContent = 'Download Offline Model (940 MB)';
+      btn.textContent = 'Download TitleForge Engine (~940 MB)';
       if (msg) { msg.textContent = 'Download error: ' + (err.message || err); msg.style.color = '#b91c1c'; }
     });
   });
