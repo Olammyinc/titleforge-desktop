@@ -359,6 +359,10 @@ fn benchmark_judge() {
     let mut egcg_s = EngineStats::default();
     let mut cur_s = EngineStats::default();
 
+    // Engine filter for sweeps: BENCH_ENGINE=qwen runs ONLY the Qwen column,
+    // so a temperature sweep is one variable per run and costs no cloud calls.
+    let only = std::env::var("BENCH_ENGINE").ok().filter(|s| !s.is_empty());
+
     let mut csv = String::from("keyword,category,engine,title,mechanical_pass,kw_literal,judge_score,usable,cached\n");
 
     let total = BENCH_KEYWORDS.len();
@@ -366,7 +370,9 @@ fn benchmark_judge() {
         eprintln!("[{}/{}] {}", i + 1, total, keyword);
 
         // ── Cloud AI (DeepSeek — web app generation prompt) ──
-        let cloud_title = generate_title_cloud(keyword, category, &api_key).unwrap_or_default();
+        let cloud_title = if only.as_deref() != Some("qwen") {
+            generate_title_cloud(keyword, category, &api_key).unwrap_or_default()
+        } else { String::new() };
 
         // ── Qwen ──
         let qwen_title = if let Some(ref mut m) = llm {
@@ -379,17 +385,20 @@ fn benchmark_judge() {
         } else { String::new() };
 
         // ── EGCG ──
-        let egcg_title = {
+        let egcg_title = if only.as_deref() != Some("qwen") {
             let cats = vec![category.to_string()];
             let results = generator.generate(keyword, &cats, "normal", "any", 1);
             results.first().map(|r| r.title.clone()).unwrap_or_default()
-        };
+        } else { String::new() };
 
         // ── Curated ──
-        let cur_title = generator.retrieve_similar(keyword, category, 1).first().cloned().unwrap_or_default();
+        let cur_title = if only.as_deref() != Some("qwen") {
+            generator.retrieve_similar(keyword, category, 1).first().cloned().unwrap_or_default()
+        } else { String::new() };
 
         // ── Judge each title ──
         for (engine_name, title) in &[("cloud", &cloud_title), ("qwen", &qwen_title), ("egcg", &egcg_title), ("curated", &cur_title)] {
+            if only.is_some() && only.as_deref() != Some(engine_name) { continue; }
             let stats: &mut EngineStats = match *engine_name {
                 "cloud" => &mut cloud_s,
                 "qwen" => &mut qwen_s,
