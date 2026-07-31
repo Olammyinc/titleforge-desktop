@@ -839,7 +839,7 @@ Full 4-engine comparison with all fixes applied:
 
 | # | Decision | Status |
 |---|---|---|
-| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B + GBNF + RAG few-shot) | **Benchmarked** — 32% usable, 68% empty-output. Larger model or retire decision pending (§7.2). |
+| 1 | Local LLM: **Path A** (llama.cpp + Qwen2.5-1.5B, T=0.8 sampling) | **Primary offline engine.** Corrected metric: 96% usable, mean 81.0 (k=1: 100%). Non-deterministic since July 31. Bigger model (3B) = the path to web-level quality (see §5 Task 1). |
 | 2 | Path B (LoRA fine-tune on synthetic titles) as future upgrade after Path A ships | Planned — only if Qwen path continues |
 | 3 | EGCG demoted to Pass 3 fallback once benchmark confirms Qwen superiority | **Reversed** — EGCG (20% usable) is worse than Qwen (32%) and Curated (58%). Neither is primary-engine-ready. |
 | 4 | Three pricing tiers: $29 Core / $59 Pro / $89 Studio | Deployed |
