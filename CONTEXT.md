@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-07-31 (post-sprint audit: sprint verified, n_ctx fixed, 4-engine baseline restored — see §5)
+> **Last updated:** 2026-08-01 (clean-machine install fixed — installer 262 MB → 5.9 MB)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -305,6 +305,30 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-08-01 — Task 3 clean-machine test: VC++ fixed, UI sync + dashboard polish; multiple bugs found via Windows Sandbox
+
+**The clean-machine test (Windows Sandbox) was worth it — it found real shipping bugs no local testing catches.** Current status: engine download works, but several UI issues were found and fixed.
+
+**Bug found + fixed — `__TAURI_INTERNALS__` vs `window.__TAURI__`:** Tauri v2 injects `__TAURI_INTERNALS__` but only populates `window.__TAURI__` when `withGlobalTauri` is enabled (it isn't). The model-status functions (`refreshModelStatus`, `setupModelDownloadButton`, `setupEnginePrompt`) guarded on `window.__TAURI__`, so they silently returned early → engine status stuck on "checking…", the download button never wired, and the Task 4 first-run prompt never appeared. Fixed guards to `window.__TAURI_INTERNALS__`.
+
+**Bug found + fixed — download progress bar never updated:** Rust reported `downloadFinished = null` (None) during download, but JS only entered the "downloading" branch on `downloadFinished === false`. Fixed: Rust reports `Some(false)` through the whole in-flight download. Also fixed the in-flight guard (uses `total == QWEN_EXPECTED_SIZE` so a failed download can be retried).
+
+**Other fixes this round:**
+- After download completes: banner hides + success toast ("TitleForge Engine installed — generate offline anytime!")
+- Plan&Version "TitleForge Engine" row updates IMMEDIATELY on download complete (shared `updateEnginePlanRow` helper); Rust `get_app_info` now reports `enginePresent`
+- Settings Updates "Status" field populates on panel open (no more "—")
+- Sidebar + title: "Dashboard" → "Overview" (internal id unchanged)
+- Generator layout: columns stretch equal height; Generate button moved full-width below columns
+- API-key upsell only for Pro/Studio (Core can't use BYO AI)
+- Stat cards differentiated with per-card Forge accents; tier badge moved to an Overview header pill (designer review)
+- Projects empty state got a CTA (was a dead end)
+
+**Designer dashboard review (`@designer`):** provided prioritized P0/P1/P2 recommendations — P0s (stale title, emoji→SVG icons, stat-card differentiation, Projects empty CTA) partially implemented; P1/P2 (tab counts, keyboard nav, sparklines, honest usage bar) deferred.
+
+**Installer now 5.85 MB** (was 262 MB — dropped dead SmolLM2 270MB + tokenizer payload; minimal + first-launch-download delivery). VC++ runtime shipped app-local (4 DLLs next to exe) — no admin, no UAC. Clean Windows install verifies.
+
+**Test licenses created** for sandbox activation: `TF-CORE-5D36-6D0A-D1BE-F35E` / `core.tester@titleforge.test`, `TF-PRO-1A2B-3C4D-5E6F-7A8B` / `pro.tester@titleforge.test`, `TF-STUDIO-9C8D-7E6F-5A4B-3C2D` / `studio.tester@titleforge.test`. All validate via the live endpoint.
+
 ### 2026-08-01 — Tasks 2 + 4 done; clean-machine VC++ runtime bug found + fixed (Task 3 in progress on Windows Sandbox)
 
 **Task 2 — Mac/Linux SHA256s published.** Release job now computes real installer hashes (`sha256sum` → `SHA256SUMS` shipped with each release). Download page updated: Windows, macOS `_aarch64.dmg`, Linux `_amd64.deb` + real hashes; Docker page Mac/Linux links fixed to actual artifact names. No placeholders (brief rule).
@@ -332,6 +356,49 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 **Final dry-run result (run `30694742926`, all 8 jobs green):** 4 real signatures in `updates.json` (Windows .exe, Linux .deb + .AppImage, macOS .app.tar.gz), real GitHub Release created, then deleted + tag cleaned up per the brief. Netlify deploy step ran (token present).
 
 **Signing key:** regenerated password-protected (passwordless key + empty password silently produces no sigs — Tauri bug). Secrets set: `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Credentials saved to `~/Documents/titleforge-signing-key-2026.txt` + `tf-key-pw` / `tf-key-pw.pub` (NOT in repo). **KEEP THESE SAFE — losing them breaks auto-updates.**
+
+### 2026-08-01 (afternoon) — Clean-machine install FIXED. Installer 262 MB → 5.9 MB.
+
+**The clean-machine test did its job: it found a real shipping bug that no amount of local testing would have caught.** Sandbox install now succeeds.
+
+**Bug 1 — VC++ runtime DLLs never copied (the MSVCP140/VCOMP140 failure).**
+
+The app-local DLL approach was correct and the DLLs *were* in the installer. The hook looked for them in the wrong place:
+
+```
+hooks.nsh checked:   $INSTDIR\resources\vcrt\msvcp140.dll   <- never exists
+NSIS installs to:    $INSTDIR\vcrt\msvcp140.dll
+```
+
+The `${If}` guard therefore always failed, the `${Else}` branch ran, and nothing was copied. The DLLs sat unused in a subfolder while Windows failed to load the exe.
+
+**Root cause of the wrong assumption: Tauri v2 does not use v1's `resources\` layer.** Verified against the generated `installer.nsi`:
+
+| Declared in `bundle.resources` | Installs to |
+|---|---|
+| `"vcrt/"` | `$INSTDIR\vcrt\` |
+| `"../seed-data.json"` | `$INSTDIR\_up_\seed-data.json` |
+| `"../models/x.gguf"` | `$INSTDIR\_up_\models\x.gguf` |
+
+Paths inside `src-tauri` map to their own name; anything reached via `../` goes under `_up_\`. **There is no `$INSTDIR\resources\`.** This mapping is now documented in `hooks.nsh` so it is not re-derived incorrectly.
+
+Also changed: the `${Else}` branch now raises a `MessageBox`, not just `DetailPrint`. A missing runtime stops the app dead, so the diagnostic must not hide behind NSIS's "Show details" button — it had in fact printed the answer during the failed install and nobody saw it.
+
+**Bug 2 — 272 MB of unreachable payload in the installer.**
+
+`tauri.conf.json` bundled `SmolLM2-360M-Instruct-Q4_K_M.gguf` (270 MB) and `tokenizer.json` (2 MB). Both were dead:
+- SmolLM2 installed to `$INSTDIR\_up_\models\`, which is **not** among the five paths `lazy_load_llm()` searches. It could never be loaded.
+- `tokenizer.json` is referenced nowhere in the codebase — a leftover from the candle-rs era. llama.cpp reads the tokenizer from inside the GGUF.
+
+**User decision: drop both** (option A). This matches the existing "minimal installer + first-launch download" delivery decision. **Installer: 262 MB → 5.9 MB.** SmolLM2 entries remain in the `lazy_load_llm()` search list so a developer can drop in an alternative GGUF; the doc comment now states plainly that nothing is bundled.
+
+**CI simplification that follows:** five jobs were downloading SmolLM2 on every run purely because `tauri-build` validates bundled resources. All five steps removed — roughly 1.3 GB of downloads per CI run. Only `verify-llm` still pulls Qwen, which is the point of that job. This also retires the workaround from commit `e015adc`, which existed solely to satisfy the bundling.
+
+**Verified:** generated `installer.nsi` shows `vcrt/` with all four DLLs and no SmolLM2/tokenizer; hook included at line 31 and invoked at `NSIS_HOOK_POSTINSTALL`; **clean Windows Sandbox install succeeded.**
+
+**Files changed (UNCOMMITTED as of this entry):** `src-tauri/windows/hooks.nsh`, `src-tauri/tauri.conf.json`, `src-tauri/src/lib.rs`, `.github/workflows/build.yml`.
+
+**Method note — this is the fourth time the pattern has held.** The failure looked like a missing system dependency ("just install the VC++ redist"). It was a path string. Before that: a buffer size, a keyword gate, a UTF-16 file, a hardcoded Windows target-dir. **Suspect the harness before you blame the platform.**
 
 ### 2026-08-01 — Shipping sprint verified independently. All gates green. Strong work.
 
@@ -999,21 +1066,30 @@ TitleForge Desktop has **no paying customers**. Nothing in this document is "aff
 
 **Do not treat the beta release as the finish line. It is the start of finding out what is still wrong.**
 
-### 6.5 Next Sprint — Cut the first release, carefully
+### 6.5 Next Sprint — Finish the clean-machine test, then release
 
-The engine is done. **Do not improve it. Ship it.** Order matters — each step de-risks the next.
+**Status 2026-08-01: clean install WORKS.** The VC++ DLL blocker is fixed and verified in Windows Sandbox. Installer is 5.9 MB.
 
-**1. Dry-run the release job before tagging.** It has never executed. Push a throwaway tag (`v0.0.0-rc1`) on a branch, or add `workflow_dispatch` to the release job, and watch it produce artifacts + a draft Release. **Delete the test tag and draft afterwards.** Do not let the first real `v*` be the first execution.
+**Step 1 — COMMIT THE FIX. Nothing is in git yet.**
+Four files are modified and unpushed: `src-tauri/windows/hooks.nsh`, `src-tauri/tauri.conf.json`, `src-tauri/src/lib.rs`, `.github/workflows/build.yml`. The working installer exists only on one machine. Commit with "verified on clean Windows Sandbox" — it is now true, so say it.
 
-**2. Compute and publish Mac/Linux SHA256s** from the artifacts that dry-run produces. Windows is already on the download page; the other two are blank.
+**Step 2 — Finish the clean-machine test.** Install succeeding is only the first half. Still unverified end to end:
+- First-run banner appears and is understandable to someone who has never seen the app
+- Engine download actually runs — **986 MB over a real connection**, progress bar accurate, SHA256 verified, atomic rename
+- **A title is generated offline** after the download completes
+- App remains usable (curated / BYO-cloud) while downloading
+- Behaviour when the download is interrupted — **resume is not implemented**, so it restarts from zero. Decide whether that ships.
+- Behaviour when there is under 1 GB free
 
-**3. Test first-launch download on a clean machine.** A VM or a wiped profile. Fresh install → no model → download prompt → 986 MB → generate a title. **This is the single most user-visible untested path.** Note that resume is not implemented; decide whether that ships as-is or gets fixed first.
+**Step 3 — Push and confirm CI is still green.** The workflow changed (five download steps removed); that needs a real run to prove it.
 
-**4. Make the download prompt active.** Currently Settings-only. A first-run user needs to be told the engine is missing and offered the download, in the main flow. Passive discovery costs conversions on the exact feature the product is sold on.
+**Step 4 — Dry-run the `release` job.** It has still never executed. Push a throwaway tag or add `workflow_dispatch`, confirm artifacts + a draft Release + real `.sig` files, then delete the test tag and draft. Do not let the first real `v*` be the first execution.
 
-**5. Then tag `v1.0.0-beta.2` (or whatever fits) and watch every job.**
+**Step 5 — Publish Mac/Linux SHA256s** from the dry-run artifacts.
 
-**Only after a release exists:** Studio batch time (context reuse), cloud batch behaviour (never measured — the web app sells 10/100 per request and every cloud number is k=1), CORS, rate limiting, Web Pro → free Core license, upgrade pricing, waitlist drip.
+**Step 6 — Tag the beta.** Watch every job.
+
+**Only after a release exists:** Studio batch time (22.6 min best / 45.3 min worst — see §6.4b item 4), cloud batch behaviour (never measured), CORS, rate limiting, Web Pro to free Core license, upgrade pricing, waitlist drip.
 
 ### 6.4 Bundling Gates — ALL FIVE must be green before shipping the model
 
