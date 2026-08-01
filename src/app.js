@@ -1686,7 +1686,12 @@ function renderSettingsContent() {
 var _modelPollTimer = null;
 
 function refreshModelStatus() {
-  if (!window.__TAURI__) { return; }
+  // Guard on the IPC bridge, not window.__TAURI__. Tauri v2 exposes
+  // __TAURI_INTERNALS__ (low-level IPC) but only populates window.__TAURI__
+  // when withGlobalTauri is enabled — which it is NOT here. Checking
+  // __TAURI__ made this return early and left the engine status stuck on
+  // "checking…" (and the Task 4 first-run prompt dead).
+  if (!window.__TAURI_INTERNALS__) { return; }
   invoke('get_model_status').then(function (s) {
     var label = document.getElementById('modelStatusLabel');
     var btn = document.getElementById('downloadModelBtn');
@@ -1766,7 +1771,7 @@ function formatBytes(n) {
 
 function setupModelDownloadButton() {
   var btn = document.getElementById('downloadModelBtn');
-  if (!btn || !window.__TAURI__) return;
+  if (!btn || !window.__TAURI_INTERNALS__) return;
   btn.addEventListener('click', function () {
     var msg = document.getElementById('modelStatusMsg');
     btn.disabled = true;
@@ -1791,7 +1796,7 @@ function setupEnginePrompt() {
   var banner = document.getElementById('enginePromptBanner');
   var dlBtn = document.getElementById('enginePromptDownloadBtn');
   var dismiss = document.getElementById('enginePromptDismiss');
-  if (!banner || !window.__TAURI__) return;
+  if (!banner || !window.__TAURI_INTERNALS__) return;
 
   var showBanner = function () {
     invoke('get_model_status').then(function (s) {
