@@ -1115,10 +1115,9 @@ function renderStatsBar() {
     totalTitles += titles.length;
   });
   container.innerHTML =
-    '<div class="stat-card"><span class="stat-number">' + totalTitles + '</span><span class="stat-label">Titles generated</span></div>' +
-    '<div class="stat-card"><span class="stat-number">' + dashFavorites.length + '</span><span class="stat-label">Favorites</span></div>' +
-    '<div class="stat-card"><span class="stat-number">' + dashProjects.length + '</span><span class="stat-label">Projects</span></div>' +
-    '<div class="stat-card"><span class="stat-badge" style="background:var(--forge);">' + currentTier.toUpperCase() + '</span><span class="stat-label">Desktop ' + currentTier.charAt(0).toUpperCase() + currentTier.slice(1) + '</span></div>';
+    '<div class="stat-card stat-card--titles"><span class="stat-number">' + totalTitles + '</span><span class="stat-label">Titles generated</span></div>' +
+    '<div class="stat-card stat-card--favs"><span class="stat-number">' + dashFavorites.length + '</span><span class="stat-label">Favorites</span></div>' +
+    '<div class="stat-card stat-card--projects"><span class="stat-number">' + dashProjects.length + '</span><span class="stat-label">Projects</span></div>';
 }
 
 // ---- OVERVIEW TAB ----
@@ -1126,6 +1125,9 @@ function renderOverviewTab() {
   var container = document.getElementById('dashOverviewList');
   if (!container) return;
   var html = '';
+  // Tier identity pill — "what plan am I on" in context, not a 4th stat tile.
+  html += '<div class="overview-tier"><span class="overview-tier-pill" title="' + currentTier.charAt(0).toUpperCase() + currentTier.slice(1) + ' plan">' + currentTier.toUpperCase() + ' \u00B7 Desktop</span>' +
+         '<span class="overview-tier-note">' + (currentTier === 'core' ? 'Install the TitleForge Engine for offline titles' : (currentTier === 'pro' ? 'Bring your own AI key for larger batches' : 'All features unlocked')) + '</span></div>';
   html += '<div class="overview-card">';
   html += '<h3 class="overview-card-title">Your usage today</h3>';
   html += '<div class="usage-row"><span>' + dailyUsage + ' generation' + (dailyUsage !== 1 ? 's' : '') + '</span><span>Unlimited</span></div>';
@@ -1328,7 +1330,7 @@ function renderProjectsTab() {
   var container = document.getElementById('dashProjectsList');
   if (!container) return;
   if (dashProjects.length === 0) {
-    container.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\uD83D\uDCC1</div><p class="dash-empty-text">Organize your work.</p><p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Group your best titles into projects for easy access.</p></div>';
+    container.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\uD83D\uDCC1</div><p class="dash-empty-text">Organize your work.</p><p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Group your best titles into projects for easy access.</p><a href="#" onclick="switchToGenerator();return false;" class="btn btn-primary" style="display:inline-block;">Generate Titles to Organize \u2192</a></div>';
     return;
   }
   container.innerHTML = '';
@@ -1630,21 +1632,9 @@ function renderSettingsContent() {
     var tierBadge = document.getElementById('sidebarTierBadge');
     if (tierBadge) tierBadge.textContent = currentTier.toUpperCase();
 
-    // Engine row reflects download + load state. enginePresent = Qwen file is
-    // on disk (downloaded). localLlmLoaded = loaded in memory (first gen).
-    var llmEl = document.getElementById('settingsLlmStatus');
-    if (llmEl) {
-      if (info.localLlmLoaded) {
-        llmEl.textContent = 'Active';
-        llmEl.style.color = '#16a34a';
-      } else if (info.enginePresent) {
-        llmEl.textContent = 'Installed (generates on first title)';
-        llmEl.style.color = '#16a34a';
-      } else {
-        llmEl.textContent = 'Off (see the TitleForge Engine card below)';
-        llmEl.style.color = '';
-      }
-    }
+    // Engine row reflects download + load state (shared helper also called
+    // live when the download/poll updates — single source of truth).
+    updateEnginePlanRow(!!info.enginePresent, !!info.localLlmLoaded);
   }).catch(function (err) { console.error('get_app_info failed:', err); });
 
   invoke('get_settings').then(function (settings) {
@@ -1695,6 +1685,25 @@ function renderSettingsContent() {
 // ---- LOCAL AI MODEL (first-launch download) ----
 var _modelPollTimer = null;
 
+// Update the "Plan & Version" engine row live, so it reflects the engine
+// state immediately (not only when the Settings panel re-renders).
+//   present=true   → Qwen file downloaded (shows Installed)
+//   loaded=true    → model loaded in memory (shows Active)
+function updateEnginePlanRow(present, loaded) {
+  var llmEl = document.getElementById('settingsLlmStatus');
+  if (!llmEl) return;
+  if (loaded) {
+    llmEl.textContent = 'Active';
+    llmEl.style.color = '#16a34a';
+  } else if (present) {
+    llmEl.textContent = 'Installed (generates on first title)';
+    llmEl.style.color = '#16a34a';
+  } else {
+    llmEl.textContent = 'Off (see the TitleForge Engine card below)';
+    llmEl.style.color = '';
+  }
+}
+
 function refreshModelStatus() {
   // Guard on the IPC bridge, not window.__TAURI__. Tauri v2 exposes
   // __TAURI_INTERNALS__ (low-level IPC) but only populates window.__TAURI__
@@ -1718,6 +1727,7 @@ function refreshModelStatus() {
       if (msg) msg.textContent = '';
       stopModelPolling();
       hideEnginePrompt(); // engine is ready — the first-run banner's job is done
+      updateEnginePlanRow(true, false); // reflect ready state in Plan & Version immediately
       return;
     }
 
@@ -1807,14 +1817,21 @@ function setupModelDownloadButton() {
   if (!btn || !window.__TAURI_INTERNALS__) return;
   btn.addEventListener('click', function () {
     var msg = document.getElementById('modelStatusMsg');
+    // Show progress in BOTH the Settings card and the first-run banner (if
+    // visible) so they stay in lockstep and finish together.
+    var bannerWrap = document.getElementById('enginePromptProgressWrap');
+    var bannerBtn = document.getElementById('enginePromptDownloadBtn');
     btn.disabled = true;
-    btn.textContent = 'Downloading… (see progress below)';
+    btn.textContent = 'Downloading…';
+    if (bannerWrap) bannerWrap.style.display = 'block';
+    if (bannerBtn) { bannerBtn.disabled = true; bannerBtn.textContent = 'Downloading…'; }
     if (msg) msg.textContent = 'Downloading the offline engine (~940 MB). You can close this panel; it continues in the background.';
     invoke('start_model_download').then(function () {
-      refreshModelStatus();
+      startModelPolling(); // drives progress in both Settings + banner together
     }).catch(function (err) {
       btn.disabled = false;
       btn.textContent = 'Download TitleForge Engine (~940 MB)';
+      if (bannerBtn) { bannerBtn.disabled = false; bannerBtn.textContent = 'Download Engine'; }
       if (msg) { msg.textContent = 'Download error: ' + (err.message || err); msg.style.color = '#b91c1c'; }
     });
   });

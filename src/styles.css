@@ -2099,6 +2099,31 @@ select:focus { outline: none; border-color: var(--forge); }
   letter-spacing: 0.5px;
 }
 
+/* Per-card accent: gives each metric its own identity and threads the warm
+   brand palette (Forge / Forge Glow / Forge Cool) instead of a flat 3-up. */
+.stat-card--titles { border-top: 3px solid var(--forge); }
+.stat-card--favs { border-top: 3px solid var(--forge-glow); }
+.stat-card--projects { border-top: 3px solid var(--forge-cool); }
+.stat-card--titles .stat-number { color: var(--forge); }
+.stat-card--favs .stat-number { color: #c0601a; }
+.stat-card--projects .stat-number { color: var(--forge-cool); }
+
+/* Overview tier identity pill (plan status lives here, not as a 4th tile) */
+.overview-tier {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.overview-tier-pill {
+  display: inline-block;
+  padding: 4px 14px; border-radius: 20px;
+  background: var(--ink); color: #fff;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.overview-tier-note {
+  font-size: 12px; color: var(--text-secondary);
+}
+
 /* Overview tab */
 .overview-card {
   background: var(--paper-card);
