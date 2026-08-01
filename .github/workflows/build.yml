@@ -164,9 +164,12 @@ jobs:
           find . -name "*.sig" -exec cp {} dist/ \;
           
           # Determine version: from tag (real release) or placeholder (dry-run)
-          VER="${{ github.ref_name }}"
-          VER="${VER#v}"
-          if [ -z "$VER" ] || [ "$VER" = "${{ github.ref_name }}" ]; then
+          # github.ref_type == 'tag' only on v* pushes; workflow_dispatch has
+          # ref_type == 'branch' even when github.ref_name is 'master'.
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          else
             VER="0.0.0-rc1"
           fi
           
