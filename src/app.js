@@ -270,7 +270,10 @@ function setupSidebarNav() {
         if (views[k]) views[k].classList.remove('active');
       });
       if (views[view]) views[view].classList.add('active');
-      if (title) title.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+      if (title) {
+        var titleMap = { dashboard: 'Overview', generator: 'Generator', settings: 'Settings' };
+        title.textContent = titleMap[view] || (view.charAt(0).toUpperCase() + view.slice(1));
+      }
       if (view === 'dashboard') {
         renderDashboard();
       }
@@ -1627,16 +1630,20 @@ function renderSettingsContent() {
     var tierBadge = document.getElementById('sidebarTierBadge');
     if (tierBadge) tierBadge.textContent = currentTier.toUpperCase();
 
-    // The engine lazy-loads on first generation, so localLlmLoaded is false
-    // until the model is present AND a title has been generated. Point users
-    // to the dedicated "TitleForge Engine" card below for install/download
-    // state — this row just reflects whether the model is loaded in memory.
+    // Engine row reflects download + load state. enginePresent = Qwen file is
+    // on disk (downloaded). localLlmLoaded = loaded in memory (first gen).
     var llmEl = document.getElementById('settingsLlmStatus');
     if (llmEl) {
-      llmEl.textContent = info.localLlmLoaded
-        ? 'Active'
-        : 'Off (see the TitleForge Engine card below)';
-      llmEl.style.color = info.localLlmLoaded ? '#16a34a' : '';
+      if (info.localLlmLoaded) {
+        llmEl.textContent = 'Active';
+        llmEl.style.color = '#16a34a';
+      } else if (info.enginePresent) {
+        llmEl.textContent = 'Installed (generates on first title)';
+        llmEl.style.color = '#16a34a';
+      } else {
+        llmEl.textContent = 'Off (see the TitleForge Engine card below)';
+        llmEl.style.color = '';
+      }
     }
   }).catch(function (err) { console.error('get_app_info failed:', err); });
 
@@ -1652,6 +1659,7 @@ function renderSettingsContent() {
   }).catch(function (err) { console.error('get_settings for AI config failed:', err); });
 
   refreshModelStatus();
+  refreshUpdateStatusOnly(); // populate the Updates Status field without auto-installing
 
   var saveBtn = document.getElementById('saveApiKeyBtn');
   if (saveBtn) {
@@ -1709,6 +1717,7 @@ function refreshModelStatus() {
       if (wrap) wrap.style.display = 'none';
       if (msg) msg.textContent = '';
       stopModelPolling();
+      hideEnginePrompt(); // engine is ready — the first-run banner's job is done
       return;
     }
 
@@ -1746,11 +1755,17 @@ function refreshModelStatus() {
 
 function startModelPolling() {
   if (_modelPollTimer) return;
+  var wasDownloading = true; // entering the loop means a download started
   _modelPollTimer = setInterval(function () {
     invoke('get_model_status').then(function (s) {
       if (s.qwenPresent) {
         refreshModelStatus();
         stopModelPolling();
+        // Download completed successfully while polling.
+        if (wasDownloading) {
+          showToast('🎉 TitleForge Engine installed — generate offline anytime!');
+          wasDownloading = false;
+        }
         return;
       }
       // Update Settings progress (if visible)
@@ -1768,7 +1783,7 @@ function startModelPolling() {
       }
       if (pt) pt.textContent = formatBytes(s.downloadDone) + ' / ' + formatBytes(s.downloadTotal);
       // Completed (success or fail): reflection stops.
-      if (s.downloadFinished !== false) {
+      if (s.downloadFinished !== false && s.downloadFinished !== null) {
         refreshModelStatus();
         stopModelPolling();
       }
@@ -1810,6 +1825,38 @@ function setupModelDownloadButton() {
 // never gets the offline engine — the one thing the product is sold on. This
 // banner surfaces it in the main flow on first run, once, and remembers
 // dismissal (engine_prompt_dismissed setting) so it doesn't nag.
+function hideEnginePrompt() {
+  var banner = document.getElementById('enginePromptBanner');
+  if (banner && banner.style.display !== 'none') {
+    banner.style.display = 'none';
+    // Remember dismissal so it doesn't nag after a re-launch.
+    if (window.__TAURI_INTERNALS__) {
+      invoke('set_setting', { key: 'engine_prompt_dismissed', value: 'true' }).catch(function () {});
+    }
+  }
+}
+
+// Fire a small transient success toast (disappears after a few seconds).
+function showToast(msg, type) {
+  var t = document.getElementById('appToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'appToast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:32px;transform:translateX(-50%);z-index:99999;padding:14px 22px;border-radius:10px;font:14px var(--font-body);box-shadow:0 8px 30px rgba(0,0,0,0.25);opacity:0;transition:opacity 0.3s, bottom 0.3s;pointer-events:none;max-width:80vw;text-align:center;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = type === 'error' ? '#b91c1c' : '#16a34a';
+  t.style.color = '#fff';
+  t.style.opacity = '1';
+  t.style.bottom = '32px';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function () {
+    t.style.opacity = '0';
+    t.style.bottom = '20px';
+  }, 4000);
+}
+
 function setupEnginePrompt() {
   var banner = document.getElementById('enginePromptBanner');
   var dlBtn = document.getElementById('enginePromptDownloadBtn');
@@ -1910,7 +1957,6 @@ function checkAndInstallUpdate(silent) {
 
   if (!silent && checkBtn) {
     checkBtn.disabled = true;
-    checkBtn.textContent = 'Checking...';
   }
   if (!silent && statusEl) {
     statusEl.textContent = 'Checking for updates...';
@@ -1965,6 +2011,27 @@ function checkAndInstallUpdate(silent) {
       checkBtn.disabled = false;
       checkBtn.textContent = 'Check for Updates';
     }
+  });
+}
+
+// Check for updates and populate the Settings "Status" field WITHOUT
+// auto-downloading/installing (used when the Settings panel opens, so a user
+// sees a real status instead of "—"; they still click the Check button to
+// actually apply an update).
+function refreshUpdateStatusOnly() {
+  var statusEl = document.getElementById('settingsUpdateStatus');
+  if (!statusEl) return;
+  invoke('plugin:updater|check').then(function (result) {
+    if (result && result.version) {
+      statusEl.textContent = 'Update v' + result.version + ' available (check above to install).';
+      statusEl.style.color = '#16a34a';
+    } else {
+      statusEl.textContent = 'You\'re up to date.';
+      statusEl.style.color = '#16a34a';
+    }
+  }).catch(function () {
+    statusEl.textContent = 'Update check failed.';
+    statusEl.style.color = '#b91c1c';
   });
 }
 

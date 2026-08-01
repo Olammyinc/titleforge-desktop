@@ -56,7 +56,7 @@
         <span class="sidebar-dot"></span> Generator
       </a>
       <a class="sidebar-item" data-view="dashboard">
-        <span class="sidebar-dot"></span> Dashboard
+        <span class="sidebar-dot"></span> Overview
       </a>
       <a class="sidebar-item" data-view="settings">
         <span class="sidebar-dot"></span> Settings
@@ -171,7 +171,6 @@
               <input type="range" id="quantity" min="1" max="50" value="10" class="slider" />
               <div class="slider-labels"><span>1</span><span>25</span><span>50</span><span>100</span></div>
             </div>
-            <button id="generateBtn" class="gen-btn">Generate Titles</button>
             <div id="loading" class="loading" style="display:none;">
               <div class="spinner"></div>
               <p>Forging your titles...</p>
@@ -276,6 +275,11 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Generate button: full-width action below both columns, above results -->
+      <div class="gen-submit">
+        <button id="generateBtn" class="gen-btn">Generate Titles</button>
       </div>
 
       <!-- Results area (full width below columns) -->

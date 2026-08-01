@@ -1041,6 +1041,7 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
         "seeded": count > 0,
         "templateCount": count,
         "localLlmLoaded": llm_guard.is_some(),
+        "enginePresent": qwen_present(),
     }))
 }
 

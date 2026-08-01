@@ -3353,19 +3353,28 @@ select:focus { outline: none; border-color: var(--forge); }
 }
 
 /* ============ GENERATOR LAYOUT ============ */
-.gen-layout { display: flex; gap: 24px; margin-bottom: 24px; }
-.gen-col { flex: 1; }
+.gen-layout { display: flex; gap: 24px; align-items: stretch; margin-bottom: 12px; }
+.gen-col { flex: 1; display: flex; }
 .gen-col-input { flex: 0 0 55%; }
 .gen-col-config { flex: 0 0 45%; }
 
+/* Full-width submit: the primary action sits below both columns, above results */
+.gen-submit {
+  width: 100%; margin: 0 0 20px;
+}
+.gen-submit .gen-btn {
+  margin-top: 0;
+}
+
 .gen-layout .card {
+  width: 100%;
   background: var(--paper-card); border: 1px solid var(--paper-border);
   border-radius: 14px; padding: 28px 24px;
   box-shadow: var(--shadow-sm);
 }
 
 .gen-btn {
-  width: 100%; height: 52px; margin-top: 20px;
+  width: 100%; height: 52px; margin-top: 0;
   background: var(--forge); color: #fff; border: none; border-radius: 12px;
   font-family: var(--font-body); font-weight: 600; font-size: 16px;
   cursor: pointer; transition: all 0.2s ease-out;
