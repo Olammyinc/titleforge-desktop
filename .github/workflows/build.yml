@@ -164,9 +164,10 @@ jobs:
           find . -name "*.dmg" -exec cp {} dist/ \;
           find . -name "*.deb" -exec cp {} dist/ \;
           find . -name "*.AppImage" -exec cp {} dist/ \;
-          # macOS updater bundles are .app.tar.gz (+ .sig); Windows/Linux sigs
-          # sit next to the installers.
-          find . -name "*.tar.gz" -exec cp {} dist/ \;
+          # macOS updater bundle is the .app.tar.gz (+ .sig); the macos job
+          # builds one universal .app on the arm64 runner. Exclude deb
+          # internals (data.tar.gz / control.tar.gz are deb package parts).
+          find . -name "*.app.tar.gz" -exec cp {} dist/ \;
           find . -name "*.sig" -exec cp {} dist/ \;
           
           # Determine version: from tag (real release) or placeholder (dry-run)
@@ -195,6 +196,11 @@ jobs:
             echo "Found sig: $base"
             if echo "$base" | grep -qi "setup.exe"; then
               SIG_WIN="$sigcontent"
+            elif echo "$base" | grep -qi "\.app\.tar\.gz"; then
+              # Universal macOS app bundle (built on the arm64 runner) — same
+              # sig serves both darwin-x86_64 and darwin-aarch64.
+              SIG_MAC_X64="$sigcontent"
+              SIG_MAC_ARM="$sigcontent"
             elif echo "$base" | grep -qi "aarch64"; then
               SIG_MAC_ARM="$sigcontent"
             elif echo "$base" | grep -qi "x64"; then
@@ -219,11 +225,11 @@ jobs:
               },
               "darwin-x86_64": {
                 "signature": "${SIG_MAC_X64}",
-                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_x64.dmg"
+                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge.app.tar.gz"
               },
               "darwin-aarch64": {
                 "signature": "${SIG_MAC_ARM}",
-                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge_${VER}_aarch64.dmg"
+                "url": "https://github.com/Olammyinc/titleforge-desktop/releases/download/${{ github.ref_name }}/TitleForge.app.tar.gz"
               },
               "linux-x86_64": {
                 "signature": "${SIG_LINUX}",
@@ -246,7 +252,7 @@ jobs:
           ls -la dist/
       - uses: softprops/action-gh-release@v2
         with:
-          name: TitleForge v${{ github.ref_name == '' && '0.0.0-rc1' || github.ref_name }}
+          name: TitleForge ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0-rc1' }}
           body: "Generated release with signed binaries and auto-update manifest."
           files: dist/*
           generate_release_notes: true
