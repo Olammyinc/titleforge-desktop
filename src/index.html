@@ -81,9 +81,15 @@
     <div id="enginePromptBanner" class="engine-prompt-banner" style="display:none;">
       <div class="engine-prompt-content">
         <div class="engine-prompt-icon">⚙️</div>
-        <div>
+        <div style="flex:1;min-width:0;">
           <strong>Install the TitleForge Engine to generate titles offline.</strong>
           <span class="engine-prompt-desc">~940 MB, one-time download. Works without an internet connection — private, fast, unlimited.</span>
+          <div id="enginePromptProgressWrap" style="display:none;margin-top:8px;">
+            <div style="height:8px;background:#E8E3D9;border-radius:4px;overflow:hidden;">
+              <div id="enginePromptProgressBar" style="height:100%;width:0%;background:var(--forge);transition:width 0.3s;"></div>
+            </div>
+            <p id="enginePromptProgressText" class="settings-status" style="margin-top:3px;font-size:11px;"></p>
+          </div>
         </div>
         <button id="enginePromptDownloadBtn" class="btn btn-primary btn-small">Download Engine</button>
         <button id="enginePromptDismiss" class="engine-prompt-dismiss" title="Not now">×</button>

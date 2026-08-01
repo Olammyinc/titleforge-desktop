@@ -951,15 +951,21 @@ fn start_model_download(app: tauri::AppHandle) -> Result<(), String> {
     // If already present or already downloading, do nothing.
     if qwen_present() { return Ok(()); }
     {
-        let (_, _, finished) = *model_download_state().lock().unwrap_or_else(|e| e.into_inner());
-        if finished == Some(false) { return Ok(()); } // a download is in flight
+        // In-flight detection: a download in progress has total = QWEN_EXPECTED_SIZE
+        // and finished = Some(false). A completed (success or fail) download
+        // resets total to 0. This lets a failed download be retried.
+        let (_, total, _) = *model_download_state().lock().unwrap_or_else(|e| e.into_inner());
+        if total == QWEN_EXPECTED_SIZE { return Ok(()); } // a download is in flight
     }
 
     let target = qwen_model_path();
     std::fs::create_dir_all(target.parent().ok_or("no parent dir")?)
         .map_err(|e| format!("cannot create models dir: {}", e))?;
 
-    *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) = (0, QWEN_EXPECTED_SIZE, None);
+    // Mark download as in-flight. `finished = Some(false)` means "downloading"
+    // so the UI poller can show progress; Some(true) once done,
+    // Some(false) again after a failure. (JS checks downloadFinished === false.)
+    *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) = (0, QWEN_EXPECTED_SIZE, Some(false));
 
     // Spawn a background thread so the command returns immediately and the
     // UI can poll get_model_status for progress.
@@ -991,7 +997,7 @@ fn start_model_download(app: tauri::AppHandle) -> Result<(), String> {
                 use std::io::Write;
                 file.write_all(&buf[..n]).map_err(|e| format!("write: {}", e))?;
                 done += n as u64;
-                *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) = (done, QWEN_EXPECTED_SIZE, None);
+                *model_download_state().lock().unwrap_or_else(|e| e.into_inner()) = (done, QWEN_EXPECTED_SIZE, Some(false));
             }
             drop(file);
 

@@ -469,9 +469,12 @@ function startBackgroundTasks() {
   }, 30 * 60 * 1000); // Every 30 minutes
 }
 
-// Show API key setup prompt on first launch (no key configured)
+// Show API key setup prompt if no key configured AND the license tier can
+// actually use BYO AI (Pro/Studio). Core has no AI access, so the upsell is
+// noise for Core users.
 function promptApiKeySetup() {
-  if (aiProvider && aiApiKey) return; // Already have a key
+  if (aiProvider && aiApiKey) return;              // Already have a key
+  if (currentTier === 'core') return;              // Core cannot use BYO AI
   setTimeout(function () {
     var existing = document.getElementById('apiKeyNotice');
     if (existing) return;
@@ -1624,16 +1627,15 @@ function renderSettingsContent() {
     var tierBadge = document.getElementById('sidebarTierBadge');
     if (tierBadge) tierBadge.textContent = currentTier.toUpperCase();
 
-    // The local LLM lazy-loads on the first title generation, not at app
-    // startup, so `localLlmLoaded` being false here can mean either "hasn't
-    // tried yet" or "tried and failed to find/load the model file." We can't
-    // fully disambiguate those from this flag alone, so word it accordingly
-    // rather than implying a hard failure before generation has even run.
+    // The engine lazy-loads on first generation, so localLlmLoaded is false
+    // until the model is present AND a title has been generated. Point users
+    // to the dedicated "TitleForge Engine" card below for install/download
+    // state — this row just reflects whether the model is loaded in memory.
     var llmEl = document.getElementById('settingsLlmStatus');
     if (llmEl) {
       llmEl.textContent = info.localLlmLoaded
         ? 'Active'
-        : 'Not loaded yet (generate a title to trigger load; check console for [local_llm] errors if it stays off)';
+        : 'Off (see the TitleForge Engine card below)';
       llmEl.style.color = info.localLlmLoaded ? '#16a34a' : '';
     }
   }).catch(function (err) { console.error('get_app_info failed:', err); });
@@ -1710,8 +1712,11 @@ function refreshModelStatus() {
       return;
     }
 
-    // Downloading or failed
-    if (s.downloadFinished === false) {
+    // Downloading: finished is false during the whole download, OR bytes have
+    // already been received (defensive — covers any null/undefined quirk).
+    var isDownloading = s.downloadFinished === false
+      || (s.downloadDone != null && s.downloadDone > 0 && s.qwenPresent === false);
+    if (isDownloading) {
       if (label) label.textContent = 'Engine status: downloading…';
       if (btn) btn.style.display = 'none';
       if (wrap) wrap.style.display = 'block';
@@ -1743,16 +1748,29 @@ function startModelPolling() {
   if (_modelPollTimer) return;
   _modelPollTimer = setInterval(function () {
     invoke('get_model_status').then(function (s) {
-      if (s.qwenPresent || s.downloadFinished !== false) {
+      if (s.qwenPresent) {
         refreshModelStatus();
         stopModelPolling();
-      } else {
-        var bar = document.getElementById('modelProgressBar');
-        var ptext = document.getElementById('modelProgressText');
-        if (bar && s.downloadTotal > 0) {
-          bar.style.width = Math.min(100, Math.round((s.downloadDone / s.downloadTotal) * 100)) + '%';
-        }
-        if (ptext) ptext.textContent = formatBytes(s.downloadDone) + ' / ' + formatBytes(s.downloadTotal);
+        return;
+      }
+      // Update Settings progress (if visible)
+      var bar = document.getElementById('modelProgressBar');
+      var ptext = document.getElementById('modelProgressText');
+      if (bar && s.downloadTotal > 0) {
+        bar.style.width = Math.min(100, Math.round((s.downloadDone / s.downloadTotal) * 100)) + '%';
+      }
+      if (ptext) ptext.textContent = formatBytes(s.downloadDone) + ' / ' + formatBytes(s.downloadTotal);
+      // Update the first-run banner progress too (if showing)
+      var pb = document.getElementById('enginePromptProgressBar');
+      var pt = document.getElementById('enginePromptProgressText');
+      if (pb && s.downloadTotal > 0) {
+        pb.style.width = Math.min(100, Math.round((s.downloadDone / s.downloadTotal) * 100)) + '%';
+      }
+      if (pt) pt.textContent = formatBytes(s.downloadDone) + ' / ' + formatBytes(s.downloadTotal);
+      // Completed (success or fail): reflection stops.
+      if (s.downloadFinished !== false) {
+        refreshModelStatus();
+        stopModelPolling();
       }
     }).catch(function () { stopModelPolling(); });
   }, 1000);
@@ -1813,11 +1831,14 @@ function setupEnginePrompt() {
 
   if (dlBtn) {
     dlBtn.addEventListener('click', function () {
+      var pw = document.getElementById('enginePromptProgressWrap');
       dlBtn.disabled = true;
       dlBtn.textContent = 'Downloading…';
+      if (pw) pw.style.display = 'block';
       invoke('start_model_download').then(function () {
-        dlBtn.textContent = 'Download started — see Settings for progress';
-        banner.style.display = 'flex';
+        // Poll the banner's own progress inline; refreshModelStatus (Settings)
+        // also runs via the shared poll loop.
+        startModelPolling();
       }).catch(function (err) {
         dlBtn.disabled = false;
         dlBtn.textContent = 'Download Engine';
