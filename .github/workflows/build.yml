@@ -43,6 +43,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: npm install
+      - name: Download SmolLM2 fallback (tauri.conf bundles it — build script fails without it)
+        run: bash scripts/download-model.sh
       - name: Download Qwen2.5-1.5B (pinned hash)
         run: bash scripts/download-model.sh qwen
       - name: Run lib tests (19/19) with error capture
