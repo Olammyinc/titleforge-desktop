@@ -4,6 +4,11 @@ on:
     branches: [master, main]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      dry_run_release:
+        description: 'Dry-run the release job (draft release, no public tag needed)'
+        type: boolean
+        default: false
 
 env:
   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -138,7 +143,10 @@ jobs:
           if-no-files-found: ignore
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Runs on real v* tags, OR on manual dispatch with dry_run_release=true
+    # (which exercises signing + artifacts + draft release creation safely —
+    # the job has never executed and the first real tag must not be its debut).
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.dry_run_release)
     needs: [build-linux-deb, build-linux-appimage, build-windows, build-macos]
     runs-on: ubuntu-latest
     permissions:
@@ -155,9 +163,12 @@ jobs:
           find . -name "*.AppImage" -exec cp {} dist/ \;
           find . -name "*.sig" -exec cp {} dist/ \;
           
-          # Determine version from tag name
+          # Determine version: from tag (real release) or placeholder (dry-run)
           VER="${{ github.ref_name }}"
           VER="${VER#v}"
+          if [ -z "$VER" ] || [ "$VER" = "${{ github.ref_name }}" ]; then
+            VER="0.0.0-rc1"
+          fi
           
           echo "=== dist contents ==="
           ls -la dist/
@@ -185,6 +196,8 @@ jobs:
           done
           
           # Build updates.json with actual signatures and resolved URLs
+          # URL ref uses VER (tag-derived or rc1 in dry-run); release file names
+          # follow Tauri's ${PRODUCT}_${VER}_${ARCH} convention.
           cat > dist/updates.json << JSONEOF
           {
             "version": "${VER}",
@@ -224,10 +237,13 @@ jobs:
           ls -la dist/
       - uses: softprops/action-gh-release@v2
         with:
-          name: TitleForge v${{ github.ref_name }}
+          name: TitleForge v${{ github.ref_name == '' && '0.0.0-rc1' || github.ref_name }}
           body: "Generated release with signed binaries and auto-update manifest."
           files: dist/*
           generate_release_notes: true
+          # Dry-runs (manual dispatch) create a DRAFT so nothing goes public.
+          # Real v* tags publish normally.
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
       - name: Deploy updates.json to Netlify
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
