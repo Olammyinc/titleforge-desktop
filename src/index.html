@@ -75,6 +75,21 @@
       <h1 class="content-title" id="pageTitle">Generator</h1>
     </div>
 
+    <!-- First-run engine prompt: shown when the TitleForge Engine (offline
+         model) isn't installed. The engine is the product's core promise —
+         a tester who never opens Settings never sees it, so surface it here. -->
+    <div id="enginePromptBanner" class="engine-prompt-banner" style="display:none;">
+      <div class="engine-prompt-content">
+        <div class="engine-prompt-icon">⚙️</div>
+        <div>
+          <strong>Install the TitleForge Engine to generate titles offline.</strong>
+          <span class="engine-prompt-desc">~940 MB, one-time download. Works without an internet connection — private, fast, unlimited.</span>
+        </div>
+        <button id="enginePromptDownloadBtn" class="btn btn-primary btn-small">Download Engine</button>
+        <button id="enginePromptDismiss" class="engine-prompt-dismiss" title="Not now">×</button>
+      </div>
+    </div>
+
     <!-- ===== GENERATOR VIEW ===== -->
     <div id="viewGenerator" class="content-view active">
       <div class="gen-layout">

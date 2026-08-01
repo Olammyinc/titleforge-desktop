@@ -421,6 +421,7 @@ function initApp() {
   setupEngineToggle();
   setupGenerateButton();
   setupModelDownloadButton();
+  setupEnginePrompt();
   setupDashboardTabs();
   setupDashboardSearch();
   setupExportButtons();
@@ -1779,6 +1780,53 @@ function setupModelDownloadButton() {
       if (msg) { msg.textContent = 'Download error: ' + (err.message || err); msg.style.color = '#b91c1c'; }
     });
   });
+}
+
+// ---- FIRST-RUN ENGINE PROMPT (Task 4: make the download prompt active) ----
+// The engine download lives in Settings. A new user who never opens Settings
+// never gets the offline engine — the one thing the product is sold on. This
+// banner surfaces it in the main flow on first run, once, and remembers
+// dismissal (engine_prompt_dismissed setting) so it doesn't nag.
+function setupEnginePrompt() {
+  var banner = document.getElementById('enginePromptBanner');
+  var dlBtn = document.getElementById('enginePromptDownloadBtn');
+  var dismiss = document.getElementById('enginePromptDismiss');
+  if (!banner || !window.__TAURI__) return;
+
+  var showBanner = function () {
+    invoke('get_model_status').then(function (s) {
+      if (!s.qwenPresent) {
+        banner.style.display = 'flex';
+      }
+    }).catch(function () {});
+  };
+
+  // Check the dismissed flag; only show if never dismissed.
+  invoke('get_settings').then(function (settings) {
+    if (settings.engine_prompt_dismissed !== 'true') { showBanner(); }
+  }).catch(function () { showBanner(); });
+
+  if (dlBtn) {
+    dlBtn.addEventListener('click', function () {
+      dlBtn.disabled = true;
+      dlBtn.textContent = 'Downloading…';
+      invoke('start_model_download').then(function () {
+        dlBtn.textContent = 'Download started — see Settings for progress';
+        banner.style.display = 'flex';
+      }).catch(function (err) {
+        dlBtn.disabled = false;
+        dlBtn.textContent = 'Download Engine';
+        dumpDebug('engine prompt download error: ' + (err.message || err));
+      });
+    });
+  }
+
+  if (dismiss) {
+    dismiss.addEventListener('click', function () {
+      banner.style.display = 'none';
+      invoke('set_setting', { key: 'engine_prompt_dismissed', value: 'true' }).catch(function () {});
+    });
+  }
 }
 
 // ---- UPDATER ----
