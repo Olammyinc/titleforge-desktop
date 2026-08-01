@@ -305,6 +305,22 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-08-01 — Tasks 2 + 4 done; clean-machine VC++ runtime bug found + fixed (Task 3 in progress on Windows Sandbox)
+
+**Task 2 — Mac/Linux SHA256s published.** Release job now computes real installer hashes (`sha256sum` → `SHA256SUMS` shipped with each release). Download page updated: Windows, macOS `_aarch64.dmg`, Linux `_amd64.deb` + real hashes; Docker page Mac/Linux links fixed to actual artifact names. No placeholders (brief rule).
+
+**Task 3 — first-launch download on a clean machine (in progress).** Using **Windows Sandbox** (fresh clean Windows VM, resets each close — ideal for repeat clean-install tests). Found a REAL clean-machine blocker:
+
+**🛑 VC++ runtime missing on clean Windows → MSVCP140.dll / VCOMP140.DLL "not found" on launch.** `llama-cpp-2` links these dynamically; clean Windows doesn't have them.
+
+- **Attempt 1 (adopted then abandoned):** bundled `vc_redist.x64.exe` as a resource + NSIS hook ran it `/quiet /norestart`. Failed with **code 6444056**. Two bugs: (a) `installMode: currentUser` → installer not elevated → vc_redist can't write System32 (needs admin); (b) exit code 6444056 = 0x625418 is a **WiX Burn parent-process handoff code**, not a real install result (documented WiX issue #5326) — the real failure is ACCESS_DENIED in `%TEMP%\dd_vcredist_*.log`.
+- **Code-reviewer confirmed:** vc_redist has NO per-user mode; it's machine-wide, admin-only. No NSIS command silently installs it without elevation. **App-local DLL deployment is the canonical fix** (Microsoft-sanctioned).
+- **Fix applied (option A — app-local DLLs):** ship the 4 runtime DLLs (`msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`, `vcomp140.dll`) as bundle resources (`src-tauri/vcrt/`) + a NSIS `NSIS_HOOK_POSTINSTALL` hook that copies them from `resources\vcrt\` to `$INSTDIR\` (next to `TitleForge.exe`). Windows loader searches the EXE's dir first → no admin, no UAC. Installer stays ~262 MB (DLLs add ~1 MB, dropped the 24 MB vc_redist). Verified the DLLs are inside the installer via 7z.
+
+**Task 4 — active first-run engine prompt (done).** Main-flow banner below the content header: "Install the TitleForge Engine to generate titles offline" + Download Engine button + × dismiss (remembered via `engine_prompt_dismissed` setting). Fixes the "testers can't reach the feature" bug. Also rebranded settings card + engine toggle to "TitleForge Engine".
+
+**Where we are:** CI is fully green (builds + verify-llm on all 3 platforms + release pipeline verified). Remaining before a clean-sandbox green: confirm the app launches without DLL errors after the app-local VC++ fix, then the first-run banner → engine download → offline generation. Then Task 5 = tag `v1.0.0-beta.2`.
+
 ### 2026-08-01 — Task 1 (release dry-run) complete: pipeline verified, 3 real bugs found + fixed
 
 **The `release` job executed for the first time (206 prior runs always skipped).** Used `workflow_dispatch` + a throwaway `v0.0.0-rc1` tag (deleted after). It exposed three real problems, all now fixed:
@@ -895,13 +911,15 @@ Full 4-engine comparison with all fixes applied:
 
 #### RISK — untested paths that a release will exercise
 
-**1. The `release` CI job has never run.** It is tag-gated and has been skipped on all 206 runs. Cutting `v*` will be the first execution of updater signing, artifact upload, and GitHub Release creation — all at once, in front of users. **Dry-run it before tagging for real.**
+**1. The `release` CI job — ✅ RAN + verified 2026-08-01 (dry-run).** Executed with a throwaway `v0.0.0-rc1` tag (deleted after). All signatures produced, SHA256SUMS generated, GitHub Release + updates.json + Netlify deploy all worked end-to-end. **The only untested path left is a real install→update cycle (#2).**
 
-**2. The auto-updater has never completed a cycle.** `updates.json` needs real signatures from the signing pipeline. No install→update has ever been verified end to end.
+**2. The auto-updater has never completed a cycle.** `updates.json` now has real signatures (dry-run verified), but no install→update has been verified end to end. Test after the first real release.
 
-**3. First-launch download has never run on a clean machine.** Built and unit-mocked, but nobody has done a fresh install and pulled 986 MB over a real connection. **Resume is not implemented** — a drop at 900 MB restarts from zero.
+**3. First-launch download — IN TEST (Windows Sandbox, 2026-08-01).** Fresh clean VM. **New blocker found + fixed: MSVCP140.dll/VCOMP140.dll missing on clean Windows** — `llama-cpp-2` links these; clean Windows lacks them. Root cause was vc_redist needing admin (incompatible with currentUser mode) + Burn exit-code 6444056. **Fixed: app-local VC++ DLLs shipped as resources + NSIS POSTINSTALL hook copies them next to the exe.** Awaiting clean-sandbox confirmation. **Resume is not implemented** — a drop restarts from zero (accepted for beta).
 
-**4. The download prompt is passive.** The model download lives in Settings only. A new user who never opens Settings gets no offline engine and no explanation. **This is a conversion bug, not a polish item.**
+**4. The download prompt — ✅ ACTIVE (Task 4, 2026-08-01).** First-run banner in the main flow: "Install the TitleForge Engine to generate titles offline" + Download button + dismiss (remembered). No longer Settings-only.
+
+**4b. VC++ runtime on clean Windows — ✅ FIXED (app-local DLLs).** `installMode: currentUser` + vc_redist = impossible (needs admin to write System32). App-local `msvcp140.dll`/`vcruntime140.dll`/`vcruntime140_1.dll`/`vcomp140.dll` next to the exe resolve with zero elevation (Microsoft-sanctioned). See §5 entry.
 
 **5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped), which helped — but `engine.rs:38` still loops `target_per_cat * 2`:
 
@@ -932,7 +950,7 @@ All cloud measurements are k=1. The web app sells 10/100 titles per request. Nob
 
 #### BACKLOG — real work, not urgent
 
-9. Mac & Linux SHA256s pending production CI builds. Windows published.
+9. Mac & Linux SHA256s — ✅ PUBLISHED 2026-08-01 (real hashes, computed in CI). Download page updated.
 10. Updater signature pipeline wired but never fired on a real `v*` tag.
 11. CORS wildcard on `licenses.js` POST endpoints. Low risk, should be restricted.
 12. No rate limiting on the public license validation endpoint — enumeration risk.
