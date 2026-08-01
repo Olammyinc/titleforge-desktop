@@ -305,6 +305,46 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-08-01 — Task 1 (release dry-run) complete: pipeline verified, 3 real bugs found + fixed
+
+**The `release` job executed for the first time (206 prior runs always skipped).** Used `workflow_dispatch` + a throwaway `v0.0.0-rc1` tag (deleted after). It exposed three real problems, all now fixed:
+
+1. **Signing produced zero `.sig` files — root cause was `bundle.createUpdaterArtifacts` missing, NOT the key.** Tauri only generates updater signatures when `createUpdaterArtifacts: true` (docs). The signing key (regenerated, password-protected) was fine. Fixed in `tauri.conf.json`.
+2. **macOS didn't produce updater artifacts** — `--bundles dmg` skips the `.app` bundle that `.app.tar.gz` derives from. Fixed: `--bundles app,dmg`. macOS sig is universal (`TitleForge.app.tar.gz.sig`) — assigned to both darwin slots in `updates.json`.
+3. **Release job collected deb internals** (`data.tar.gz`/`control.tar.gz`) — fixed with `find *.app.tar.gz`. Also fixed release name double-v (`vv1.0.0` → `v1.0.0`).
+
+**Final dry-run result (run `30694742926`, all 8 jobs green):** 4 real signatures in `updates.json` (Windows .exe, Linux .deb + .AppImage, macOS .app.tar.gz), real GitHub Release created, then deleted + tag cleaned up per the brief. Netlify deploy step ran (token present).
+
+**Signing key:** regenerated password-protected (passwordless key + empty password silently produces no sigs — Tauri bug). Secrets set: `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Credentials saved to `~/Documents/titleforge-signing-key-2026.txt` + `tf-key-pw` / `tf-key-pw.pub` (NOT in repo). **KEEP THESE SAFE — losing them breaks auto-updates.**
+
+### 2026-08-01 — Shipping sprint verified independently. All gates green. Strong work.
+
+**Audit of the shipping sprint. Every claim checked against code, git history, and the GitHub Actions API. Everything holds up.**
+
+**CI independently confirmed** (not taken on trust): GitHub API + `gh` both show run `9d995f2` with **7 jobs green** — `verify-llm` on ubuntu-22.04 and macos-latest, `build-windows`, `build-macos`, `build-linux-deb`, `build-linux-appimage`, `lint-js`. `release` skipped, correctly, being tag-gated. Failure history matches the recorded account exactly: `c622886`, `6011731`, `7c13fb4` failed; `e015adc` and `9d995f2` green.
+
+**Verified against source, not the change log:**
+- Offline caps `pro => 50`, `studio => 200` (`lib.rs:92-96`) ✅
+- `sha2 = "0.10"` present ✅
+- `THIRD-PARTY-NOTICES` exists, attributes Qwen (Alibaba, Apache 2.0) and the bartowski GGUF quant, bundled in `tauri.conf.json` resources ✅
+- `get_model_status` / `start_model_download` with background thread + polled progress ✅
+- `src-tauri/.cargo/` untracked and gitignored, local override preserved ✅
+- Temperature default 0.8, env-overridable, clamped to 0.05–2.0 ✅
+- `cargo test --release --lib` 19/19 ✅
+
+**What deserves credit — specifically:**
+
+1. **Rejected the plausible hypothesis and found the real cause.** The macOS failure looked exactly like a Metal/Xcode toolchain problem, and that would have been a defensible thing to chase for days. It was a committed `.cargo/config.toml` with `target-dir = "C:/temp/..."` breaking path joining on non-Windows. That is brief rule #1 executed properly — suspect the harness, not the platform.
+2. **Removed `continue-on-error: true` from the AppImage job.** It was masking the same failure. Nobody asked for that; it was the "never hide bad output" principle applied unprompted, at the cost of turning a green board red until the real fix landed. Correct call.
+3. **Split offline and BYOK caps on reasoning, not vibes.** Offline is capped because it burns the user's CPU; BYOK is uncapped because the user pays their own API bill. That distinction is genuinely thought through.
+4. **Documented the gap honestly.** "Resume support not implemented (fresh download on retry); acceptable for v1" — stating what was *not* built, with a rationale, is worth more than a green checkmark.
+5. **Verified the download URL and SHA256 against the local model** before wiring it up, rather than assuming HuggingFace would serve what was expected.
+6. **Closed Task 1 on evidence.** Two prompt variants tested, both measured worse, task closed rather than forced through. Negative results recorded as results.
+
+**This is the standard to hold.** The pattern that keeps working in this project: instrument the failure, read the raw data, distrust the plausible story, write down what did not work.
+
+**Next: §6.5 — cut the first release. The engine is finished; stop improving it.**
+
 ### 2026-07-31 (post-sprint shipping decisions) — Tasks 2-5 decisions locked + Task 3 implemented
 
 **User decisions on the shipping sprint (§4):**
@@ -847,16 +887,31 @@ Full 4-engine comparison with all fixes applied:
 
 **Read this before planning anything. Items are ranked by what blocks revenue, not by what is interesting to fix.**
 
-#### BLOCKING — customers are affected right now
+#### STATUS — beta, no paying customers. Correctness over speed. (see §6.4b)
 
-**1. The desktop app ships SmolLM2, not Qwen. Every quality number in this document is invisible to customers.**
-`tauri.conf.json` bundles `SmolLM2-360M` (270 MB). Qwen2.5-1.5B (986 MB) is delivered via **first-launch download** (Task 5, user decision 2026-07-31) — the installer stays minimal, the engine downloads once per machine from HF (Apache 2.0, SHA256-verified). **All five bundling gates are green; shipping is no longer blocked on any decision.** Remaining to close the gap: cut a release with the download flow + a first-launch prompt that gets users to click Download (currently Settings-only, passive).
+**All five bundling gates are green (§6.4). CI independently confirmed 2026-08-01: run `9d995f2`, 7 jobs green, `release` skipped (tag-gated).** The engine works, builds on all three platforms, and has a legal, checksum-verified delivery path.
 
-**2. Pro and Studio batch times are unshippable.**
-Measured 6.79 s/title. Core (25) = 169.6 s, acceptable. **Pro (100) ≈ 22 min. Studio (500) ≈ 110 min.** No user waits 110 minutes. Options: reuse one KV cache across a batch (`generate_chat_raw` currently allocates a fresh context per title), parallel contexts, background generation with progress, or lower the per-tier caps. **This is a product decision before it is an engineering one — surface it, do not silently optimise.**
+**Nothing here is hurting users, because there are none yet.** Payments are off until the product is right. The next step is a *beta* release — a way to find out what is still broken, not a revenue event. See §6.5.
 
-**3. Studio's "up to 500 titles" is still a claim you cannot honour in reasonable time.**
-Copy was softened to "Largest batch sizes (up to 500 titles)" but the underlying 110-minute reality is unchanged. Fix #2 or change the claim.
+#### RISK — untested paths that a release will exercise
+
+**1. The `release` CI job has never run.** It is tag-gated and has been skipped on all 206 runs. Cutting `v*` will be the first execution of updater signing, artifact upload, and GitHub Release creation — all at once, in front of users. **Dry-run it before tagging for real.**
+
+**2. The auto-updater has never completed a cycle.** `updates.json` needs real signatures from the signing pipeline. No install→update has ever been verified end to end.
+
+**3. First-launch download has never run on a clean machine.** Built and unit-mocked, but nobody has done a fresh install and pulled 986 MB over a real connection. **Resume is not implemented** — a drop at 900 MB restarts from zero.
+
+**4. The download prompt is passive.** The model download lives in Settings only. A new user who never opens Settings gets no offline engine and no explanation. **This is a conversion bug, not a polish item.**
+
+**5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped), which helped — but `engine.rs:38` still loops `target_per_cat * 2`:
+
+| Tier | Titles | Best case | Worst case (2× loop) |
+|---|---|---|---|
+| Core | 25 | 2.8 min | 5.7 min |
+| Pro | 50 | 5.7 min | 11.3 min |
+| Studio | 200 | 22.6 min | **45.3 min** |
+
+Core and Pro are shippable. **Studio is not.** Context reuse (`generate_chat_raw` allocates a fresh KV cache per title) is the untried win.
 
 #### OPEN — decide, don't drift
 
@@ -899,6 +954,48 @@ All cloud measurements are k=1. The web app sells 10/100 titles per request. Nob
 - ~~Web few-shot reverted~~ — re-applied after the metric was fixed. Kept. Mean 90.2, 100% usable.
 - ~~`n_ctx` unset~~ — now 1024.
 - ~~"Port web quality rules to desktop"~~ — tested twice, measured worse, closed. Model capacity is the ceiling.
+
+### 6.4b PRODUCT STATUS: BETA. No paying customers yet. (User, 2026-08-01)
+
+**Read this before you prioritise anything.**
+
+TitleForge Desktop has **no paying customers**. Nothing in this document is "affecting users right now." Payments are not switched on and will not be until the product is right. The user's position, verbatim in intent: *"this is a beta, no paying customer yet until we get it right — I don't want to sell half-baked product."*
+
+**What this changes:**
+
+- **Speed is not the constraint. Correctness is.** There is no revenue clock. Do not cut corners to ship sooner.
+- **A failed release tag is cheap right now.** That is exactly why the dry-run in §6.5 is worth doing — practise the release while mistakes are free.
+- **Quality work is deferred, not cancelled.** Engine tuning, Studio batch time, cloud batch behaviour — all explicitly parked until the product is shippable end to end. They come back before payments, not after.
+- **Anything that would be a "conversion bug" with customers is a "beta testers can't reach the feature" bug today.** Still worth fixing, lower stakes.
+
+**Before payments are switched on, ALL of these must be true. This list is the real gate, not the release tag:**
+
+1. Release pipeline has run successfully at least once end to end
+2. Auto-updater has completed a real install → update cycle
+3. First-launch download verified on a clean machine, on a real connection
+4. Studio batch time is honest — currently 22.6 min best case, **45.3 min worst**, against a "up to 500 titles" heritage claim now softened to 200
+5. Every sales-page claim matches measured reality (engine name, batch sizes, offline quality)
+6. Cloud batch behaviour measured — the web app sells 10/100 per request and every cloud number is k=1
+7. Licence flow tested end to end with a real Stripe test purchase
+8. CORS restricted and rate limiting added on the licence endpoint
+
+**Do not treat the beta release as the finish line. It is the start of finding out what is still wrong.**
+
+### 6.5 Next Sprint — Cut the first release, carefully
+
+The engine is done. **Do not improve it. Ship it.** Order matters — each step de-risks the next.
+
+**1. Dry-run the release job before tagging.** It has never executed. Push a throwaway tag (`v0.0.0-rc1`) on a branch, or add `workflow_dispatch` to the release job, and watch it produce artifacts + a draft Release. **Delete the test tag and draft afterwards.** Do not let the first real `v*` be the first execution.
+
+**2. Compute and publish Mac/Linux SHA256s** from the artifacts that dry-run produces. Windows is already on the download page; the other two are blank.
+
+**3. Test first-launch download on a clean machine.** A VM or a wiped profile. Fresh install → no model → download prompt → 986 MB → generate a title. **This is the single most user-visible untested path.** Note that resume is not implemented; decide whether that ships as-is or gets fixed first.
+
+**4. Make the download prompt active.** Currently Settings-only. A first-run user needs to be told the engine is missing and offered the download, in the main flow. Passive discovery costs conversions on the exact feature the product is sold on.
+
+**5. Then tag `v1.0.0-beta.2` (or whatever fits) and watch every job.**
+
+**Only after a release exists:** Studio batch time (context reuse), cloud batch behaviour (never measured — the web app sells 10/100 per request and every cloud number is k=1), CORS, rate limiting, Web Pro → free Core license, upgrade pricing, waitlist drip.
 
 ### 6.4 Bundling Gates — ALL FIVE must be green before shipping the model
 
