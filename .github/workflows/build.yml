@@ -250,6 +250,13 @@ jobs:
           if [ -z "$SIG_LINUX" ]; then echo "WARNING: Linux signature missing"; fi
           echo ""
           ls -la dist/
+
+          # Compute installer SHA256s for the download page (Task 2). Real
+          # hashes only — no placeholders. Written as a SHA256SUMS file that
+          # ships with the release and is mirrored to desktop-download.html.
+          echo "=== SHA256 sums (for download page) ==="
+          (cd dist && sha256sum *.exe *.dmg *.deb *.AppImage *.app.tar.gz 2>/dev/null) | tee dist/SHA256SUMS || true
+          cat dist/SHA256SUMS 2>/dev/null || echo "(no installers to hash)"
       - uses: softprops/action-gh-release@v2
         with:
           # github.ref_name already includes the leading 'v' on tag pushes
