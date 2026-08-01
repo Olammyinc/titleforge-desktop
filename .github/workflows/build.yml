@@ -252,7 +252,9 @@ jobs:
           ls -la dist/
       - uses: softprops/action-gh-release@v2
         with:
-          name: TitleForge ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0-rc1' }}
+          # github.ref_name already includes the leading 'v' on tag pushes
+          # (e.g. 'v1.0.0'), so no extra prefix — 'TitleForge v1.0.0'.
+          name: TitleForge ${{ github.ref_name }}
           body: "Generated release with signed binaries and auto-update manifest."
           files: dist/*
           generate_release_notes: true
