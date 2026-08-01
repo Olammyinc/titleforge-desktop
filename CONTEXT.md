@@ -325,6 +325,10 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 - **Harness bugs fixed:** (1) `download-model.sh` used `declare -A` (associative arrays) which **macOS bash 3.2 cannot parse** — rewritten POSIX-safe with `case`; (2) added OpenMP deps (`brew install libomp` macOS, `libgomp1` Linux) — llama-cpp-2 default `openmp` feature needs them; (3) added `curl --retry 5 --retry-all-errors` for transient HF CDN throttling; (4) matrix reduced to ubuntu-22.04 + macos-latest to conserve free-tier macOS runner minutes.
 - **Qwen download URL verified:** 302 → 200, `content-length: 986048768`, SHA256 `1adf0b11...` matches local model exactly.
 - **Remaining:** macOS ARM `cargo test --release --lib` fails in ~6s (build-script error in llama-cpp-2 0.1.153 — likely Metal feature vs runner Xcode). Compile log captured as artifact; needs auth to view, or user to read it in the Actions UI. Leading hypothesis if log unavailable: disable `metal` feature (CPU-only fine for 1.5B).
+- **✅ RESOLVED (later same session) — ALL CI GREEN.** Two root causes, both harness bugs (brief rule #1):
+  1. **`src-tauri/.cargo/config.toml` had `target-dir = "C:/temp/titleforge-build"`** — a hardcoded Windows path committed to the repo. On macOS cargo path-joining blew up: `path segment contains separator ':'` in `DYLD_FALLBACK_LIBRARY_PATH`. This was the pre-existing failure breaking EVERY push all day. Removed from git, added `src-tauri/.cargo/` to `.gitignore` (local dev keeps the speedup).
+  2. **verify-llm downloaded Qwen but not SmolLM2** — tauri-build validates bundled resources at compile time: `resource path ../models/SmolLM2-360M-Instruct-Q4_K_M.gguf doesn't exist`. Fixed: verify-llm downloads both.
+- **Final run `e015adc` — all 7 jobs green:** build-windows/macos/linux-deb/linux-appimage + verify-llm (ubuntu-22.04 + macos-latest). macOS ARM: Qwen downloaded, llama-cpp-2 compiled natively (incl. Metal path), lib tests 19/19, smoke test generated 3 titles. **Qwen verified to build/load/generate on all three platforms — all 5 bundling gates green.**
 
 ### 2026-07-31 (post-sprint audit) — n_ctx actually applied; full 4-engine baseline restored
 
@@ -846,7 +850,7 @@ Full 4-engine comparison with all fixes applied:
 #### BLOCKING — customers are affected right now
 
 **1. The desktop app ships SmolLM2, not Qwen. Every quality number in this document is invisible to customers.**
-`tauri.conf.json` bundles `SmolLM2-360M` (270 MB). Qwen2.5-1.5B (986 MB) is not bundled and not downloaded. Production users fall back to SmolLM2, which is worse than the retired EGCG. **Until this is resolved, the entire offline engine effort has shipped nothing.** Blocked on three decisions the user must make — see §6.4 Bundling Gates.
+`tauri.conf.json` bundles `SmolLM2-360M` (270 MB). Qwen2.5-1.5B (986 MB) is delivered via **first-launch download** (Task 5, user decision 2026-07-31) — the installer stays minimal, the engine downloads once per machine from HF (Apache 2.0, SHA256-verified). **All five bundling gates are green; shipping is no longer blocked on any decision.** Remaining to close the gap: cut a release with the download flow + a first-launch prompt that gets users to click Download (currently Settings-only, passive).
 
 **2. Pro and Studio batch times are unshippable.**
 Measured 6.79 s/title. Core (25) = 169.6 s, acceptable. **Pro (100) ≈ 22 min. Studio (500) ≈ 110 min.** No user waits 110 minutes. Options: reuse one KV cache across a batch (`generate_chat_raw` currently allocates a fresh context per title), parallel contexts, background generation with progress, or lower the per-tier caps. **This is a product decision before it is an engineering one — surface it, do not silently optimise.**
@@ -902,9 +906,9 @@ The offline engine works. It reaches zero customers until this is done.
 
 1. ✅ **Qwen non-deterministic** — done (T=0.8, top-k 40)
 2. ✅ **Real batch measured** — done (25/25 unique, 169.6 s)
-3. ⬜ **Cross-platform verification** — `llama-cpp-2` compiles native code. Qwen has only ever been built and run on **one Windows machine**. macOS and Linux are completely unverified. **Do not ship to platforms you have not run on.**
-4. ⬜ **GGUF redistribution terms** — Qwen2.5 base is Apache 2.0, but the quantised file is third-party. Confirm before placing it inside a paid installer.
-5. ⬜ **Delivery mechanism** — 986 MB. Installer goes 22 MB → ~1 GB, or first-launch download with progress, resume, and checksum. **User decides. Not the agent.**
+3. ✅ **Cross-platform verification** — done 2026-07-31. CI run `e015adc` all green: llama-cpp-2 compiles + Qwen loads/generates on macOS ARM (Metal) and Linux. Windows verified locally. Two harness bugs fixed along the way: committed Windows `target-dir` in `.cargo/config.toml` (path separator `:` broke macOS), and verify-llm missing the SmolLM2 resource that tauri-build validates.
+4. ✅ **GGUF redistribution terms** — `bartowski/Qwen2.5-1.5B-Instruct-GGUF` license card = `apache-2.0`. Apache 2.0 permits commercial redistribution in a paid installer (attribution via `THIRD-PARTY-NOTICES`, bundled).
+5. ✅ **Delivery mechanism** — first-launch download (user decision). Minimal installer (~22 MB) + `start_model_download`/`get_model_status` Rust commands + Settings "TitleForge Engine" card with progress. SHA256-verified, atomic rename.
 
 ### 6.3 Strategic Decisions (Active)
 
