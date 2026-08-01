@@ -39,7 +39,9 @@
       "nsis": {
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
-        "languages": ["English"],
+        "languages": [
+          "English"
+        ],
         "startMenuFolder": "TitleForge",
         "installerHooks": "./windows/hooks.nsh"
       }
@@ -52,7 +54,11 @@
         "depends": []
       }
     },
-    "resources": ["../seed-data.json", "../THIRD-PARTY-NOTICES", "../models/SmolLM2-360M-Instruct-Q4_K_M.gguf", "../models/tokenizer.json", "vcrt/"]
+    "resources": [
+      "../seed-data.json",
+      "../THIRD-PARTY-NOTICES",
+      "vcrt/"
+    ]
   },
   "plugins": {
     "updater": {

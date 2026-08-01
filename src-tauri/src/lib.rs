@@ -1040,7 +1040,14 @@ fn get_app_info(state: tauri::State<AppState>) -> Result<serde_json::Value, Stri
 
 /// Lazy-load the local LLM model on first generation call.
 /// Checks multiple paths so it works in dev, production, and CI.
-/// Prefers Qwen2.5-1.5B first, falls back to SmolLM2 models.
+/// Prefers Qwen2.5-1.5B (the shipped TitleForge Engine, fetched on first run).
+///
+/// SmolLM2 entries are kept only so a developer — or a user who manually drops a
+/// GGUF into the data directory — can run an alternative model. **Neither SmolLM2
+/// file is bundled in the installer any more** (removed 2026-08-01): they were
+/// installed to `$INSTDIR\_up_\models\`, which is not on this search path, so
+/// 272 MB shipped that could never be loaded. The installer is now minimal and
+/// the engine arrives via first-run download.
 fn lazy_load_llm() -> Option<local_llm::LocalLlm> {
     let model_names = vec![
         "qwen2.5-1.5b-instruct-q4_k_m.gguf",
