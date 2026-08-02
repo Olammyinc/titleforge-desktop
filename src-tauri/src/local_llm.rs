@@ -287,13 +287,14 @@ impl LocalLlm {
     }
 }
 
-/// True if the title uses a cliché word from the same blocklist as the web
-/// app's "NO CLICHÉS" rule (generate.js). These read as lazy/SEO-stuffed.
+/// True if the title uses an egregious cliché — the words the 07-31 benchmark
+/// flagged (21/50) and the user called out as uncreative. Kept NARROW: only the
+/// strongest offenders. "secrets"/"master"/"unveil" were dropped because Qwen
+/// 1.5B pairs them with the topic so often that rejecting them exhausts the
+/// 3-attempt budget and produces empty batches (fire rate dropped 50→34).
 fn contains_cliche(lower: &str) -> bool {
-    ["ultimate", "unlock", "unleash", "revolutioniz", "secrets", "master the",
-     "game changer", "mind-blowing", "life-changing", "unleash your",
-     "everything you need to know", "new york times bestseller", "in a nutshell",
-     "at the end of the day", "unveil"]
+    ["ultimate", "unlock", "unleash", "revolutioniz", "game changer",
+     "mind-blowing", "life-changing"]
         .iter().any(|c| lower.contains(c))
 }
 
@@ -402,6 +403,12 @@ fn is_echo_line(lower: &str) -> bool {
 fn is_instruction_echo(lower: &str) -> bool {
     lower.contains("title:") || lower.contains("reply with") || lower.contains("one title")
         || lower.contains("example") || lower.starts_with("write")
+        // Creator-voice echoes Qwen sometimes leaks: "get ready to dive into",
+        // "our latest video", "welcome to", "here's a video".
+        || lower.starts_with("get ready")
+        || lower.starts_with("welcome")
+        || lower.contains("our latest video")
+        || lower.contains("going to show you")
 }
 
 fn clean_title(s: &str) -> String {
