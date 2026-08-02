@@ -305,6 +305,20 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-08-02 — UX-fix round verified on clean machine: async gen, creative titles, AI-mode clarity, loading placement
+
+**The `@designer` gave a dashboard review (P0/P1/P2); `@copywriter` supplied on-brand forge copy.** Several real bugs found + fixed via the Windows Sandbox clean-machine test:
+
+- **UI hang during generation (FIXED).** `generate_titles` and `generate_with_ai` ran on the UI main thread — multi-minute LLM batches froze the whole app (loading animation couldn't even render). Both are now **async commands** (Tauri v2 runs them off the UI thread). Also applied the `'_,` lifetime to `State` in `generate_with_ai`.
+- **Off-topic curated titles (FIXED).** Curated fallback pulled `ORDER BY RANDOM()` category titles, ignoring the keyword ("coffee" got "gardening" titles). Added `curated_is_relevant()` token-stem filter — off-topic fill is skipped; returns fewer titles rather than padding with unrelated ones.
+- **Download-sync across modal + Settings (FIXED).** Clicking the banner button didn't update the Settings card. Shared `setDownloadUISync()` now flips BOTH into downloading state with lockstep progress bars.
+- **Translate/Subtitles/Cross-medium silently ignored offline (CLARIFIED).** The offline engine only produces flat titles; these are BYO-AI cloud features. Now badged "AI", given hint text, and a toast warns when enabled offline.
+- **Keyword forcing reduced creativity (FIXED).** Prompt said "THE TITLE MUST contain the word X" + QC hard-rejected missing literal keyword. That's inversely correlated with quality (brief Prime Directive). Softened to "clearly about X; weave in naturally, never force it" + QC no longer gate on literal keyword. Titles are noticeably more creative.
+- **Loading placement (FIXED).** "Forging your titles" moved from the left column (needed scrolling) to right above the Generate button — always in view.
+- **Forging animation + copybank.** Anvil-pulse + spark-fly animation; rotating copywriter lines ("Pounding your keyword into shape", "Good titles take a hammer or two"); completion toast "N titles forged — ready to publish".
+
+**Verified on clean machine:** all three (async/no-hang, loading placement, creative titles) confirmed working by the user.
+
 ### 2026-08-01 — Task 3 clean-machine test: VC++ fixed, UI sync + dashboard polish; multiple bugs found via Windows Sandbox
 
 **The clean-machine test (Windows Sandbox) was worth it — it found real shipping bugs no local testing catches.** Current status: engine download works, but several UI issues were found and fixed.
@@ -982,7 +996,7 @@ Full 4-engine comparison with all fixes applied:
 
 **2. The auto-updater has never completed a cycle.** `updates.json` now has real signatures (dry-run verified), but no install→update has been verified end to end. Test after the first real release.
 
-**3. First-launch download — IN TEST (Windows Sandbox, 2026-08-01).** Fresh clean VM. **New blocker found + fixed: MSVCP140.dll/VCOMP140.dll missing on clean Windows** — `llama-cpp-2` links these; clean Windows lacks them. Root cause was vc_redist needing admin (incompatible with currentUser mode) + Burn exit-code 6444056. **Fixed: app-local VC++ DLLs shipped as resources + NSIS POSTINSTALL hook copies them next to the exe.** Awaiting clean-sandbox confirmation. **Resume is not implemented** — a drop restarts from zero (accepted for beta).
+**3. First-launch download — ✅ VERIFIED on clean Windows Sandbox (2026-08-02).** VC++ runtime was the blocker (vc_redist needs admin, incompatible with currentUser; exit code 6444056 is a WiX Burn handoff, not a real result). **Fixed with app-local DLLs** (`msvcp140.dll`/`vcruntime140.dll`/`vcruntime140_1.dll`/`vcomp140.dll` shipped as resources, NSIS POSTINSTALL hook copies next to exe) — no admin, no UAC. Offline generation confirmed working end-to-end: install → activate → download engine → generate titles offline. **Resume is not implemented** — a drop at 900 MB restarts from zero (accepted for beta, per brief decision).
 
 **4. The download prompt — ✅ ACTIVE (Task 4, 2026-08-01).** First-run banner in the main flow: "Install the TitleForge Engine to generate titles offline" + Download button + dismiss (remembered). No longer Settings-only.
 
