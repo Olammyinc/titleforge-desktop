@@ -175,7 +175,11 @@ fn retrieve_curated_fallback(
 /// overlap check. We do NOT demand the literal keyword (that's inversely
 /// correlated with quality), but we do require SOME lexical connection so
 /// "coffee" never gets a gardening title.
-fn curated_is_relevant(title: &str, keyword: &str) -> bool {
+///
+/// Also used by local_llm.rs as the post-generation drift guard: accept any
+/// >=4-char keyword word anywhere in the title. No literal full-phrase match,
+/// so creative titles survive; genuine off-topic drift does not.
+pub(crate) fn curated_is_relevant(title: &str, keyword: &str) -> bool {
     let t = title.to_lowercase();
     let kw = keyword.to_lowercase();
     if t.contains(&kw) { return true; }

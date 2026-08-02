@@ -256,11 +256,13 @@ impl LocalLlm {
             if cleaned.len() < 3 || cleaned.split_whitespace().count() < 2 { continue; }
             let cl = cleaned.to_lowercase();
 
-            // Coherence QC only — do NOT reject for missing literal keyword
-            // (brief rule #3 / Prime Directive). The judge / seo handles topic
-            // relevance; a hard keyword gate punishes the best, most creative
-            // titles. We keep a soft boost but never a hard reject.
-            let keyword_ok = cl.len() >= 4;
+            // Drift guard — NOT a literal-keyword gate. We softened the prompt
+            // for creativity, but Qwen 1.5B can drift fully off-topic without
+            // any guard (investing → "High-Retention Fundraising", scored 12
+            // on 07-31). curated_is_relevant() accepts any >=4-char keyword
+            // word anywhere in the title — creative titles survive, genuine
+            // off-topic drift does not. (brief rule #3, Task 1.)
+            let keyword_ok = cl.len() >= 4 && crate::engine::curated_is_relevant(&cleaned, keyword);
             if !keyword_ok { continue; }
 
             if examples.iter().any(|e| e.eq_ignore_ascii_case(&cleaned)) { continue; }
