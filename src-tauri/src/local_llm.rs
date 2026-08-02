@@ -221,15 +221,17 @@ impl LocalLlm {
         style: &str,
         examples: &[String],
     ) -> Option<String> {
-        let kw_lower = keyword.to_lowercase();
-        let kw_tokens: Vec<&str> = kw_lower.split_whitespace().collect();
         let style_label = if style.is_empty() || style == "any" { "normal" } else { style };
 
         for attempt in 1..=3u32 {
-            // Stronger system prompt — keyword inclusion is MANDATORY
+            // System prompt — the title must be ABOUT the topic, but we do NOT
+            // force the literal keyword. Forcing it (brief: "inversely
+            // correlated with quality") produces stuffed, uncreative output.
+            // Encourage naturally weaving in the keyword OR a close variant,
+            // and rank creativity above literal inclusion.
             let system = format!(
-                "You are TitleForge, an elite title generator. Generate ONE creative, clickable {} title about \"{}\". CRITICAL RULE: the title MUST contain the word \"{}\" somewhere in it. Output ONLY the title text — no explanation, no preamble, no markdown, no quotes.",
-                category, keyword, keyword
+                "You are TitleForge, an elite title generator. Generate ONE creative, clickable {category} title about \"{keyword}\". It should sound natural and evocative — weave in the topic or a close variant where it fits, but never force it. Output ONLY the title text — no explanation, no preamble, no markdown, no quotes.",
+                category = category, keyword = keyword
             );
 
             let mut user_prompt = String::new();
@@ -239,10 +241,10 @@ impl LocalLlm {
                 user_prompt.push('\n');
             }
             user_prompt.push_str(&format!(
-                "Write a {} {} title. The word \"{}\" MUST appear in the title. 3-15 words, creative, clickable.",
+                "Write a {} {} title clearly about \"{}\". 3-15 words, creative, clickable, natural.",
                 style_label, category, keyword
             ));
-            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT title. MUST include \"{}\".)", attempt, keyword)); }
+            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT title, still clearly about \"{}\", more creative.)", attempt, keyword)); }
 
             let raw = match self.generate_chat_raw(&system, &user_prompt) {
                 Some(r) => r,
@@ -254,17 +256,11 @@ impl LocalLlm {
             if cleaned.len() < 3 || cleaned.split_whitespace().count() < 2 { continue; }
             let cl = cleaned.to_lowercase();
 
-            // Keyword QC: strict on attempt 1, relaxed on retries
-            // Qwen-1.5B can't reliably force keyword inclusion.
-            // When it fails, the creative alternative is better than nothing.
-            let keyword_ok = match attempt {
-                1 => cl.contains(&kw_lower) || kw_tokens.iter().any(|&w| cl.contains(w))
-                    || (kw_tokens.len() > 1 && {
-                        let m = kw_tokens.iter().filter(|&w| cl.contains(w)).count();
-                        m * 2 >= kw_tokens.len()
-                    }),
-                _ => cl.len() >= 4, // relax: accept any coherent output on retry
-            };
+            // Coherence QC only — do NOT reject for missing literal keyword
+            // (brief rule #3 / Prime Directive). The judge / seo handles topic
+            // relevance; a hard keyword gate punishes the best, most creative
+            // titles. We keep a soft boost but never a hard reject.
+            let keyword_ok = cl.len() >= 4;
             if !keyword_ok { continue; }
 
             if examples.iter().any(|e| e.eq_ignore_ascii_case(&cleaned)) { continue; }

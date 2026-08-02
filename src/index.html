@@ -171,16 +171,6 @@
               <input type="range" id="quantity" min="1" max="50" value="10" class="slider" />
               <div class="slider-labels"><span>1</span><span>25</span><span>50</span><span>100</span></div>
             </div>
-            <div id="loading" class="loading" style="display:none;">
-              <div class="forge-animation" aria-hidden="true">
-                <div class="forge-anvil">&#9876;&#65039;</div>
-                <div class="forge-sparks">
-                  <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span><span class="spark s4"></span>
-                </div>
-              </div>
-              <p class="loading-title" id="loadingTitle">Forging your titles…</p>
-              <p class="loading-sub" id="loadingSub">Striking the right words, one by one.</p>
-            </div>
             <div id="error" class="error-msg" style="display:none;"></div>
           </div>
         </div>
@@ -251,17 +241,19 @@
             <div class="gen-toggles">
               <label class="toggle-row">
                 <input type="checkbox" id="crossMediumToggle" />
-                <span>Cross-medium adaptation <span class="pro-badge">BETA</span></span>
+                <span>Cross-medium adaptation <span class="pro-badge">AI</span></span>
               </label>
-              <p class="toggle-hint">Generate the same concept across all selected categories and see how it adapts to each medium.</p>
+              <p class="toggle-hint">Generate the same concept across all selected categories and see how it adapts to each medium. (AI mode — needs a key)</p>
               <label class="toggle-row">
                 <input type="checkbox" id="subtitlesToggle" />
-                <span>Subtitles</span>
+                <span>Subtitles <span class="pro-badge">AI</span></span>
               </label>
+              <p class="toggle-hint">Add a one-line subtitle to each title. (AI mode — needs a key)</p>
               <label class="toggle-row">
                 <input type="checkbox" id="translateToggle" />
-                <span>Translate</span>
+                <span>Translate <span class="pro-badge">AI</span></span>
               </label>
+              <p class="toggle-hint">Translate every title into another language. (AI mode — needs a key)</p>
               <div id="translateLangs" class="translate-langs" style="display:none;">
                 <select id="translateLang">
                   <option value="es">Spanish</option>
@@ -285,6 +277,16 @@
 
       <!-- Generate button: full-width action below both columns, above results -->
       <div class="gen-submit">
+        <div id="loading" class="loading" style="display:none;">
+          <div class="forge-animation" aria-hidden="true">
+            <div class="forge-anvil">&#9876;&#65039;</div>
+            <div class="forge-sparks">
+              <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span><span class="spark s4"></span>
+            </div>
+          </div>
+          <p class="loading-title" id="loadingTitle">Forging your titles…</p>
+          <p class="loading-sub" id="loadingSub">Striking the right words, one by one.</p>
+        </div>
         <button id="generateBtn" class="gen-btn">Generate Titles</button>
       </div>
 

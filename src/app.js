@@ -586,14 +586,35 @@ function collectFineTune() {
   return Object.keys(ft).length ? ft : null;
 }
 
-// ---- TRANSLATE TOGGLE ----
+// ---- TRANSLATE / SUBTITLE / CROSS-MEDIUM TOGGLES ----
 function setupTranslateToggle() {
   var toggle = document.getElementById('translateToggle');
   var langs = document.getElementById('translateLangs');
   if (toggle && langs) {
     toggle.addEventListener('change', function () {
       langs.style.display = toggle.checked ? 'block' : 'none';
+      maybeWarnAIFeature();
     });
+  }
+  var st = document.getElementById('subtitlesToggle');
+  if (st) st.addEventListener('change', maybeWarnAIFeature);
+  var cm = document.getElementById('crossMediumToggle');
+  if (cm) cm.addEventListener('change', maybeWarnAIFeature);
+}
+
+// Subtitles / Translation / Cross-medium are AI-mode features (the offline
+// engine only produces flat titles). If the user enables one while not in AI
+// mode, tell them clearly so it's not silently ignored.
+function maybeWarnAIFeature() {
+  var wantAI = document.getElementById('translateToggle').checked
+    || document.getElementById('subtitlesToggle').checked
+    || document.getElementById('crossMediumToggle').checked;
+  if (!wantAI) return;
+  var usesAI = activeEngine === 'ai' && aiProvider && aiApiKey;
+  if (usesAI) return; // fine — AI mode will handle it
+  var offline = activeEngine === 'database' || !aiApiKey;
+  if (offline) {
+    showToast('Subtitles, translation & cross-medium need AI mode (add an API key in Settings).');
   }
 }
 
