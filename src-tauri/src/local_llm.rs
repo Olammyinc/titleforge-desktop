@@ -273,10 +273,28 @@ impl LocalLlm {
 
             if examples.iter().any(|e| e.eq_ignore_ascii_case(&cleaned)) { continue; }
             if is_instruction_echo(&cl) { continue; }
+            // Cliché rejection — "Ultimate / Unlock / Unleash / Revolutionize /
+            // Secrets" etc. appeared in 21/50 titles. Reject and retry; the
+            // loop's 3-attempt budget is the cap, so it can't hang. (brief §4 Task 5)
+            if contains_cliche(&cl) {
+                #[cfg(debug_assertions)]
+                eprintln!("[local_llm] attempt {} rejected (cliché): '{}'", attempt, cleaned);
+                continue;
+            }
             return Some(cleaned);
         }
         None
     }
+}
+
+/// True if the title uses a cliché word from the same blocklist as the web
+/// app's "NO CLICHÉS" rule (generate.js). These read as lazy/SEO-stuffed.
+fn contains_cliche(lower: &str) -> bool {
+    ["ultimate", "unlock", "unleash", "revolutioniz", "secrets", "master the",
+     "game changer", "mind-blowing", "life-changing", "unleash your",
+     "everything you need to know", "new york times bestseller", "in a nutshell",
+     "at the end of the day", "unveil"]
+        .iter().any(|c| lower.contains(c))
 }
 
 /// Scan the full vocabulary once and collect token IDs whose text starts an
