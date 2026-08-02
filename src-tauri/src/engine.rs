@@ -41,8 +41,15 @@ pub fn generate(
             _ => 4, // core / default
         };
         for cat in categories {
-            // RAG: retrieve similar curated titles for few-shot prompting
-            let examples = generator.retrieve_similar(keyword, cat, 4);
+            // RAG: retrieve similar curated titles for few-shot prompting.
+            // When keyword retrieval is empty (laptop, bitcoin, tennis, jazz,
+            // cooking among ~13/50 benchmark keywords), fall back to the
+            // highest-appeal curated titles for this category so the model
+            // ALWAYS has strong exemplars. (brief §4 Task 3.)
+            let mut examples = generator.retrieve_similar(keyword, cat, 4);
+            if examples.is_empty() {
+                examples = fetch_top_appeal_fewshot(conn, cat, 4);
+            }
             // Candidate pool for THIS category — run the full budget, dedupe,
             // rank by score, keep the top target_per_cat.
             let mut pool: Vec<TitleResult> = Vec::new();
@@ -102,6 +109,22 @@ pub fn generate(
     results.truncate(quantity as usize);
 
     Ok(results)
+}
+
+/// Few-shot exemplars for the local LLM when keyword retrieval is empty.
+/// Returns the highest-`appeal_score` curated titles in the category — strong,
+/// on-voice titles the model can imitate even without a keyword-specific match.
+fn fetch_top_appeal_fewshot(conn: &Connection, category: &str, limit: i64) -> Vec<String> {
+    match conn.prepare(
+        "SELECT title FROM curated_titles WHERE category = ?1 ORDER BY appeal_score DESC LIMIT ?2"
+    ) {
+        Ok(mut stmt) => stmt
+            .query_map(rusqlite::params![category, limit], |row| row.get::<_, String>(0))
+            .ok()
+            .map(|rows| rows.filter_map(|r| r.ok()).collect())
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    }
 }
 
 /// Pull a handful of matching curated titles to ground the local LLM in
