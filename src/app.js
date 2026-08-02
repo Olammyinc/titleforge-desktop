@@ -789,6 +789,8 @@ function handleGenerate() {
   genPromise.then(function (titles) {
     dumpDebug('generate: SUCCESS, titles count=' + (titles ? titles.length : 'null'));
     displayResults(titles, keyword);
+    var count = (titles && titles.length) || 0;
+    showToast(count + (count === 1 ? ' title forged —' : ' titles forged —') + ' ready to publish.');
     dailyUsage++;
     invoke('record_generation', {
       keyword: keyword,
@@ -812,18 +814,23 @@ function handleGenerate() {
 }
 
 // Rotate engaging, on-brand messages while titles are being generated.
-// (Keeps long batches feeling alive — the forge is working, not stuck.)
+// Copybank from the copywriter (Editorial Industrial voice). Keeps long
+// batches feeling alive — the forge is working, not stuck.
 var _loadingRotateTimer = null;
 function startLoadingCopy(kw) {
   var sub = document.getElementById('loadingSub');
-  var base = kw ? 'Forging titles for “' + kw + '”' : 'Forging your titles';
   var rotate = [
-    base + ' — striking the right words',
-    base + ' — teasing out the clicks',
-    base + ' — sharper than a fresh pen nib',
-    'Measuring syllables against the anvil…',
-    'Dusting off the clichés as we go…',
-    'Almost there — the good ones take a moment',
+    'Pounding your keyword into shape.',
+    'Ink\'s hot. The press never misses.',
+    'Tempering each line until it rings true.',
+    kw ? 'For “' + kw + '” — crafted over the fire.' : 'Crafted over the fire.',
+    'Good titles take a hammer or two.',
+    'Sparks fly. So do the good ideas.',
+    'Every strike sharpens something.',
+    'Scoring a title worth putting your name on.',
+    'One pass at a time, like a master smith.',
+    kw ? 'For “' + kw + '” — filing the rough edges.' : 'Filing the rough edges.',
+    'Chiseling away everything that isn\'t a hook.',
   ];
   var i = 0;
   if (_loadingRotateTimer) clearInterval(_loadingRotateTimer);
