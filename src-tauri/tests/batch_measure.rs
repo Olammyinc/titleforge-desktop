@@ -58,7 +58,7 @@ fn batch_25_measure() {
     eprintln!("[batch] Generating {} titles for '{}' ({} category)...", quantity, keyword, categories.len());
     let start = Instant::now();
     let results = titleforge_lib::engine::generate(
-        &conn, &generator, Some(&mut llm), keyword, &categories, style, genre, quantity,
+        &conn, &generator, Some(&mut llm), keyword, &categories, style, genre, quantity, "core",
     ).expect("engine::generate");
     let elapsed = start.elapsed();
 

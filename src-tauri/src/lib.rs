@@ -91,7 +91,7 @@ async fn generate_titles(
     // measured ~7-12s/title makes 100 ≈ 22 min and 500 ≈ 110 min — unshippable.
     // 50 ≈ 8 min, 200 ≈ 33 min worst-case. BYOK path (generate_with_ai) has
     // NO cap — users bring their own key precisely to generate large batches.
-    let (_tier, quantity) = {
+    let (tier, quantity) = {
         let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
         let tier = get_tier(&db);
         let cap: u32 = match tier.as_str() {
@@ -111,7 +111,7 @@ async fn generate_titles(
     // Re-acquire DB for the engine passes (fetch_curated_sample, fallback queries).
     // These are millisecond operations — safe to lock.
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity)
+    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier)
 }
 
 #[tauri::command]

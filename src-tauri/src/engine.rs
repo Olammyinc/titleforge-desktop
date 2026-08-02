@@ -20,6 +20,7 @@ pub fn generate(
     style: &str,
     genre: &str,
     quantity: u32,
+    tier: &str,
 ) -> Result<Vec<TitleResult>, String> {
     let mut results = Vec::new();
 
@@ -30,28 +31,34 @@ pub fn generate(
 
     if let Some(llm) = local_llm {
         let target_per_cat = (quantity as usize / categories.len().max(1)).max(1);
+        // Best-of-N multiplier — tier aware. We generate MORE candidates than
+        // we need, then rank by score and keep the top N. Core gets a generous
+        // multiplier (25 is cheap to over-generate, quality wins), Studio stays
+        // tight (200 is already 22+ min). (brief §4 Task 2.)
+        let mult: usize = match tier {
+            "studio" => 2,
+            "pro" => 3,
+            _ => 4, // core / default
+        };
         for cat in categories {
             // RAG: retrieve similar curated titles for few-shot prompting
             let examples = generator.retrieve_similar(keyword, cat, 4);
-            let mut got = 0usize;
+            // Candidate pool for THIS category — run the full budget, dedupe,
+            // rank by score, keep the top target_per_cat.
+            let mut pool: Vec<TitleResult> = Vec::new();
 
-            for _ in 0..target_per_cat * 2 {
-                if got >= target_per_cat { break; }
+            for _ in 0..target_per_cat * mult {
                 let title = match llm.generate_one_clean(keyword, cat, style, &examples) {
                     Some(t) => t,
                     None => continue,
                 };
-                let lower = title.to_lowercase();
-                let kw_lower = keyword.to_lowercase();
-                let _has_keyword = lower.contains(&kw_lower)
-                    || kw_lower.split_whitespace().any(|w| lower.contains(w));
-                let already_seen = results.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
+                let already_seen = pool.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
                 if already_seen { continue; }
 
                 let (score, breakdown) = calculate_score(&title, keyword, cat);
                 let platform = seo::platform_for_category(cat);
                 let (seo_score, seo_breakdown) = seo_scorer.score_seo(&title, keyword, cat, platform);
-                results.push(TitleResult {
+                pool.push(TitleResult {
                     title,
                     score,
                     categories: vec![cat.clone()],
@@ -60,8 +67,12 @@ pub fn generate(
                     seo_score: Some(seo_score),
                     seo_breakdown: Some(serde_json::to_value(&seo_breakdown).unwrap_or(serde_json::Value::Null)),
                 });
-                got += 1;
             }
+
+            // Best-of-N: rank the pool by score, keep the top target_per_cat.
+            pool.sort_by(|a, b| b.score.cmp(&a.score));
+            pool.truncate(target_per_cat);
+            results.extend(pool);
         }
     }
 
