@@ -722,6 +722,7 @@ function handleGenerate() {
   document.getElementById('results').innerHTML = '';
   document.getElementById('error').style.display = 'none';
   document.getElementById('generateBtn').disabled = true;
+  startLoadingCopy(keyword); // rotate engaging messages while the forge works
 
   var genPromise;
 
@@ -806,7 +807,34 @@ function handleGenerate() {
   }).finally(function () {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('generateBtn').disabled = false;
+    stopLoadingCopy();
   });
+}
+
+// Rotate engaging, on-brand messages while titles are being generated.
+// (Keeps long batches feeling alive — the forge is working, not stuck.)
+var _loadingRotateTimer = null;
+function startLoadingCopy(kw) {
+  var sub = document.getElementById('loadingSub');
+  var base = kw ? 'Forging titles for “' + kw + '”' : 'Forging your titles';
+  var rotate = [
+    base + ' — striking the right words',
+    base + ' — teasing out the clicks',
+    base + ' — sharper than a fresh pen nib',
+    'Measuring syllables against the anvil…',
+    'Dusting off the clichés as we go…',
+    'Almost there — the good ones take a moment',
+  ];
+  var i = 0;
+  if (_loadingRotateTimer) clearInterval(_loadingRotateTimer);
+  _loadingRotateTimer = setInterval(function () {
+    if (!sub) return;
+    sub.textContent = rotate[i % rotate.length];
+    i++;
+  }, 3200);
+}
+function stopLoadingCopy() {
+  if (_loadingRotateTimer) { clearInterval(_loadingRotateTimer); _loadingRotateTimer = null; }
 }
 
 function saveToHistoryLocal(keyword, categories, genre, style, titles) {
@@ -1812,26 +1840,37 @@ function formatBytes(n) {
   return mb.toFixed(0) + ' MB';
 }
 
+// Set BOTH the Settings card and the first-run banner into the "downloading"
+// state so progress + button labels stay in lockstep regardless of which one
+// started the download. `active` true = downloading, false = idle.
+function setDownloadUISync(active) {
+  var sBtn = document.getElementById('downloadModelBtn');
+  var sWrap = document.getElementById('modelProgressWrap');
+  var bBtn = document.getElementById('enginePromptDownloadBtn');
+  var bWrap = document.getElementById('enginePromptProgressWrap');
+  if (active) {
+    if (sBtn) { sBtn.disabled = true; sBtn.textContent = 'Downloading…'; }
+    if (sWrap) sWrap.style.display = 'block';
+    if (bBtn) { bBtn.disabled = true; bBtn.textContent = 'Downloading…'; }
+    if (bWrap) bWrap.style.display = 'block';
+  } else {
+    if (sBtn) { sBtn.disabled = false; sBtn.textContent = 'Download TitleForge Engine (~940 MB)'; }
+    if (bBtn) { bBtn.disabled = false; bBtn.textContent = 'Download Engine'; }
+  }
+}
+
 function setupModelDownloadButton() {
   var btn = document.getElementById('downloadModelBtn');
   if (!btn || !window.__TAURI_INTERNALS__) return;
   btn.addEventListener('click', function () {
     var msg = document.getElementById('modelStatusMsg');
-    // Show progress in BOTH the Settings card and the first-run banner (if
-    // visible) so they stay in lockstep and finish together.
-    var bannerWrap = document.getElementById('enginePromptProgressWrap');
-    var bannerBtn = document.getElementById('enginePromptDownloadBtn');
-    btn.disabled = true;
-    btn.textContent = 'Downloading…';
-    if (bannerWrap) bannerWrap.style.display = 'block';
-    if (bannerBtn) { bannerBtn.disabled = true; bannerBtn.textContent = 'Downloading…'; }
+    // Drive BOTH the Settings card and the banner into downloading state.
+    setDownloadUISync(true);
     if (msg) msg.textContent = 'Downloading the offline engine (~940 MB). You can close this panel; it continues in the background.';
     invoke('start_model_download').then(function () {
       startModelPolling(); // drives progress in both Settings + banner together
     }).catch(function (err) {
-      btn.disabled = false;
-      btn.textContent = 'Download TitleForge Engine (~940 MB)';
-      if (bannerBtn) { bannerBtn.disabled = false; bannerBtn.textContent = 'Download Engine'; }
+      setDownloadUISync(false);
       if (msg) { msg.textContent = 'Download error: ' + (err.message || err); msg.style.color = '#b91c1c'; }
     });
   });
@@ -1895,17 +1934,12 @@ function setupEnginePrompt() {
 
   if (dlBtn) {
     dlBtn.addEventListener('click', function () {
-      var pw = document.getElementById('enginePromptProgressWrap');
-      dlBtn.disabled = true;
-      dlBtn.textContent = 'Downloading…';
-      if (pw) pw.style.display = 'block';
+      // Drive BOTH the Settings card and the banner into downloading state.
+      setDownloadUISync(true);
       invoke('start_model_download').then(function () {
-        // Poll the banner's own progress inline; refreshModelStatus (Settings)
-        // also runs via the shared poll loop.
-        startModelPolling();
+        startModelPolling(); // progress driven in both spots together
       }).catch(function (err) {
-        dlBtn.disabled = false;
-        dlBtn.textContent = 'Download Engine';
+        setDownloadUISync(false);
         dumpDebug('engine prompt download error: ' + (err.message || err));
       });
     });

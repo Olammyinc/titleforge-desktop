@@ -147,6 +147,11 @@ fn retrieve_curated_fallback(
         for title in titles {
             if existing.iter().any(|r| r.title.eq_ignore_ascii_case(&title)) { continue; }
             if out.iter().any(|r| r.title.eq_ignore_ascii_case(&title)) { continue; }
+            // ONLY use curated titles the keyword is actually about. A random
+            // category title that ignores the user's keyword is worse than no
+            // fill — "clearly about the topic" is the Prime Directive, and a
+            // tangentially-related or unrelated title reads as broken output.
+            if !curated_is_relevant(&title, keyword) { continue; }
             let (score, breakdown) = calculate_score(&title, keyword, cat);
             out.push(TitleResult {
                 title,
@@ -164,6 +169,20 @@ fn retrieve_curated_fallback(
     out.sort_by(|a, b| b.score.cmp(&a.score));
     out.truncate(limit);
     out
+}
+
+/// True if a curated title is plausibly about the keyword — a soft token-stem
+/// overlap check. We do NOT demand the literal keyword (that's inversely
+/// correlated with quality), but we do require SOME lexical connection so
+/// "coffee" never gets a gardening title.
+fn curated_is_relevant(title: &str, keyword: &str) -> bool {
+    let t = title.to_lowercase();
+    let kw = keyword.to_lowercase();
+    if t.contains(&kw) { return true; }
+    // Any significant word of the keyword (≥4 chars) appearing in the title.
+    kw.split_whitespace()
+        .filter(|w| w.len() >= 4)
+        .any(|w| t.contains(w))
 }
 
 fn calculate_score(title: &str, keyword: &str, _category: &str) -> (u32, serde_json::Value) {

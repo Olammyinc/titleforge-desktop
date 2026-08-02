@@ -172,8 +172,14 @@
               <div class="slider-labels"><span>1</span><span>25</span><span>50</span><span>100</span></div>
             </div>
             <div id="loading" class="loading" style="display:none;">
-              <div class="spinner"></div>
-              <p>Forging your titles...</p>
+              <div class="forge-animation" aria-hidden="true">
+                <div class="forge-anvil">&#9876;&#65039;</div>
+                <div class="forge-sparks">
+                  <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span><span class="spark s4"></span>
+                </div>
+              </div>
+              <p class="loading-title" id="loadingTitle">Forging your titles…</p>
+              <p class="loading-sub" id="loadingSub">Striking the right words, one by one.</p>
             </div>
             <div id="error" class="error-msg" style="display:none;"></div>
           </div>

@@ -71,14 +71,19 @@ pub struct UsageStats {
 // ── Title Generation ──
 
 #[tauri::command]
-fn generate_titles(
+async fn generate_titles(
     keyword: String,
     categories: Vec<String>,
     style: String,
     genre: String,
     quantity: u32,
-    state: tauri::State<AppState>,
+    state: tauri::State<'_, AppState>,
 ) -> Result<Vec<TitleResult>, String> {
+    // Async command: Tauri v2 runs async commands on its worker runtime (off
+    // the main / UI thread), so the WebView stays responsive during the
+    // CPU-heavy LLM inference. (A `spawn_blocking` closure would need the
+    // state to be Clone — it isn't — so the inline await is the practical
+    // non-UI-blocking path here.)
     // Read tier and curated data before releasing DB lock.
     // The DB mutex must never be held during LLM inference (3.5s+/title).
     //
@@ -697,7 +702,7 @@ const AI_PROVIDERS: &[(&str, &str, &str, bool)] = &[
 ];
 
 #[tauri::command]
-fn generate_with_ai(
+async fn generate_with_ai(
     keyword: String,
     categories: Vec<String>,
     style: String,
@@ -711,7 +716,7 @@ fn generate_with_ai(
     translate_lang: Option<String>,
     gender: Option<String>,
     finetune: Option<serde_json::Value>,
-    state: tauri::State<AppState>,
+    state: tauri::State<'_, AppState>,
 ) -> Result<Vec<TitleResult>, String> {
     // Tier gate: cloud AI is Pro/Studio only. DB lock scoped before HTTP call.
     {
