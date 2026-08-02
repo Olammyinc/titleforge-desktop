@@ -76,7 +76,7 @@ fn diag_qwen_silence() {
         let examples = generator.retrieve_similar(kw, cat, 3);
 
         // Call the real public path first — does it still fail?
-        let real = llm.generate_one_clean(kw, cat, "normal", &examples);
+        let real = llm.generate_one_clean(kw, cat, "normal", &examples, None);
 
         if let Some(t) = &real {
             recovered += 1;

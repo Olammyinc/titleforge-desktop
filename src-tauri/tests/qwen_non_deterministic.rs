@@ -22,7 +22,7 @@ fn qwen_non_deterministic() {
     let cat = "youtube";
     let mut titles = Vec::new();
     for i in 0..5 {
-        match llm.generate_one_clean(kw, cat, "normal", &examples) {
+        match llm.generate_one_clean(kw, cat, "normal", &examples, None) {
             Some(t) => {
                 eprintln!("[nondet] run {}: '{}'", i + 1, t);
                 titles.push(t);

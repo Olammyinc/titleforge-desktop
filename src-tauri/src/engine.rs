@@ -53,12 +53,27 @@ pub fn generate(
             // Candidate pool for THIS category — run the full budget, dedupe,
             // rank by score, keep the top target_per_cat.
             let mut pool: Vec<TitleResult> = Vec::new();
+            // Rotate ONE structural constraint per call to break formula
+            // repetition (7/25 "From X to Y"). Qwen 1.5B handles a single
+            // constraint; the full 6-rule block measured worse. (brief §4 Task 4)
+            let constraints = [
+                "",
+                "Make this one a question.",
+                "Open this one with a specific number.",
+                "Frame this one as a personal story or first-person experience.",
+                "Build this one on a contrast or a reversal.",
+                "Make this one short — three words or fewer.",
+            ];
+            let mut ci = 0usize;
 
             for _ in 0..target_per_cat * mult {
-                let title = match llm.generate_one_clean(keyword, cat, style, &examples) {
+                let title = match llm.generate_one_clean(
+                    keyword, cat, style, &examples, Some(constraints[ci % constraints.len()]),
+                ) {
                     Some(t) => t,
-                    None => continue,
+                    None => { ci += 1; continue; }
                 };
+                ci += 1;
                 let already_seen = pool.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
                 if already_seen { continue; }
 

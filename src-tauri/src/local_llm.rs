@@ -220,6 +220,7 @@ impl LocalLlm {
         category: &str,
         style: &str,
         examples: &[String],
+        constraint: Option<&str>,
     ) -> Option<String> {
         let style_label = if style.is_empty() || style == "any" { "normal" } else { style };
 
@@ -240,11 +241,16 @@ impl LocalLlm {
                 for ex in examples.iter().take(3) { user_prompt.push_str(&format!("- \"{}\"\n", ex)); }
                 user_prompt.push('\n');
             }
+            // ONE extra constraint per call (rotated across the batch by the
+            // caller) to break formula repetition — Qwen 1.5B handles a single
+            // constraint fine, not the full 6-rule block (which measured worse).
+            let c = constraint.unwrap_or("");
+            let c_line = if c.is_empty() { String::new() } else { format!(" {}", c) };
             user_prompt.push_str(&format!(
-                "Write a {} {} title clearly about \"{}\". 3-15 words, creative, clickable, natural.",
-                style_label, category, keyword
+                "Write a {} {} title clearly about \"{}\". 3-15 words, creative, clickable, natural.{}",
+                style_label, category, keyword, c_line
             ));
-            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT title, still clearly about \"{}\", more creative.)", attempt, keyword)); }
+            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT title, still clearly about \"{}\", more creative.{})", attempt, keyword, c_line)); }
 
             let raw = match self.generate_chat_raw(&system, &user_prompt) {
                 Some(r) => r,

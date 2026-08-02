@@ -391,7 +391,7 @@ fn benchmark_judge() {
         } else if let Some(ref mut m) = llm {
             let ex = generator.retrieve_similar(keyword, category, 3);
             let start = Instant::now();
-            let t = m.generate_one_clean(keyword, category, "normal", &ex);
+            let t = m.generate_one_clean(keyword, category, "normal", &ex, None);
             let elapsed = start.elapsed().as_secs_f32();
             qwen_s.times.push(elapsed);
             t.unwrap_or_default()

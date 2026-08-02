@@ -113,7 +113,7 @@ fn benchmark_path_a() {
         let llm_result = if let Some(ref mut m) = llm {
             let examples = generator.retrieve_similar(keyword, category, 3);
             let start = Instant::now();
-            let title = m.generate_one_clean(keyword, category, "normal", &examples);
+            let title = m.generate_one_clean(keyword, category, "normal", &examples, None);
             let elapsed = start.elapsed().as_millis() as u64;
             llm_time_total += elapsed;
             title
