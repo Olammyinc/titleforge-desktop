@@ -899,6 +899,13 @@ function displayResults(titles, currentKeyword) {
       return;
     }
 
+    // ── Revealed-preference batch id (brief §4 Task 2b) ──
+    // One id per generated batch. Passed to toggle_favorite so favorites made
+    // from THIS batch are grouped, and the titles they passed over are known.
+    // Purely local — logged to SQLite, never sent anywhere.
+    var batchId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    var batchTitles = titles.map(function (t) { return t.title; }).filter(Boolean);
+
     var seoLegend = document.getElementById('seoLegend');
     if (seoLegend) seoLegend.style.display = (titles && titles.length) ? 'flex' : 'none';
 
@@ -982,7 +989,7 @@ function displayResults(titles, currentKeyword) {
       starBtn.innerHTML = isFav ? '\u2605' : '\u2606';
       (function (titleText, btn) {
         btn.addEventListener('click', function () {
-          toggleFavorite(titleText, currentKeyword, item.score || 0, (item.categories || [''])[0], btn);
+          toggleFavorite(titleText, currentKeyword, item.score || 0, (item.categories || [''])[0], btn, batchTitles, batchId);
         });
       })(item.title, starBtn);
       body.appendChild(starBtn);
@@ -1307,7 +1314,12 @@ function renderHistoryTab() {
       var isFav = isFavorited(titleText);
       hStar.className = 'dash-star' + (isFav ? ' starred' : '');
       hStar.innerHTML = isFav ? '\u2605' : '\u2606';
-      hStar.addEventListener('click', function () { toggleFavorite(titleText, entry.keyword, (typeof t === 'object' ? t.score : 0) || 0, cats[0] || '', hStar); });
+      (function (titleText, entry, t, cats, hStar) {
+        hStar.addEventListener('click', function () {
+          var histBatch = titles.map(function (x) { return typeof x === 'string' ? x : x.title; }).filter(Boolean);
+          toggleFavorite(titleText, entry.keyword, (typeof t === 'object' ? t.score : 0) || 0, cats[0] || '', hStar, histBatch, 'hist-' + entry.created_at);
+        });
+      })(titleText, entry, t, cats, hStar);
       itemDiv.appendChild(hStar);
       var hProj = document.createElement('button');
       hProj.className = 'dash-proj-btn';
@@ -1337,12 +1349,14 @@ function isFavorited(titleText) {
   return dashFavorites.some(function (f) { return f.title === titleText; });
 }
 
-function toggleFavorite(titleText, sourceKeyword, score, category, starBtn) {
+function toggleFavorite(titleText, sourceKeyword, score, category, starBtn, batchTitles, batchId) {
   invoke('toggle_favorite', {
     title: titleText,
     keyword: sourceKeyword || '',
     score: score || 0,
     category: category || '',
+    batchTitles: batchTitles || null,
+    batchId: batchId || null,
   }).then(function (nowFavorited) {
     if (nowFavorited) {
       dashFavorites.unshift({ title: titleText, keyword: sourceKeyword || '', score: score || 0, category: category || '', created_at: new Date().toISOString() });

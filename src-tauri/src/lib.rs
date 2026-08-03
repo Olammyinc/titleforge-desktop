@@ -237,6 +237,8 @@ fn toggle_favorite(
     keyword: String,
     score: i64,
     category: String,
+    batch_titles: Option<Vec<String>>,
+    batch_id: Option<String>,
     state: tauri::State<AppState>,
 ) -> Result<bool, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
@@ -263,6 +265,26 @@ fn toggle_favorite(
             rusqlite::params![title, keyword, score, category],
         )
         .map_err(|e| e.to_string())?;
+
+        // ── Revealed-preference capture (brief §4 Task 2b) ──
+        // When the user favorites ONE title out of a batch, the rest are the
+        // ones they passed over — that is (batch - 1) labelled comparisons
+        // from a single click, from the actual target user. Purely local.
+        // No telemetry, no upload: this stays in the user's SQLite.
+        if let Some(batch) = batch_titles {
+            if batch.len() >= 2 && batch.iter().any(|t| *t == title) {
+                let passed: Vec<&String> = batch.iter().filter(|t| **t != title).collect();
+                let passed_json = serde_json::to_string(&passed).unwrap_or_else(|_| "[]".to_string());
+                let bid = batch_id.unwrap_or_else(|| format!("{}-{}", keyword, category));
+                db.execute(
+                    "INSERT INTO revealed_preference (batch_id, keyword, category, chosen_title, passed_over_titles)
+                     VALUES (?1, ?2, ?3, ?4, ?5)",
+                    rusqlite::params![bid, keyword, category, title, passed_json],
+                )
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
         Ok(true) // now favorited
     }
 }

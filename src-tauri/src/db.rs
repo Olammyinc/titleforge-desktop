@@ -57,6 +57,16 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
             created_at TEXT DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS revealed_preference (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            batch_id TEXT,
+            keyword TEXT,
+            category TEXT,
+            chosen_title TEXT NOT NULL,
+            passed_over_titles TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS user_settings (
             key TEXT PRIMARY KEY,
             value TEXT
