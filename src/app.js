@@ -793,6 +793,7 @@ function handleGenerate() {
         style: selectedStyle,
         genre: genre,
         quantity: quantity,
+        finetune: finetune,
       });
     });
   } else {
@@ -804,6 +805,7 @@ function handleGenerate() {
       style: selectedStyle,
       genre: genre,
       quantity: quantity,
+      finetune: finetune,
     });
   }
 

@@ -11,6 +11,7 @@ use crate::TitleResult;
 /// pipeline (2026-07-31): 20-24% usable on the corrected metric, mean ~37 —
 /// it produced output 98% of the time and garbage 80% of the time. Qwen now
 /// fires 50/50, so the only reason to keep EGCG (batch fill) is gone.
+#[allow(clippy::too_many_arguments)]
 pub fn generate(
     conn: &Connection,
     generator: &Generator,
@@ -21,6 +22,7 @@ pub fn generate(
     genre: &str,
     quantity: u32,
     tier: &str,
+    finetune: &crate::prompt_spec::FineTune,
 ) -> Result<Vec<TitleResult>, String> {
     let mut results = Vec::new();
 
@@ -78,9 +80,12 @@ pub fn generate(
             };
             let mut ci = 0usize;
 
+            let spec = crate::prompt_spec::category_spec(cat);
+
             for _ in 0..target_per_cat * mult {
                 let title = match llm.generate_one_clean(
-                    keyword, cat, style, &examples, Some(constraints[ci % constraints.len()]),
+                    keyword, cat, style, genre, &examples,
+                    Some(constraints[ci % constraints.len()]), finetune,
                 ) {
                     Some(t) => t,
                     None => { ci += 1; continue; }
@@ -90,16 +95,27 @@ pub fn generate(
                 if already_seen { continue; }
 
                 let (score, breakdown) = calculate_score(&title, keyword, cat);
-                let platform = seo::platform_for_category(cat);
-                let (seo_score, seo_breakdown) = seo_scorer.score_seo(&title, keyword, cat, platform);
+                // SEO scoring is length/keyword-based and calibrated for
+                // headlines on Google/YouTube/Amazon. Scoring a product NAME
+                // against a 60-100 char Amazon sweet spot reports ~15 for a
+                // correct answer, which reads to the user as "this is bad".
+                // Names carry no SEO score rather than a misleading one; the
+                // field is already Option and the UI omits it when absent.
+                let (seo_score, seo_breakdown) = if spec.is_name {
+                    (None, None)
+                } else {
+                    let platform = seo::platform_for_category(cat);
+                    let (s, b) = seo_scorer.score_seo(&title, keyword, cat, platform);
+                    (Some(s), Some(serde_json::to_value(&b).unwrap_or(serde_json::Value::Null)))
+                };
                 pool.push(TitleResult {
                     title,
                     score,
                     categories: vec![cat.clone()],
                     breakdown: Some(breakdown),
                     source: Some("local-llm".to_string()),
-                    seo_score: Some(seo_score),
-                    seo_breakdown: Some(serde_json::to_value(&seo_breakdown).unwrap_or(serde_json::Value::Null)),
+                    seo_score,
+                    seo_breakdown,
                 });
             }
 
@@ -111,10 +127,21 @@ pub fn generate(
     }
 
     // ── Pass 2: Instant curated-title retrieval fallback ──
+    // The curated corpus is 2,623 TITLES. Using it to top up a product-name or
+    // child-name request returns blog headlines for a name slot — the same
+    // off-topic padding that `curated_is_relevant` was added to stop, one level
+    // up. Name categories are excluded; if that leaves the batch short, we
+    // return fewer results rather than wrong ones (established behaviour, see
+    // the 2026-08-02 "off-topic curated titles" fix).
+    let fallback_cats: Vec<String> = categories
+        .iter()
+        .filter(|c| !crate::prompt_spec::category_spec(c).is_name)
+        .cloned()
+        .collect();
     let remaining = (quantity as usize).saturating_sub(results.len());
-    if remaining > 0 {
+    if remaining > 0 && !fallback_cats.is_empty() {
         let curated_results = retrieve_curated_fallback(
-            conn, keyword, categories, style, genre, remaining, &results,
+            conn, keyword, &fallback_cats, style, genre, remaining, &results,
         );
         results.extend(curated_results);
     }

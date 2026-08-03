@@ -6,6 +6,7 @@ use std::sync::Mutex;
 pub mod db;
 pub mod engine;
 pub mod local_llm;
+pub mod prompt_spec;
 pub mod seo;
 pub mod title_gen;
 
@@ -77,6 +78,10 @@ async fn generate_titles(
     style: String,
     genre: String,
     quantity: u32,
+    // Offline generation ignored fine-tune entirely until 2026-08-03 — the UI
+    // exposed the controls and the engine silently dropped them. Same camelCase
+    // JSON shape the frontend already sends to `generate_with_ai`.
+    finetune: Option<serde_json::Value>,
     state: tauri::State<'_, AppState>,
 ) -> Result<Vec<TitleResult>, String> {
     // Async command: Tauri v2 runs async commands on its worker runtime (off
@@ -111,7 +116,8 @@ async fn generate_titles(
     // Re-acquire DB for the engine passes (fetch_curated_sample, fallback queries).
     // These are millisecond operations — safe to lock.
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
-    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier)
+    let ft = prompt_spec::FineTune::from_json(finetune.as_ref());
+    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier, &ft)
 }
 
 #[tauri::command]

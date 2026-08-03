@@ -138,6 +138,7 @@ fn bench_batch_quality() {
         let gen_start = std::time::Instant::now();
         let results = titleforge_lib::engine::generate(
             &conn, &generator, Some(&mut llm), kw, &cats, "normal", "any", QUANTITY, TIER,
+            &Default::default(),
         ).unwrap_or_default();
         let gen_secs = gen_start.elapsed().as_secs_f64();
 

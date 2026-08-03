@@ -1,0 +1,10 @@
+{
+  "agreement_rate": 0.5528455284552846,
+  "close_agreement_rate": 0.5454545454545454,
+  "elo_r": 0.018899349943406887,
+  "elo_n": 103,
+  "pairs": 200,
+  "usable": 123,
+  "verdict": "WRONG TEACHER \u2014 STOP",
+  "action": "Do NOT build the 5,000-label dataset. The rubric needs rewriting, or human/revealed-preference labels must carry more weight."
+}

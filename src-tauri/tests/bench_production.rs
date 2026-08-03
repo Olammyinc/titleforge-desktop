@@ -158,6 +158,7 @@ fn bench_production() {
         // quantity=1, tier=pro — the real orchestrator, all five tasks active.
         let out = titleforge_lib::engine::generate(
             &conn, &generator, Some(&mut llm), kw, &cats, "normal", "any", 1, "pro",
+            &Default::default(),
         ).unwrap_or_default();
 
         let (title, source) = match out.first() {

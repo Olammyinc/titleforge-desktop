@@ -24,7 +24,7 @@ fn smoke_llama() {
     for (kw, cat, exs) in tests {
         let examples: Vec<String> = exs.iter().map(|s| s.to_string()).collect();
         let start = std::time::Instant::now();
-        match llm.generate_one_clean(kw, cat, "normal", &examples, None) {
+        match llm.generate_one_clean(kw, cat, "normal", "any", &examples, None, &Default::default()) {
             Some(title) => {
                 let t = start.elapsed().as_secs_f64();
                 let has_kw = title.to_lowercase().contains(&kw.to_lowercase());

@@ -214,43 +214,78 @@ impl LocalLlm {
         self.model.str_to_token(&prompt, AddBos::Always).ok().map(|t| t.len())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn generate_one_clean(
         &mut self,
         keyword: &str,
         category: &str,
         style: &str,
+        genre: &str,
         examples: &[String],
         constraint: Option<&str>,
+        finetune: &crate::prompt_spec::FineTune,
     ) -> Option<String> {
-        let style_label = if style.is_empty() || style == "any" { "normal" } else { style };
+        // Category conventions REPLACE the old bare-word substitution. Before
+        // this, category was a label ("Generate ONE creative, clickable
+        // {category} title") and output collapsed to one shape across all 16
+        // categories. See prompt_spec.rs for the measured evidence and for the
+        // rule about not stacking additional constraints here.
+        let spec = crate::prompt_spec::category_spec(category);
+        let style_desc = crate::prompt_spec::style_description(style);
+        let genre_text = if genre.is_empty() || genre == "any" {
+            String::new()
+        } else {
+            format!(" in the {} genre", genre)
+        };
+        // At most ONE extra line, and only for the soft fields. mustInclude /
+        // avoid are enforced after generation instead — see FineTune docs.
+        let ft_line = finetune.soft_prompt_line().unwrap_or_default();
 
         for attempt in 1..=3u32 {
-            // System prompt — the title must be ABOUT the topic, but we do NOT
+            // System prompt — the output must be ABOUT the topic, but we do NOT
             // force the literal keyword. Forcing it (brief: "inversely
             // correlated with quality") produces stuffed, uncreative output.
             // Encourage naturally weaving in the keyword OR a close variant,
             // and rank creativity above literal inclusion.
-            let system = format!(
-                "You are TitleForge, an elite title generator. Generate ONE creative, clickable {category} title about \"{keyword}\". It should sound natural and evocative — weave in the topic or a close variant where it fits, but never force it. Output ONLY the title text — no explanation, no preamble, no markdown, no quotes.",
-                category = category, keyword = keyword
-            );
+            //
+            // Name categories are a DIFFERENT TASK: the output is a name, not a
+            // headline about the topic. Saying so plainly is the whole fix for
+            // the user-reported "product titles read like blog titles".
+            let system = if spec.is_name {
+                format!(
+                    "You are TitleForge. Generate ONE {label} inspired by \"{keyword}\"{genre_text}. A {label} is {form}. It is a NAME, not a headline and not a sentence about the topic. Example of the right shape: \"{example}\". Output ONLY the name — no explanation, no preamble, no markdown, no quotes.",
+                    label = spec.label, keyword = keyword, genre_text = genre_text,
+                    form = spec.form, example = spec.example
+                )
+            } else {
+                format!(
+                    "You are TitleForge, an elite title generator. Generate ONE {label} about \"{keyword}\"{genre_text}. A {label} is {form}. Example of the right shape: \"{example}\". Weave in the topic or a close variant where it fits, but never force it. Output ONLY the title text — no explanation, no preamble, no markdown, no quotes.",
+                    label = spec.label, keyword = keyword, genre_text = genre_text,
+                    form = spec.form, example = spec.example
+                )
+            };
 
             let mut user_prompt = String::new();
             if !examples.is_empty() {
-                user_prompt.push_str(&format!("Examples of {} {} titles:\n", style_label, category));
+                user_prompt.push_str(&format!("Examples of {} {}s:\n", style_desc, spec.label));
                 for ex in examples.iter().take(3) { user_prompt.push_str(&format!("- \"{}\"\n", ex)); }
                 user_prompt.push('\n');
             }
             // ONE extra constraint per call (rotated across the batch by the
             // caller) to break formula repetition — Qwen 1.5B handles a single
             // constraint fine, not the full 6-rule block (which measured worse).
-            let c = constraint.unwrap_or("");
+            // Constraints are structural and only make sense for real titles;
+            // "make this one a question" applied to a product name is nonsense.
+            let c = if spec.is_name { "" } else { constraint.unwrap_or("") };
             let c_line = if c.is_empty() { String::new() } else { format!(" {}", c) };
             user_prompt.push_str(&format!(
-                "Write a {} {} title clearly about \"{}\". 3-15 words, creative, clickable, natural.{}",
-                style_label, category, keyword, c_line
+                "Write a {} {} about \"{}\". {}-{} words, {}.{}{}",
+                style_desc, spec.label, keyword,
+                spec.words.0, spec.words.1,
+                if spec.is_name { "distinctive and memorable" } else { "creative and natural" },
+                c_line, ft_line
             ));
-            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT title, still clearly about \"{}\", more creative.{})", attempt, keyword, c_line)); }
+            if attempt > 1 { user_prompt.push_str(&format!("\n(Retry {} — DIFFERENT {}, still inspired by \"{}\", more creative.{})", attempt, spec.label, keyword, c_line)); }
 
             let raw = match self.generate_chat_raw(&system, &user_prompt) {
                 Some(r) => r,
@@ -259,7 +294,11 @@ impl LocalLlm {
             let cleaned = clean_output(&raw);
             #[cfg(debug_assertions)]
             eprintln!("[local_llm] attempt {}: '{}' -> '{}'", attempt, raw, cleaned);
-            if cleaned.len() < 3 || cleaned.split_whitespace().count() < 2 { continue; }
+            // Minimum length. Name categories legitimately produce ONE word
+            // ("Vivid"), so the blanket >=2-word floor is applied to titles
+            // only — it was silently rejecting every correct product name.
+            let min_words = if spec.is_name { 1 } else { 2 };
+            if cleaned.len() < 3 || cleaned.split_whitespace().count() < min_words { continue; }
             let cl = cleaned.to_lowercase();
 
             // Drift guard — NOT a literal-keyword gate. We softened the prompt
@@ -268,8 +307,33 @@ impl LocalLlm {
             // on 07-31). curated_is_relevant() accepts any >=4-char keyword
             // word anywhere in the title — creative titles survive, genuine
             // off-topic drift does not. (brief rule #3, Task 1.)
-            let keyword_ok = cl.len() >= 4 && crate::engine::curated_is_relevant(&cleaned, keyword);
-            if !keyword_ok { continue; }
+            //
+            // EXEMPT for name categories. A brandable product name inspired by
+            // "coffee" ("Ember", "Vivid") deliberately does not contain the
+            // keyword; applying the guard here rejected 100% of correct output.
+            // The trade-off is real and accepted: names are unguarded against
+            // topical drift, so `passes_name_shape` below carries the QC weight
+            // instead. Revisit if name-category drift is ever measured.
+            if !spec.is_name {
+                let keyword_ok = cl.len() >= 4 && crate::engine::curated_is_relevant(&cleaned, keyword);
+                if !keyword_ok { continue; }
+            }
+
+            // Shape check — rejects a headline returned for a name category.
+            if !crate::prompt_spec::passes_name_shape(&cleaned, &spec) {
+                #[cfg(debug_assertions)]
+                eprintln!("[local_llm] attempt {} rejected (wrong shape for {}): '{}'", attempt, spec.label, cleaned);
+                continue;
+            }
+
+            // Fine-tune hard constraints (mustInclude / avoid). Enforced here
+            // rather than in the prompt: a 1.5B asked to satisfy a word
+            // blocklist burns its 3-attempt budget and returns nothing.
+            if !finetune.satisfies_hard_constraints(&cleaned) {
+                #[cfg(debug_assertions)]
+                eprintln!("[local_llm] attempt {} rejected (fine-tune constraint): '{}'", attempt, cleaned);
+                continue;
+            }
 
             if examples.iter().any(|e| e.eq_ignore_ascii_case(&cleaned)) { continue; }
             if is_instruction_echo(&cl) { continue; }
