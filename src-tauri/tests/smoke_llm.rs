@@ -1,11 +1,11 @@
-/// Path A LLM smoke test with Qwen2.5 on llama.cpp.
+﻿/// Path A LLM smoke test with Qwen2.5 on llama.cpp.
 /// Verifies llama-cpp-2 backend loads and generates (not just candle-rs compatibility).
 
 #[test]
 fn smoke_llama() {
     let model_path = std::path::Path::new("../models/qwen2.5-1.5b-instruct-q4_k_m.gguf");
     if !model_path.exists() {
-        eprintln!("[smoke] Qwen model not found — skipping Path A smoke test");
+        eprintln!("[smoke] Qwen model not found â€” skipping Path A smoke test");
         return;
     }
     eprintln!("[smoke] Loading Qwen2.5-1.5B via llama-cpp-2...");
@@ -28,11 +28,11 @@ fn smoke_llama() {
             Some(title) => {
                 let t = start.elapsed().as_secs_f64();
                 let has_kw = title.to_lowercase().contains(&kw.to_lowercase());
-                eprintln!("[smoke] {:>5.1}s {} {} → '{}' (kw={})", t, if has_kw {"PASS"} else {"OK"}, cat, title, has_kw);
+                eprintln!("[smoke] {:>5.1}s {} {} â†’ '{}' (kw={})", t, if has_kw {"PASS"} else {"OK"}, cat, title, has_kw);
             }
             None => {
                 let t = start.elapsed().as_secs_f64();
-                eprintln!("[smoke] {:>5.1}s {} {} → FAILED", t, kw, cat);
+                eprintln!("[smoke] {:>5.1}s {} {} â†’ FAILED", t, kw, cat);
             }
         }
     }

@@ -1,0 +1,27 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"The Power of Simple: Exploring the Impact of Minimalist Coffee Brewing",11,0,1,1,1
+blog,"Mindfulness Brew: Exploring the Benefits and Zen of Coffee",9,0,1,1,1
+blog,"Is Your Coffee Making You Jittery or Just Nervous?",9,0,0,1,1
+blog,"Exploring the Brew: Discovering the World of Coffee",8,0,1,1,1
+book,"Is Remote Work the Future?",5,0,0,1,1
+book,"4Elements of Remote Work",4,1,0,1,1
+book,"The Arrival: Remote Work Takes Over",6,0,1,1,1
+book,"Remote Revolution: How Work Transformed",5,0,1,1,1
+poem,"How Sourdough Bread Takes Over Your Life",7,0,0,0,1
+poem,"The Yeast's Embrace: A Tribute to Sourdough",7,0,1,0,0
+poem,"A Bread's Journey From Yeast to Crust",7,0,0,0,1
+poem,"Bread's Awakening, Sourdough's Charm",4,0,0,1,1
+product,"Zen Brew",2,0,0,1,1
+product,"Jazzy Brew",2,0,0,1,1
+product,"Vivid Brew",2,0,0,1,1
+product,"Ripple",1,0,0,1,1
+product,"Crafted Sourdough",2,0,0,1,1
+product,"Fresh Rise Sourdough",3,0,0,1,1
+product,"Earthy Brioche",2,0,0,1,1
+product,"Fresh Loaves",2,0,0,1,1
+song,"Why Good Day Starts With a Cup of Coffee?",9,0,0,0,1
+song,"Crafting Bliss: The Zen of Coffee",6,0,1,1,0
+youtube,"Remote Work Revolution: The Future Is Here",7,0,1,1,1
+youtube,"Are You Navigating Remote Work Successfully?",6,0,0,1,1
+youtube,"Boost Your Productivity: Remote Work Tips for Success",8,0,1,1,1
+youtube,"Beyond the Screen: The Future of Remote Work",8,0,1,1,1

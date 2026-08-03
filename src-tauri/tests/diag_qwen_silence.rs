@@ -1,10 +1,10 @@
-/// Diagnostic: why does Qwen stay silent on 46% of keywords?
+﻿/// Diagnostic: why does Qwen stay silent on 46% of keywords?
 ///
 /// Runs the 23 keywords Qwen produced nothing for in the 2026-07-31 benchmark,
 /// calls the REAL generation path, and reports the raw model output plus which
 /// filter in `generate_one_clean` would have rejected it.
 ///
-/// Read-only — changes no production behaviour.
+/// Read-only â€” changes no production behaviour.
 ///
 /// Usage:
 ///   cargo test --release diag_qwen_silence -- --nocapture
@@ -23,7 +23,7 @@ const SILENT: &[(&str, &str)] = &[
     ("solo travel", "blog"), ("home office", "product"),
 ];
 
-// ── Mirrors of the private filters in local_llm.rs (kept in sync manually) ──
+// â”€â”€ Mirrors of the private filters in local_llm.rs (kept in sync manually) â”€â”€
 
 fn is_echo_line(lower: &str) -> bool {
     ["here", "i would", "sure", "let me", "title:", "here is", "here's",
@@ -62,12 +62,12 @@ fn diag_qwen_silence() {
     }
     let mut llm = match llm {
         Some(m) => m,
-        None => { eprintln!("Qwen model not found — skipping diagnostic."); return; }
+        None => { eprintln!("Qwen model not found â€” skipping diagnostic."); return; }
     };
 
-    println!("\n╔═══════════════════════════════════════════════════════════════════╗");
-    println!("║  Qwen silence diagnostic — 23 keywords that produced nothing      ║");
-    println!("╚═══════════════════════════════════════════════════════════════════╝\n");
+    println!("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+    println!("â•‘  Qwen silence diagnostic â€” 23 keywords that produced nothing      â•‘");
+    println!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
 
     let mut counts = std::collections::BTreeMap::<&str, usize>::new();
     let mut recovered = 0usize;
@@ -75,7 +75,7 @@ fn diag_qwen_silence() {
     for (kw, cat) in SILENT {
         let examples = generator.retrieve_similar(kw, cat, 3);
 
-        // Call the real public path first — does it still fail?
+        // Call the real public path first â€” does it still fail?
         let real = llm.generate_one_clean(kw, cat, "normal", "any", &examples, None, &Default::default());
 
         if let Some(t) = &real {
@@ -88,7 +88,7 @@ fn diag_qwen_silence() {
         // Still fails. Reproduce the pipeline to find the blocking filter.
         // Use the same prompt shape as attempt 1.
         let system = format!(
-            "You are TitleForge, an elite title generator. Generate ONE creative, clickable {} title about \"{}\". CRITICAL RULE: the title MUST contain the word \"{}\" somewhere in it. Output ONLY the title text — no explanation, no preamble, no markdown, no quotes.",
+            "You are TitleForge, an elite title generator. Generate ONE creative, clickable {} title about \"{}\". CRITICAL RULE: the title MUST contain the word \"{}\" somewhere in it. Output ONLY the title text â€” no explanation, no preamble, no markdown, no quotes.",
             cat, kw, kw
         );
         let mut user_prompt = String::new();
@@ -149,12 +149,12 @@ fn diag_qwen_silence() {
 
         *counts.entry(reason).or_default() += 1;
         let preview: String = raw_s.chars().take(70).collect();
-        println!("  {:46} {:20} raw: {}", reason, kw, preview.replace('\n', " ⏎ "));
+        println!("  {:46} {:20} raw: {}", reason, kw, preview.replace('\n', " âŽ "));
     }
 
-    println!("\n╔═══════════════════════════════════════════════════════════════════╗");
-    println!("║  REJECTION BREAKDOWN                                              ║");
-    println!("╚═══════════════════════════════════════════════════════════════════╝");
+    println!("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+    println!("â•‘  REJECTION BREAKDOWN                                              â•‘");
+    println!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
     for (reason, n) in &counts {
         println!("  {:3}  {}", n, reason);
     }

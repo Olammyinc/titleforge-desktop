@@ -49,11 +49,13 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (2, 7),
             example: "The Name of the Wind",
             is_name: false,
-            // A book title in this spec is 2-7 words and evocative. The colon
-            // subtitle form ("Remote Revolution: How Work Will Never Be the
-            // Same") is what Qwen produced instead — that is an article shape.
-            // Digits stay allowed ("1984", "Catch-22").
-            forbid_colon: true,
+            // Both forms are legitimate for books: the evocative one-liner
+            // ("The Name of the Wind") and the subtitle form ("Sapiens: A Brief
+            // History of Humankind"). Banning the colon outright was wrong and
+            // is reverted (user, 2026-08-03). The real problem was PROPORTION —
+            // Qwen produced colons in 75% of book titles. That is capped per
+            // batch in engine.rs instead, which is the right place for it.
+            forbid_colon: false,
             forbid_digits: false,
         },
         "ebook" => CategorySpec {
@@ -512,8 +514,12 @@ mod tests {
         let poem = category_spec("poem");
         assert!(!passes_name_shape("Rise of Sourdough: A Journey in Yeast", &poem));
 
+        // Books keep BOTH forms — the colon subtitle is legitimate ("Sapiens:
+        // A Brief History of Humankind"). Proportion is capped in engine.rs,
+        // not here. (User decision 2026-08-03.)
         let book = category_spec("book");
-        assert!(!passes_name_shape("Remote Revolution: How Work Will Never Be the Same", &book));
+        assert!(passes_name_shape("Remote Revolution: How Work Will Never Be the Same", &book));
+        assert!(passes_name_shape("The Name of the Wind", &book));
         assert!(passes_name_shape("Catch-22", &book), "digits stay legal in book titles");
 
         // Categories that legitimately use colons must be unaffected.
@@ -521,6 +527,32 @@ mod tests {
             let s = category_spec(c);
             assert!(passes_name_shape("Something: A Subtitle Here", &s), "{c} should allow colons");
         }
+    }
+
+    #[test]
+    fn shared_opening_dedup() {
+        use crate::engine::shares_opening;
+        // The measured failure: a 4-title book batch that was four variations
+        // on one stem (2026-08-03 run 5). The shared stem is TWO words — the
+        // third word already differs ("How" vs "My"), which is why n=3 missed
+        // the exact case this was written for.
+        assert!(shares_opening(
+            "Remote Revolution: How Work Transformed",
+            "Remote Revolution: My Journey Unplugged", 2));
+        assert!(shares_opening("The Art of Coffee", "the art of tea", 2),
+            "case and punctuation insensitive");
+        // Genuinely different titles must survive.
+        assert!(!shares_opening(
+            "Remote Revolution: How Work Transformed",
+            "Why Nobody Misses The Commute", 2));
+        // Too short to judge — must not collapse distinct short titles.
+        assert!(!shares_opening("Vivid", "Vivid Brew", 2));
+        // Pure function-word openings are shared by many distinct titles;
+        // rejecting those would cost fire rate for no diversity gain.
+        assert!(!shares_opening(
+            "How To Brew Better Coffee",
+            "How To Bake Sourdough", 2));
+        assert!(!shares_opening("The Best Coffee", "The Best Bread", 2));
     }
 
     #[test]

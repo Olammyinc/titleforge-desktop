@@ -1,4 +1,4 @@
-/// Path A 50-keyword benchmark: Qwen vs EGCG vs Curated
+﻿/// Path A 50-keyword benchmark: Qwen vs EGCG vs Curated
 ///
 /// Tests format-conformance, category-relevance, keyword presence, 
 /// readability, and speed across all three engines.
@@ -10,7 +10,7 @@ use std::path::Path;
 use std::time::Instant;
 use rusqlite::Connection;
 
-// ── 50 keywords with categories ──
+// â”€â”€ 50 keywords with categories â”€â”€
 const BENCH_KEYWORDS: &[(&str, &str)] = &[
     ("shirt", "product"), ("laptop", "product"), ("productivity", "book"),
     ("love", "song"), ("startup", "book"), ("crypto", "article"),
@@ -90,10 +90,10 @@ fn benchmark_path_a() {
     }
     let model_name = if llm.is_some() { "Qwen2.5-1.5B" } else { "none (LLM disabled)" };
 
-    println!("\n╔═══════════════════════════════════════════════════════════════════════╗");
-    println!("║  Path A 50-Keyword Benchmark — {}                ║", model_name);
-    println!("║  Qwen vs EGCG vs Curated — quality + speed                          ║");
-    println!("╚═══════════════════════════════════════════════════════════════════════╝\n");
+    println!("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+    println!("â•‘  Path A 50-Keyword Benchmark â€” {}                â•‘", model_name);
+    println!("â•‘  Qwen vs EGCG vs Curated â€” quality + speed                          â•‘");
+    println!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
 
     // Metrics accumulators
     let mut llm_format = 0usize; let mut llm_keyword = 0usize; let mut llm_readable = 0usize; let mut llm_relevant = 0usize;
@@ -109,7 +109,7 @@ fn benchmark_path_a() {
     for (i, (keyword, category)) in BENCH_KEYWORDS.iter().enumerate() {
         eprintln!("[{}/{}] {}", i + 1, total, keyword);
 
-        // ── Qwen LLM ──
+        // â”€â”€ Qwen LLM â”€â”€
         let llm_result = if let Some(ref mut m) = llm {
             let examples = generator.retrieve_similar(keyword, category, 3);
             let start = Instant::now();
@@ -122,7 +122,7 @@ fn benchmark_path_a() {
             None
         };
 
-        // ── EGCG ──
+        // â”€â”€ EGCG â”€â”€
         let egcg_result = {
             let cats = vec![category.to_string()];
             let start = Instant::now();
@@ -132,7 +132,7 @@ fn benchmark_path_a() {
             results.first().map(|r| r.title.clone())
         };
 
-        // ── Curated retrieval ──
+        // â”€â”€ Curated retrieval â”€â”€
         let cur_result = {
             let start = Instant::now();
             let examples = generator.retrieve_similar(keyword, category, 1);
@@ -178,22 +178,22 @@ fn benchmark_path_a() {
         ));
     }
 
-    // ── Summary ──
+    // â”€â”€ Summary â”€â”€
     let pct = |n: usize| format!("{:.1}%", (n as f64 / total as f64) * 100.0);
     let avg_ms = |t: u64| if total > 0 { format!("{:.1}s", t as f64 / total as f64 / 1000.0) } else { "n/a".to_string() };
 
-    println!("╔══════════════════════════════════════════════════════════════════╗");
-    println!("║  BENCHMARK RESULTS ({} keywords)                                ║", total);
-    println!("╠══════════════════════════════════════════════════════════════════╣");
-    println!("║  Engine     Format    Keyword   Readable  Good      Avg Time   ║");
-    println!("╠══════════════════════════════════════════════════════════════════╣");
-    println!("║  Qwen       {:>8}  {:>8}  {:>8}  {:>8}  {:>8}   ║",
+    println!("â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+    println!("â•‘  BENCHMARK RESULTS ({} keywords)                                â•‘", total);
+    println!("â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
+    println!("â•‘  Engine     Format    Keyword   Readable  Good      Avg Time   â•‘");
+    println!("â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
+    println!("â•‘  Qwen       {:>8}  {:>8}  {:>8}  {:>8}  {:>8}   â•‘",
         pct(llm_format), pct(llm_keyword), pct(llm_readable), pct(llm_relevant), avg_ms(llm_time_total));
-    println!("║  EGCG       {:>8}  {:>8}  {:>8}  {:>8}  {:>8}   ║",
+    println!("â•‘  EGCG       {:>8}  {:>8}  {:>8}  {:>8}  {:>8}   â•‘",
         pct(egcg_format), pct(egcg_keyword), pct(egcg_readable), pct(egcg_relevant), avg_ms(egcg_time_total));
-    println!("║  Curated    {:>8}  {:>8}  {:>8}  {:>8}  {:>8}   ║",
+    println!("â•‘  Curated    {:>8}  {:>8}  {:>8}  {:>8}  {:>8}   â•‘",
         pct(cur_format), pct(cur_keyword), pct(cur_readable), pct(cur_relevant), avg_ms(cur_time_total));
-    println!("╚══════════════════════════════════════════════════════════════════╝\n");
+    println!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
 
     println!("Legend:");
     println!("  Format   = no template leaks, valid length, no instruction echo");

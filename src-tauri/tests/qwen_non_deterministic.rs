@@ -1,4 +1,4 @@
-/// Task 0 verification: sampling must be non-deterministic.
+﻿/// Task 0 verification: sampling must be non-deterministic.
 /// Same keyword + category generated twice must produce DIFFERENT titles.
 /// This is what unblocks batch generation (25/100/500 titles per request).
 
@@ -8,7 +8,7 @@ use titleforge_lib::local_llm::LocalLlm;
 fn qwen_non_deterministic() {
     let model_path = std::path::Path::new("../models/qwen2.5-1.5b-instruct-q4_k_m.gguf");
     if !model_path.exists() {
-        eprintln!("[nondet] Qwen model not found — skipping");
+        eprintln!("[nondet] Qwen model not found â€” skipping");
         return;
     }
     let mut llm = match LocalLlm::load(model_path) {
@@ -35,8 +35,8 @@ fn qwen_non_deterministic() {
     eprintln!("[nondet] {} generated, {} unique", titles.len(), unique.len());
     assert!(
         unique.len() >= 2,
-        "Deterministic generation: same keyword produced {} title(s) — batch generation impossible. Expected >= 2 distinct titles.",
+        "Deterministic generation: same keyword produced {} title(s) â€” batch generation impossible. Expected >= 2 distinct titles.",
         unique.len()
     );
-    eprintln!("[nondet] PASS — sampling is non-deterministic");
+    eprintln!("[nondet] PASS â€” sampling is non-deterministic");
 }

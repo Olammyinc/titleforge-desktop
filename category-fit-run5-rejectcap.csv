@@ -1,0 +1,27 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"What's Your Favorite Coffee Ritual?",5,0,0,1,1
+blog,"Exploring the Roast of Life: Thoughts on Coffee",8,0,1,1,1
+blog,"From Caffeinated Addict to Coffee-Free Hero: My Journey",8,0,1,1,1
+blog,"Why You Should Consider Brewing Coffee Without Sugar",8,0,0,1,1
+book,"Remote Revolution: How Work Transformed",5,0,1,1,1
+book,"Remote Revolution: How Work Changes When You Do",8,0,1,0,1
+book,"Remote Revolution: My Journey Unplugged",5,0,1,1,1
+book,"Remote Revolution",2,0,0,1,1
+poem,"How Do You Cultivate Perfect Sourdough?",6,0,0,1,1
+poem,"Rising Traditions of Sourdough",4,0,0,1,1
+poem,"Crafting Delicate Sourdough Loaves",4,0,0,1,1
+poem,"The Art of Crafting Sourdough's Golden Embrace",7,0,0,0,1
+product,"Journey Beans",2,0,0,1,1
+product,"Caffeine Bliss",2,0,0,1,1
+product,"Jolt Bliss",2,0,0,1,1
+product,"Sparkly Brew",2,0,0,1,1
+product,"Sourdough Forge",2,0,0,1,1
+product,"Ripened Rise",2,0,0,1,1
+product,"Yeast Awakening",2,0,0,1,1
+product,"SourdoughSavvy",1,0,0,1,1
+song,"Morning Ritual: A Cup of Coffee Awakens Me",8,0,1,0,0
+song,"4 Coffee Nights",3,1,0,1,0
+youtube,"48HourWorkFrenzy: My Remote Work Journey",5,1,1,1,1
+youtube,"Remote Work Revolution: How It's Shaping the Future",8,0,1,1,1
+youtube,"How to Succeed as a Remote Worker? Top Tips from the Pros",12,0,0,1,1
+youtube,"50 Ideas for Remote Work Success",6,1,0,1,1

@@ -1,4 +1,4 @@
-/// Task 1 — Benchmark v2 with LLM-judge
+﻿/// Task 1 â€” Benchmark v2 with LLM-judge
 ///
 /// Every title that passes mechanical gates is scored 0-100 by a cloud AI
 /// on usability: "Would a real creator publish this without editing?"
@@ -11,8 +11,8 @@
 ///   cargo test --release benchmark_judge -- --nocapture 2>&1 | tee bench-judge.txt
 ///
 /// Outputs:
-///   bench-usability.csv  — 150 rows (50 keywords × 3 engines) with judge scores
-///   bench-cache.json     — cached judge responses (re-run costs $0 on same data)
+///   bench-usability.csv  â€” 150 rows (50 keywords Ã— 3 engines) with judge scores
+///   bench-cache.json     â€” cached judge responses (re-run costs $0 on same data)
 
 use std::time::Instant;
 use std::collections::HashMap;
@@ -112,7 +112,7 @@ fn save_cache(cache: &HashMap<String, serde_json::Value>) {
 
 fn call_judge(title: &str, keyword: &str, category: &str, api_key: &str) -> Option<u32> {
     let rubric = format!(
-        "You are grading titles for a title generator. The user asked for a title about \"{keyword}\" in the {category} category.\n\nHere is a candidate: \"{title}\"\n\nRate 0-100 on USABILITY: would a real creator publish this without editing?\n\nDeduct heavily for:\n- Not on-topic for the keyword\n- Grammatical errors, awkward phrasing, template shrapnel\n- Vague and generic (\"The Peak Truth About X\")\n- Category mismatch\n- Boring, clichéd, or noise\n\nReward:\n- Specific, concrete language\n- Curiosity or emotional hook\n- Category-appropriate voice and length\n- Something a human would actually click / buy / read\n\nOutput ONLY a single integer 0-100. No explanation."
+        "You are grading titles for a title generator. The user asked for a title about \"{keyword}\" in the {category} category.\n\nHere is a candidate: \"{title}\"\n\nRate 0-100 on USABILITY: would a real creator publish this without editing?\n\nDeduct heavily for:\n- Not on-topic for the keyword\n- Grammatical errors, awkward phrasing, template shrapnel\n- Vague and generic (\"The Peak Truth About X\")\n- Category mismatch\n- Boring, clichÃ©d, or noise\n\nReward:\n- Specific, concrete language\n- Curiosity or emotional hook\n- Category-appropriate voice and length\n- Something a human would actually click / buy / read\n\nOutput ONLY a single integer 0-100. No explanation."
     );
 
     let body = serde_json::json!({
@@ -199,34 +199,34 @@ fn generate_title_cloud(keyword: &str, category: &str, api_key: &str) -> Option<
     };
 
     let system = format!(
-        "You are TitleForge — an elite title generator for authors, marketers, and creators. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."
+        "You are TitleForge â€” an elite title generator for authors, marketers, and creators. Generate titles that people actually click. Before you write each title, ask: 'Would I click this?' If the answer is no, replace it. Return ONLY valid JSON."
     );
 
     let prompt = format!(
         "Generate 1 title for a {cat_label} named \"{keyword}\".
 
-The keyword is \"{keyword}\". Every title must be about this keyword — not about the category itself.
+The keyword is \"{keyword}\". Every title must be about this keyword â€” not about the category itself.
 
 Communication style: normal
 
-REFERENCE TITLES — publication-ready titles from the TitleForge corpus. Study their structure, specificity, and quality bar — your titles must match this caliber:
+REFERENCE TITLES â€” publication-ready titles from the TitleForge corpus. Study their structure, specificity, and quality bar â€” your titles must match this caliber:
 
-Book:    \"The Name of the Wind\" → poetic metaphor creates mystery in 5 words
-Article: \"The Myth of Meritocracy: Why Talent Alone Will Never Beat Inheritance\" → bold thesis + colon + concrete payoff
-YouTube: \"I Spent 48 Hours in a Silent Retreat\" → personal experiment + number + curiosity gap
-Podcast: \"You Don't Actually Care About Climate Change — You Just Like the Aesthetic\" → confronts the listener with an uncomfortable truth
-Newsletter: \"What's the one metric most teams overlook?\" → question + FOMO + insider knowledge tease
-Product: \"Vivid\" → single word, instantly brand-able, emotional
-Song:    \"Cigarette Smoke and Honey\" → sensory contrast, vivid, memorable
-Speech:  \"How to Raise a Generation of Critical Thinkers\" → aspirational, how-to format without being generic
+Book:    \"The Name of the Wind\" â†’ poetic metaphor creates mystery in 5 words
+Article: \"The Myth of Meritocracy: Why Talent Alone Will Never Beat Inheritance\" â†’ bold thesis + colon + concrete payoff
+YouTube: \"I Spent 48 Hours in a Silent Retreat\" â†’ personal experiment + number + curiosity gap
+Podcast: \"You Don't Actually Care About Climate Change â€” You Just Like the Aesthetic\" â†’ confronts the listener with an uncomfortable truth
+Newsletter: \"What's the one metric most teams overlook?\" â†’ question + FOMO + insider knowledge tease
+Product: \"Vivid\" â†’ single word, instantly brand-able, emotional
+Song:    \"Cigarette Smoke and Honey\" â†’ sensory contrast, vivid, memorable
+Speech:  \"How to Raise a Generation of Critical Thinkers\" â†’ aspirational, how-to format without being generic
 
 QUALITY RULES (these are what separate a great title from a forgettable one):
 - EMOTIONAL PULL: Make the reader feel something. Curiosity, surprise, aspiration, or urgency. A title that evokes nothing is wasted.
-- SPECIFICITY: Use concrete details — numbers, names, vivid specifics. \"7 Habits\" beats \"Good Habits.\" \"The $1.2 Million Typo\" beats \"An Expensive Mistake.\" Always choose the specific over the abstract.
+- SPECIFICITY: Use concrete details â€” numbers, names, vivid specifics. \"7 Habits\" beats \"Good Habits.\" \"The $1.2 Million Typo\" beats \"An Expensive Mistake.\" Always choose the specific over the abstract.
 - CURIOSITY GAP: The reader should NEED to click to satisfy an open question. If the reader can guess the full story from the title, rewrite it.
 - NO FILLER: Every title must be genuinely strong.
-- VARIETY: Mix structures — a question, a declaration, a numbered list, a story hook, a counterintuitive statement.
-- NO CLICHÉS: Never use: \"unlock the secrets,\" \"ultimate guide,\" \"everything you need to know,\" \"game changer,\" \"mind-blowing,\" \"life-changing,\" \"revolutionize,\" \"master the art,\" \"unleash your potential,\" \"X is the new Y.\"
+- VARIETY: Mix structures â€” a question, a declaration, a numbered list, a story hook, a counterintuitive statement.
+- NO CLICHÃ‰S: Never use: \"unlock the secrets,\" \"ultimate guide,\" \"everything you need to know,\" \"game changer,\" \"mind-blowing,\" \"life-changing,\" \"revolutionize,\" \"master the art,\" \"unleash your potential,\" \"X is the new Y.\"
 
 Respond with exactly: {{\"titles\":[{{\"title\":\"Your Title Here\",\"score\":85,\"breakdown\":{{\"curiosityGap\":\"High\",\"emotionalTrigger\":\"aspiration\",\"powerWords\":[\"word1\",\"word2\"],\"lengthAnalysis\":\"Optimal (8 words)\",\"specificity\":\"Concrete\"}}}}]}}",
         cat_label = cat_label, keyword = keyword
@@ -273,7 +273,7 @@ Respond with exactly: {{\"titles\":[{{\"title\":\"Your Title Here\",\"score\":85
 
 #[test]
 fn benchmark_judge() {
-    // ── API key: env var first, then .bench-key file, then error ──
+    // â”€â”€ API key: env var first, then .bench-key file, then error â”€â”€
     let api_key = std::env::var("BENCH_JUDGE_API_KEY").ok()
         .or_else(|| {
             let key_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".bench-key");
@@ -281,7 +281,7 @@ fn benchmark_judge() {
             if key_path.exists() {
                 eprintln!("  Found .bench-key file, reading key...");
                 // PowerShell's `echo key > file` writes UTF-16LE with a BOM on Windows,
-                // which is NOT valid UTF-8 — read_to_string silently returns Err and the
+                // which is NOT valid UTF-8 â€” read_to_string silently returns Err and the
                 // key looks "unset". Decode defensively: UTF-16 LE/BE, UTF-8 BOM, or plain.
                 let key = std::fs::read(&key_path).ok().and_then(|bytes| {
                     let s = match bytes.as_slice() {
@@ -311,32 +311,32 @@ fn benchmark_judge() {
             }
         })
         .unwrap_or_else(|| {
-            eprintln!("\n╔══════════════════════════════════════════════════════════════╗");
-            eprintln!("║  BENCH_JUDGE_API_KEY not set                                ║");
-            eprintln!("║                                                             ║");
-            eprintln!("║  Option A: Run in a single PowerShell command:               ║");
-            eprintln!("║    $env:BENCH_JUDGE_API_KEY='sk-...'; cargo test ...        ║");
-            eprintln!("║                                                             ║");
-            eprintln!("║  Option B: Put your key in ../../.bench-key (no env needed):║");
-            eprintln!("║    Set-Content -Path ../../.bench-key -Value 'sk-...' `     ║");
-            eprintln!("║      -Encoding utf8 -NoNewline                              ║");
-            eprintln!("║    (plain `echo >` writes UTF-16 on Windows)                 ║");
-            eprintln!("║                                                             ║");
-            eprintln!("║  Then run:                                                  ║");
-            eprintln!("║    cargo test --release benchmark_judge -- --nocapture      ║");
-            eprintln!("║                                                             ║");
-            eprintln!("║  Cost: ~$0.10 per full run (150 titles)                     ║");
-            eprintln!("╚══════════════════════════════════════════════════════════════╝\n");
+            eprintln!("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+            eprintln!("â•‘  BENCH_JUDGE_API_KEY not set                                â•‘");
+            eprintln!("â•‘                                                             â•‘");
+            eprintln!("â•‘  Option A: Run in a single PowerShell command:               â•‘");
+            eprintln!("â•‘    $env:BENCH_JUDGE_API_KEY='sk-...'; cargo test ...        â•‘");
+            eprintln!("â•‘                                                             â•‘");
+            eprintln!("â•‘  Option B: Put your key in ../../.bench-key (no env needed):â•‘");
+            eprintln!("â•‘    Set-Content -Path ../../.bench-key -Value 'sk-...' `     â•‘");
+            eprintln!("â•‘      -Encoding utf8 -NoNewline                              â•‘");
+            eprintln!("â•‘    (plain `echo >` writes UTF-16 on Windows)                 â•‘");
+            eprintln!("â•‘                                                             â•‘");
+            eprintln!("â•‘  Then run:                                                  â•‘");
+            eprintln!("â•‘    cargo test --release benchmark_judge -- --nocapture      â•‘");
+            eprintln!("â•‘                                                             â•‘");
+            eprintln!("â•‘  Cost: ~$0.10 per full run (150 titles)                     â•‘");
+            eprintln!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
             "".to_string()
         });
     if api_key.is_empty() { return; }
 
-    // ── Pre-flight: verify API key works before burning compute ──
+    // â”€â”€ Pre-flight: verify API key works before burning compute â”€â”€
     eprintln!("Verifying API key with test call...");
     let pre = call_judge("Test Title", "test", "book", &api_key);
     match pre {
         Some(s) if s > 0 => eprintln!("Pre-flight OK (test score: {})", s),
-        Some(s) => panic!("Pre-flight returned score {} — API is responding but producing zeros. Check thinking mode / max_tokens / response format.", s),
+        Some(s) => panic!("Pre-flight returned score {} â€” API is responding but producing zeros. Check thinking mode / max_tokens / response format.", s),
         None => panic!("PRE-FLIGHT FAILED: API call returned no score at all. Check [judge] error messages above for HTTP/parse errors."),
     }
 
@@ -357,11 +357,11 @@ fn benchmark_judge() {
     }
     let model_name = if llm.is_some() { "Qwen2.5-1.5B" } else { "none" };
 
-    println!("\n╔═══════════════════════════════════════════════════════════════════════╗");
-    println!("║  Benchmark v2 — LLM-Judge Usability Scores — {}                ║", format!("{:<18}", model_name));
-    println!("║  50 keywords × 4 engines (Cloud/Qwen/EGCG/Curated)                  ║");
-    println!("║  ≥70 = Usable. <70 = Rubbish.                                      ║");
-    println!("╚═══════════════════════════════════════════════════════════════════════╝\n");
+    println!("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+    println!("â•‘  Benchmark v2 â€” LLM-Judge Usability Scores â€” {}                â•‘", format!("{:<18}", model_name));
+    println!("â•‘  50 keywords Ã— 4 engines (Cloud/Qwen/EGCG/Curated)                  â•‘");
+    println!("â•‘  â‰¥70 = Usable. <70 = Rubbish.                                      â•‘");
+    println!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
 
     #[derive(Default)]
     struct EngineStats { count: usize, sum: u64, sum_sq: u64, usable: usize, times: Vec<f32> }
@@ -380,12 +380,12 @@ fn benchmark_judge() {
     for (i, (keyword, category)) in BENCH_KEYWORDS.iter().enumerate() {
         eprintln!("[{}/{}] {}", i + 1, total, keyword);
 
-        // ── Cloud AI (DeepSeek — web app generation prompt) ──
+        // â”€â”€ Cloud AI (DeepSeek â€” web app generation prompt) â”€â”€
         let cloud_title = if only.as_deref() != Some("qwen") {
             generate_title_cloud(keyword, category, &api_key).unwrap_or_default()
         } else { String::new() };
 
-        // ── Qwen ──
+        // â”€â”€ Qwen â”€â”€
         let qwen_title = if only.as_deref() == Some("cloud") {
             String::new()
         } else if let Some(ref mut m) = llm {
@@ -397,7 +397,7 @@ fn benchmark_judge() {
             t.unwrap_or_default()
         } else { String::new() };
 
-        // ── EGCG ──
+        // â”€â”€ EGCG â”€â”€
         let egcg_title = if only.as_deref() == Some("cloud") {
             String::new()
         } else if only.as_deref() != Some("qwen") {
@@ -406,14 +406,14 @@ fn benchmark_judge() {
             results.first().map(|r| r.title.clone()).unwrap_or_default()
         } else { String::new() };
 
-        // ── Curated ──
+        // â”€â”€ Curated â”€â”€
         let cur_title = if only.as_deref() == Some("cloud") {
             String::new()
         } else if only.as_deref() != Some("qwen") {
             generator.retrieve_similar(keyword, category, 1).first().cloned().unwrap_or_default()
         } else { String::new() };
 
-        // ── Judge each title ──
+        // â”€â”€ Judge each title â”€â”€
         for (engine_name, title) in &[("cloud", &cloud_title), ("qwen", &qwen_title), ("egcg", &egcg_title), ("curated", &cur_title)] {
             if only.is_some() && only.as_deref() != Some(engine_name) { continue; }
             let stats: &mut EngineStats = match *engine_name {
@@ -427,7 +427,7 @@ fn benchmark_judge() {
             // judge rubric already penalises off-topic titles ("Deduct heavily for: not
             // on-topic for the keyword"). A string match cannot tell that "VR" means
             // "virtual reality", that "100 Workouts" is a fitness title, or that
-            // "Meditate" is the verb form of "meditation" — and in the 2026-07-31 run it
+            // "Meditate" is the verb form of "meditation" â€” and in the 2026-07-31 run it
             // wrongly rejected 17/50 excellent cloud titles, understating the ceiling by
             // roughly 25 points. Literal keyword presence is now advisory only.
             let mech_pass = is_readable(title);
@@ -443,11 +443,11 @@ fn benchmark_judge() {
                                 (s, false)
                             }
                             Some(s) => {
-                                eprintln!("  [judge] got score 0 for '{}' — not caching", title);
+                                eprintln!("  [judge] got score 0 for '{}' â€” not caching", title);
                                 (0, false)
                             }
                             None => {
-                                eprintln!("  [judge] FAILED for '{}' — not cached", title);
+                                eprintln!("  [judge] FAILED for '{}' â€” not cached", title);
                                 (0, false)
                             }
                         }
@@ -476,7 +476,7 @@ fn benchmark_judge() {
         }
     }
 
-    // ── Print statistics ──
+    // â”€â”€ Print statistics â”€â”€
     save_cache(&cache);
 
     let fmt_eng = |name: &str, s: &EngineStats| {
@@ -491,18 +491,18 @@ fn benchmark_judge() {
             if name == "Qwen" && !s.times.is_empty() { s.times.iter().sum::<f32>() / s.times.len() as f32 } else { 0.0 })
     };
 
-    println!("\n╔══════════════════════════════════════════════════════════════════════╗");
-    println!("║  JUDGE RESULTS — \"Would a creator publish this without editing?\"   ║");
-    println!("╠══════════════════════════════════════════════════════════════════════╣");
-    println!("║  Engine     Mean     StdDev   %Usable    AvgTime                   ║");
-    println!("╠══════════════════════════════════════════════════════════════════════╣");
-    println!("║  {} ║", fmt_eng("Cloud", &cloud_s));
-    println!("║  {} ║", fmt_eng("Qwen", &qwen_s));
-    println!("║  {} ║", fmt_eng("EGCG", &egcg_s));
-    println!("║  {} ║", fmt_eng("Curated", &cur_s));
-    println!("╚══════════════════════════════════════════════════════════════════════╝\n");
+    println!("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+    println!("â•‘  JUDGE RESULTS â€” \"Would a creator publish this without editing?\"   â•‘");
+    println!("â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
+    println!("â•‘  Engine     Mean     StdDev   %Usable    AvgTime                   â•‘");
+    println!("â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£");
+    println!("â•‘  {} â•‘", fmt_eng("Cloud", &cloud_s));
+    println!("â•‘  {} â•‘", fmt_eng("Qwen", &qwen_s));
+    println!("â•‘  {} â•‘", fmt_eng("EGCG", &egcg_s));
+    println!("â•‘  {} â•‘", fmt_eng("Curated", &cur_s));
+    println!("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n");
 
-    println!("Usability threshold: ≥70 = usable. <70 = not publishable.");
+    println!("Usability threshold: â‰¥70 = usable. <70 = not publishable.");
     println!();
 
     // Write CSV
@@ -511,9 +511,9 @@ fn benchmark_judge() {
     eprintln!("Results written to {:?}", csv_path);
     eprintln!("Cache saved to {:?}", cache_path());
 
-    // ── Assertions: validate the benchmark actually produced results ──
+    // â”€â”€ Assertions: validate the benchmark actually produced results â”€â”€
     assert!(cloud_s.sum > 0 || qwen_s.sum > 0 || egcg_s.sum > 0 || cur_s.sum > 0,
-        "ALL judge scores are 0 across all engines — API calls are failing silently. Check [judge] errors above.");
+        "ALL judge scores are 0 across all engines â€” API calls are failing silently. Check [judge] errors above.");
     assert!(qwen_s.usable + egcg_s.usable + cur_s.usable > 0,
-        "ZERO usable titles found (threshold ≥70). Either the engines produce garbage or the judge is broken.");
+        "ZERO usable titles found (threshold â‰¥70). Either the engines produce garbage or the judge is broken.");
 }

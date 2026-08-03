@@ -6,6 +6,34 @@ use crate::seo;
 use crate::title_gen::Generator;
 use crate::TitleResult;
 
+/// True if two titles open with the same `n` words (case-insensitive,
+/// punctuation-stripped). Catches the near-duplicate family that exact-match
+/// dedup misses — measured 2026-08-03, a 4-title book batch came back as four
+/// variations on "Remote Revolution".
+pub(crate) fn shares_opening(a: &str, b: &str, n: usize) -> bool {
+    // Function-word openings ("how to", "the best", "why you") are common to
+    // many perfectly distinct titles. Flagging those would reject legitimate
+    // variety and cost fire rate, so a shared opening only counts when it
+    // carries at least one content word.
+    const FUNCTION: &[&str] = &[
+        "the", "a", "an", "of", "in", "on", "at", "to", "for", "and", "or",
+        "my", "i", "you", "your", "is", "it", "with", "how", "what", "why",
+        "this", "that", "from", "best", "top",
+    ];
+    let head = |s: &str| -> Vec<String> {
+        s.split_whitespace()
+            .take(n)
+            .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase())
+            .filter(|w| !w.is_empty())
+            .collect()
+    };
+    let (ha, hb) = (head(a), head(b));
+    if ha.len() != n || ha != hb {
+        return false;
+    }
+    ha.iter().any(|w| !FUNCTION.contains(&w.as_str()))
+}
+
 /// Orchestrate title generation: local LLM first, then curated-title
 /// retrieval as the quality fallback. EGCG generation was retired from the
 /// pipeline (2026-07-31): 20-24% usable on the corrected metric, mean ~37 —
@@ -82,6 +110,23 @@ pub fn generate(
 
             let spec = crate::prompt_spec::category_spec(cat);
 
+            // A COLON-PROPORTION CAP WAS TRIED TWICE AND DOES NOT WORK. Do not
+            // re-attempt it without reading this. Measured 2026-08-03:
+            //   run 4, cap via instruction ("Do not use a colon in this one"):
+            //     blog colons went UP 50% -> 75% and poem word-band conformance
+            //     collapsed 67% -> 25%. A 1.5B does not follow negative
+            //     instructions, and it displaced the rotated diversity
+            //     constraint, which was doing real work.
+            //   run 5, cap via soft rejection: book stayed at 75% colons. Qwen
+            //     emits a colon on nearly every book attempt, so all 3 attempts
+            //     are rejected and the soft fallback returns a colon title
+            //     anyway. Headline metrics regressed (range 7.00 -> 5.88).
+            //   run 2, cap via HARD rejection: works (75% -> 0%) but costs 18%
+            //     of all output.
+            // Conclusion: at 1.5B this is a model-capacity limit. Both forms are
+            // legitimate for books anyway ("The Name of the Wind" and "Sapiens:
+            // A Brief History"), so the proportion is left alone.
+
             for _ in 0..target_per_cat * mult {
                 let title = match llm.generate_one_clean(
                     keyword, cat, style, genre, &examples,
@@ -91,7 +136,16 @@ pub fn generate(
                     None => { ci += 1; continue; }
                 };
                 ci += 1;
-                let already_seen = pool.iter().any(|r: &TitleResult| r.title.eq_ignore_ascii_case(&title));
+                // Dedup was exact-match only, which let near-duplicates through:
+                // one measured book batch returned "Remote Revolution: How Work
+                // Transformed", "Remote Revolution: How Work Changes When You
+                // Do", "Remote Revolution: My Journey Unplugged" and "Remote
+                // Revolution". Also reject a shared opening — the web prompt
+                // already states "no two titles may share their opening three
+                // words"; this enforces it instead of asking.
+                let already_seen = pool.iter().any(|r: &TitleResult| {
+                    r.title.eq_ignore_ascii_case(&title) || shares_opening(&r.title, &title, 2)
+                });
                 if already_seen { continue; }
 
                 let (score, breakdown) = calculate_score(&title, keyword, cat);
