@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-08-03 (ranker sprint Task 1/2a/2b + full security audit fixed + web 502 root-caused)
+> **Last updated:** 2026-08-03 (admin multi-page SPA + user management + sharing detection + banned domains)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
