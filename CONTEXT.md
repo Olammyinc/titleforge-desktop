@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-08-03 (web fixes: fetchWithTimeout, auth error handling, admin dashboard)
+> **Last updated:** 2026-08-03 (ranker sprint: Task 1 multiplier 1× verified, Task 2a judge-calibration tooling, Task 2b revealed-preference capture)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -1091,15 +1091,15 @@ Full 4-engine comparison with all fixes applied:
 
 **4b. VC++ runtime on clean Windows — ✅ FIXED (app-local DLLs).** `installMode: currentUser` + vc_redist = impossible (needs admin to write System32). App-local `msvcp140.dll`/`vcruntime140.dll`/`vcruntime140_1.dll`/`vcomp140.dll` next to the exe resolve with zero elevation (Microsoft-sanctioned). See §5 entry.
 
-**5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped), which helped — but `engine.rs:38` still loops `target_per_cat * 2`:
+**5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped). **Task 1 (2026-08-03) dropped the best-of-N multiplier to 1×** — the old 4× loop was the worst-case driver. Core 25 is now ~1.4 min generation (measured 4.7 min total for 50 titles incl. judge calls). Updated estimate:
 
-| Tier | Titles | Best case | Worst case (2× loop) |
-|---|---|---|---|
-| Core | 25 | 2.8 min | 5.7 min |
-| Pro | 50 | 5.7 min | 11.3 min |
-| Studio | 200 | 22.6 min | **45.3 min** |
+| Tier | Titles | Generation (1×) |
+|---|---|---|
+| Core | 25 | ~1.4 min |
+| Pro | 50 | ~2.8 min |
+| Studio | 200 | ~11 min |
 
-Core and Pro are shippable. **Studio is not.** Context reuse (`generate_chat_raw` allocates a fresh KV cache per title) is the untried win.
+Studio is now plausible; the remaining lever is context reuse (`generate_chat_raw` allocates a fresh KV cache per title).
 
 #### OPEN — decide, don't drift
 
