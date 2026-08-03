@@ -214,6 +214,32 @@ impl LocalLlm {
         self.model.str_to_token(&prompt, AddBos::Always).ok().map(|t| t.len())
     }
 
+    /// Locate a bundled/installed model file by name.
+    ///
+    /// Benchmarks used to hardcode `../models/<name>`, which only works on a
+    /// dev checkout that keeps a copy inside the repo. A real install puts the
+    /// model in the OS data dir (see `qwen_model_path()` in lib.rs), so on any
+    /// machine with an actual install the benches silently skipped with
+    /// "model not found". Search order mirrors `lazy_load_llm`, with an env
+    /// override so a model on another volume can be used without copying ~1 GB.
+    pub fn find_model(name: &str) -> Option<std::path::PathBuf> {
+        if let Ok(p) = std::env::var("TF_MODEL_PATH") {
+            let p = std::path::PathBuf::from(p);
+            let p = if p.is_dir() { p.join(name) } else { p };
+            if p.exists() {
+                return Some(p);
+            }
+        }
+        let data = dirs::data_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+        let candidates = [
+            std::path::PathBuf::from("../models").join(name),
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("models").join(name),
+            data.join("titleforge-desktop").join("models").join(name),
+            data.join("com.titleforge.desktop").join("models").join(name),
+        ];
+        candidates.into_iter().find(|p| p.exists())
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn generate_one_clean(
         &mut self,
@@ -240,6 +266,11 @@ impl LocalLlm {
         // At most ONE extra line, and only for the soft fields. mustInclude /
         // avoid are enforced after generation instead — see FineTune docs.
         let ft_line = finetune.soft_prompt_line().unwrap_or_default();
+
+        // Best candidate that failed only a SOFT preference (mood-category
+        // shape, exemplar echo). Returned if all 3 attempts fail, so a
+        // stylistic preference can never turn into an empty slot.
+        let mut soft_reject: Option<String> = None;
 
         for attempt in 1..=3u32 {
             // System prompt — the output must be ABOUT the topic, but we do NOT
@@ -319,10 +350,41 @@ impl LocalLlm {
                 if !keyword_ok { continue; }
             }
 
-            // Shape check — rejects a headline returned for a name category.
+            // Shape check. Split by severity, because these two cases are NOT
+            // equally bad and treating them the same cost 18% of output.
+            //
+            // NAME categories: HARD. A blog headline returned for `product` is
+            // the original user-reported bug; never return it.
+            //
+            // Mood categories (song/poem/album/movie/book): SOFT. A colon in a
+            // song title is wrong but still usable. Measured 2026-08-03: making
+            // it a hard reject inside the fixed 3-attempt budget dropped fire
+            // rate 100% -> 82%, halving song and poem output — the same failure
+            // the cliche filter caused on 2026-08-02 (50 -> 34). Brief §5 rule
+            // 4: "Empty output is a failure, not a skip." So we PREFER a clean
+            // shape and fall back to the best rejected candidate if the budget
+            // runs out.
             if !crate::prompt_spec::passes_name_shape(&cleaned, &spec) {
                 #[cfg(debug_assertions)]
                 eprintln!("[local_llm] attempt {} rejected (wrong shape for {}): '{}'", attempt, spec.label, cleaned);
+                if !spec.is_name && soft_reject.is_none() {
+                    soft_reject = Some(cleaned.clone());
+                }
+                continue;
+            }
+
+            // The prompt's exemplar is there to be imitated in SHAPE. Qwen also
+            // imitates its content — measured: the YouTube example "I Spent 48
+            // Hours in a Silent Retreat" produced "48 Hours in the Silent Remote
+            // Office". Reject the echo rather than drop the exemplar.
+            // Also SOFT — an echo is a weak title, not an unusable one, and it
+            // must not be able to empty a batch on its own.
+            if crate::prompt_spec::echoes_example(&cleaned, &spec) {
+                #[cfg(debug_assertions)]
+                eprintln!("[local_llm] attempt {} rejected (echoes exemplar): '{}'", attempt, cleaned);
+                if soft_reject.is_none() {
+                    soft_reject = Some(cleaned.clone());
+                }
                 continue;
             }
 
@@ -347,7 +409,14 @@ impl LocalLlm {
             }
             return Some(cleaned);
         }
-        None
+        // Budget exhausted. A candidate that failed only a stylistic preference
+        // beats returning nothing — an empty slot is a worse product than a
+        // song title with a colon in it.
+        #[cfg(debug_assertions)]
+        if soft_reject.is_some() {
+            eprintln!("[local_llm] budget exhausted; returning soft-rejected candidate");
+        }
+        soft_reject
     }
 }
 

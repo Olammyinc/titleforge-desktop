@@ -1,0 +1,27 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"5 Reasons Why Coffee Is Essential For Your Daily Boost",10,1,0,1,1
+blog,"What Is the Perfect Cup of Coffee?",7,0,0,1,1
+blog,"Exploring the Origins of Coffee: From Arabia to Espresso Shops",10,0,1,1,1
+blog,"From Dark Roast to Dawn: My Journey with Coffee",9,0,1,1,1
+book,"7 Words About Remote Work",5,1,0,1,1
+book,"Remote Revolution: How Work Reshapes Its Own Fate",8,0,1,0,0
+book,"Remote Revolution: Shaping the Future of Work",7,0,1,1,0
+book,"Remote: The Chronicles of a Freelance Life",7,0,1,1,0
+poem,"What's the Perfect Yeast to Raise Sourdough Bread?",8,0,0,0,1
+poem,"Germination of Sourdough Dreams",4,0,0,1,1
+poem,"The Craft of Fermenting Sourdough",5,0,0,1,1
+product,"Harmony Brew",2,0,0,1,1
+product,"Flavor Fusion",2,0,0,1,1
+product,"Jazzy Brew",2,0,0,1,1
+product,"BlendWave",1,0,0,1,1
+product,"Fresh Start Sourdough",3,0,0,1,1
+product,"Sourdough Forge",2,0,0,1,1
+product,"Authentic Sourdough",2,0,0,1,1
+product,"Fresh Rise",2,0,0,1,1
+song,"Why Should We Love Coffee?",5,0,0,1,1
+song,"2 cups of coffee",4,1,0,1,0
+song,"Morning Ritual: A Cup of Coffee Awakens",7,0,1,1,0
+youtube,"Remote Work Revolution: How It's Changed Everything",7,0,1,1,1
+youtube,"4 Easy Steps to Remote Work Bliss",7,1,0,1,1
+youtube,"Remote Work: My 30-Day Experiment and Lessons Learned",8,1,1,1,1
+youtube,"Rediscovering the Benefits of Remote Work: Expert Insights",8,0,1,1,1

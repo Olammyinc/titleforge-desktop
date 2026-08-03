@@ -28,6 +28,14 @@ pub struct CategorySpec {
     pub example: &'static str,
     /// True when the output is a NAME, not a title — a different task entirely.
     pub is_name: bool,
+    /// Forms where a colon is essentially never right. Measured 2026-08-03 on
+    /// Qwen: after the conventions landed, `X: Y` became the dominant template
+    /// (75% of book and youtube output, 50% of song). For a song, poem, album
+    /// or film title a colon is a tell that the model wrote a headline.
+    pub forbid_colon: bool,
+    /// Forms where digits are essentially never right. Songs and poems came
+    /// back with "2 Coffees and Tea" — a listicle habit bleeding across.
+    pub forbid_digits: bool,
 }
 
 /// Conventions for all 16 categories. `product`, `childname`, `character` and
@@ -41,6 +49,12 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (2, 7),
             example: "The Name of the Wind",
             is_name: false,
+            // A book title in this spec is 2-7 words and evocative. The colon
+            // subtitle form ("Remote Revolution: How Work Will Never Be the
+            // Same") is what Qwen produced instead — that is an article shape.
+            // Digits stay allowed ("1984", "Catch-22").
+            forbid_colon: true,
+            forbid_digits: false,
         },
         "ebook" => CategorySpec {
             label: "eBook title",
@@ -48,6 +62,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (4, 10),
             example: "The 30-Minute Pantry: Cooking Without a Recipe",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
         "article" => CategorySpec {
             label: "article headline",
@@ -55,6 +71,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (6, 14),
             example: "The Myth of Meritocracy: Why Talent Alone Will Never Beat Inheritance",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
         "blog" => CategorySpec {
             label: "blog post title",
@@ -62,6 +80,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (5, 12),
             example: "Why Your Sourdough Keeps Coming Out Flat",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
         "movie" => CategorySpec {
             label: "film title",
@@ -69,6 +89,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 5),
             example: "No Country for Old Men",
             is_name: false,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "song" => CategorySpec {
             label: "song title",
@@ -76,6 +98,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (2, 7),
             example: "Cigarette Smoke and Honey",
             is_name: false,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "album" => CategorySpec {
             label: "album title",
@@ -83,6 +107,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 5),
             example: "In the Aeroplane Over the Sea",
             is_name: false,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "poem" => CategorySpec {
             label: "poem title",
@@ -90,6 +116,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 6),
             example: "The Fish",
             is_name: false,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "youtube" => CategorySpec {
             label: "YouTube video title",
@@ -97,6 +125,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (5, 12),
             example: "I Spent 48 Hours in a Silent Retreat",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
         "podcast" => CategorySpec {
             label: "podcast episode title",
@@ -104,6 +134,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (4, 12),
             example: "You're Not Tired, You're Under-Slept",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
         "newsletter" => CategorySpec {
             label: "newsletter subject line",
@@ -111,6 +143,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (4, 10),
             example: "What's the one metric most teams overlook?",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
         "speech" => CategorySpec {
             label: "speech title",
@@ -118,6 +152,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (4, 10),
             example: "How to Raise a Generation of Critical Thinkers",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
 
         // ── NAME categories — the output is a NAME, not a title about a topic ──
@@ -127,6 +163,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 3),
             example: "Vivid",
             is_name: true,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "childname" => CategorySpec {
             label: "child's given name",
@@ -134,6 +172,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 2),
             example: "Marisol",
             is_name: true,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "character" => CategorySpec {
             label: "character name",
@@ -141,6 +181,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 3),
             example: "Atticus Finch",
             is_name: true,
+            forbid_colon: true,
+            forbid_digits: true,
         },
         "street" => CategorySpec {
             label: "street or place name",
@@ -148,6 +190,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (1, 4),
             example: "Kestrel Row",
             is_name: true,
+            forbid_colon: true,
+            forbid_digits: true,
         },
 
         // Unknown category: stay generic rather than assert a wrong convention.
@@ -157,6 +201,8 @@ pub fn category_spec(category: &str) -> CategorySpec {
             words: (3, 12),
             example: "The Quiet Thief",
             is_name: false,
+            forbid_colon: false,
+            forbid_digits: false,
         },
     }
 }
@@ -276,6 +322,16 @@ impl FineTune {
 /// enforcing a max word count on them would cost fire rate for no measured
 /// gain, and the word band stays prompt-only guidance.
 pub fn passes_name_shape(title: &str, spec: &CategorySpec) -> bool {
+    // Colon / digit bans apply to mood-based forms too (song, poem, album,
+    // movie, book) — measured 2026-08-03, `X: Y` became the dominant template
+    // across every category once the conventions landed, and songs came back
+    // with digits. The prompt suggests; this enforces.
+    if spec.forbid_colon && title.contains(':') {
+        return false;
+    }
+    if spec.forbid_digits && title.chars().any(|c| c.is_ascii_digit()) {
+        return false;
+    }
     if !spec.is_name {
         return true;
     }
@@ -285,14 +341,37 @@ pub fn passes_name_shape(title: &str, spec: &CategorySpec) -> bool {
     }
     // A name is not a sentence. These are the tells that the model produced a
     // headline anyway — the exact failure the user reported for `product`.
-    if title.contains(':') || title.ends_with('?') || title.ends_with('.') {
-        return false;
-    }
-    // "no digits" is part of the product/name form statement; enforce it.
-    if title.chars().any(|c| c.is_ascii_digit()) {
+    if title.ends_with('?') || title.ends_with('.') {
         return false;
     }
     true
+}
+
+/// True if the title has visibly copied the spec's exemplar.
+///
+/// Measured 2026-08-03: giving Qwen a concrete example ("I Spent 48 Hours in a
+/// Silent Retreat") made it return "48 Hours in the Silent Remote Office" —
+/// it imitates the example's CONTENT, not just its shape. The exemplar earns
+/// its place (a 1.5B imitates better than it follows), so keep it and reject
+/// the echoes instead. Trips on 2+ shared distinctive words.
+pub fn echoes_example(title: &str, spec: &CategorySpec) -> bool {
+    const STOP: &[&str] = &[
+        "the", "a", "an", "of", "in", "on", "at", "to", "for", "and", "or",
+        "my", "i", "you", "your", "is", "it", "with", "how", "what", "why",
+    ];
+    let words = |s: &str| -> Vec<String> {
+        s.split_whitespace()
+            .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase())
+            .filter(|w| w.len() > 2 && !STOP.contains(&w.as_str()))
+            .collect()
+    };
+    let ex = words(spec.example);
+    if ex.is_empty() {
+        return false;
+    }
+    let t = words(title);
+    let shared = t.iter().filter(|w| ex.contains(w)).count();
+    shared >= 2
 }
 
 fn split_terms(raw: &str) -> Vec<String> {
@@ -414,11 +493,47 @@ mod tests {
     }
 
     #[test]
-    fn name_shape_is_a_noop_for_title_categories() {
+    fn name_shape_is_a_noop_for_permissive_title_categories() {
         let blog = category_spec("blog");
         // Long, colon-bearing, digit-bearing titles are all legitimate here.
         assert!(passes_name_shape("The 5 Things Nobody Tells You: A Guide", &blog));
         assert!(passes_name_shape("Why Your Sourdough Keeps Coming Out Flat?", &blog));
+    }
+
+    #[test]
+    fn mood_categories_reject_headline_punctuation() {
+        // Regression guard for the 2026-08-03 measured result: `X: Y` became
+        // the dominant template and songs came back carrying digits.
+        let song = category_spec("song");
+        assert!(!passes_name_shape("Drinking Life: A Journey Through Coffee", &song));
+        assert!(!passes_name_shape("2 Coffees and Tea", &song));
+        assert!(passes_name_shape("Cigarette Smoke and Honey", &song));
+
+        let poem = category_spec("poem");
+        assert!(!passes_name_shape("Rise of Sourdough: A Journey in Yeast", &poem));
+
+        let book = category_spec("book");
+        assert!(!passes_name_shape("Remote Revolution: How Work Will Never Be the Same", &book));
+        assert!(passes_name_shape("Catch-22", &book), "digits stay legal in book titles");
+
+        // Categories that legitimately use colons must be unaffected.
+        for c in ["ebook", "article", "blog", "podcast"] {
+            let s = category_spec(c);
+            assert!(passes_name_shape("Something: A Subtitle Here", &s), "{c} should allow colons");
+        }
+    }
+
+    #[test]
+    fn exemplar_echo_detected() {
+        let yt = category_spec("youtube"); // "I Spent 48 Hours in a Silent Retreat"
+        // The actual measured leak.
+        assert!(echoes_example("48 Hours in the Silent Remote Office", &yt));
+        assert!(echoes_example("I Spent 48 Hours Working Silent", &yt));
+        // Ordinary output that merely shares stop words must NOT trip.
+        assert!(!echoes_example("Why Nobody Talks About Standing Desks", &yt));
+        assert!(!echoes_example("The Commute I Did Not Miss", &yt));
+        // One shared distinctive word is a coincidence, not a copy.
+        assert!(!echoes_example("My Retreat From Open Offices", &yt));
     }
 
     #[test]

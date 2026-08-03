@@ -1,0 +1,29 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"Mindfulness Brew: Discovering the Benefits of Coffee Without Compromise",9,0,1,1,1
+blog,"Is Your Coffee Satisfying the Right Nervous System Needs?",9,0,0,1,1
+blog,"3 Reasons You're Drinking Too Much Coffee",7,1,0,1,1
+blog,"From Espresso to Caffeine: My Personal Journey with Coffee",9,0,1,1,1
+book,"Remote Revolution: How Work Will Never Be the Same",9,0,1,0,1
+book,"Remote Revolution: Shaping the Future of Work",7,0,1,1,1
+book,"The Freelancer's Journey: From Desk to Remote",7,0,1,1,1
+book,"The Art of Remote Leadership",5,0,0,1,1
+poem,"Rise of Sourdough: A Journey in Yeast",7,0,1,0,1
+poem,"Birth of Sourdough's First Kiss",5,0,0,1,1
+poem,"A Toast to Flaky Sourdough",5,0,0,1,1
+poem,"The Rise and Fall of a Sourdough Bakers Journey",9,0,0,0,1
+product,"Caffeinate Spark",2,0,0,1,1
+product,"Roast & Lull",3,0,0,1,1
+product,"Jazzy Brew",2,0,0,1,1
+product,"Jolt'n",1,0,0,1,1
+product,"Authentic Sourdough Forge",3,0,0,1,1
+product,"Risen Classics",2,0,0,1,1
+product,"Fresh Loaf Pro",3,0,0,1,1
+product,"SourdoughCraft",1,0,0,1,1
+song,"What Does Coffee Do To Your Brain?",7,0,0,1,1
+song,"Drinking Life: A Journey Through Coffee",6,0,1,1,1
+song,"2 Coffees and Tea",4,1,0,1,1
+song,"Morning Muse: Coffee's Sweet Symphony",5,0,1,1,1
+youtube,"5 Hours at Home: My Journey to Remote Work",9,1,1,1,1
+youtube,"48 Hours in the Silent Remote Office: Reflections and Refreshments",10,1,1,1,1
+youtube,"Are You Missing Your Commute in Remote Work?",8,0,0,1,1
+youtube,"The Remote Revolution: Opportunities & Challenges",6,0,1,1,1
