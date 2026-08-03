@@ -1,0 +1,51 @@
+keyword,category,engine,title,mechanical_pass,kw_literal,judge_score,usable,cached
+"shirt","product","qwen","Craft a Versatile Life: The Ultimate Shirt Upgrade Guide",1,1,42,0,0
+"laptop","product","qwen","Unlocking Genius with the Notebook: The Ultimate Laptop for Learning",1,1,72,1,0
+"productivity","book","qwen","Unlocking Hours: Unleash Productivity in Your 3-Day Work Week",1,1,78,1,0
+"love","song","qwen","Echoes of His Heart",1,0,72,1,0
+"startup","book","qwen","Startup's Secret Sauce: Blend, Blend, Blend",1,1,78,1,0
+"crypto","article","qwen","Unleash Crypto: From Basics to Blockchain Revolution",1,1,78,1,0
+"parenting","book","qwen","Finding Your Noddy: A Journey Through Parenting's Mysteries",1,1,25,0,0
+"fitness","youtube","qwen","Unleash Your Fitness Potential: 5 Amazing Tips for a Leaner You",1,1,78,1,0
+"travel","blog","qwen","From Desk to Doorstep: A Solo Traveler's Journey Through Europe",1,0,92,1,0
+"cooking","book","qwen","Chef's Whisper: Secrets to Crafting Flavors from Scratch",1,0,87,1,0
+"meditation","podcast","qwen","Revitalize Your Mind: The Meditation Journey",1,1,78,1,0
+"investing","article","qwen","Uncover the Secrets of High-Yield Stocks: A Beginner's Guide to Investing",1,1,92,1,0
+"photography","youtube","qwen","An Unconventional Guide to Digital Photography",1,1,85,1,0
+"music","song","qwen","Echoes of the Soul: Journey Through Musical Minds",1,0,72,1,0
+"AI","article","qwen","Unlocking AI: A Thrilling Journey into the Future of Everyday Products",1,1,72,1,0
+"remote work","blog","qwen","Does Remote Work Hold the Key to Unlocking the Future of Flexibility?",1,1,78,1,0
+"mental health","podcast","qwen","Unmasking Myths: The Untold Truth About Mental Health",1,1,92,1,0
+"gardening","book","qwen","Grow Wild: Unraveling the Secrets of Nature's Garden",1,0,85,1,0
+"coffee","product","qwen","Discover the Brew: Unlocking the Secrets of Perfect Morning Coffee",1,1,78,1,0
+"minimalism","book","qwen","Digitizing Minimalism: Unlocking the Secrets of Life's Most Efficient Organization",1,1,72,1,0
+"creativity","book","qwen","Unlocking Uncharted Horizons: The Secret Path to Unleash Your Creative Imagination",1,0,42,0,0
+"sleep","podcast","qwen","Uncommon Sleep: Diving Deep into Dreams",1,1,85,1,0
+"negotiation","book","qwen","Negotiating With Shadows: A Night of Shadowy Deals",1,0,42,0,0
+"writing","book","qwen","Unlocking the Magic of Scribble: A Journey Through Creative Writing",1,1,78,1,0
+"marketing","article","qwen","Unlock Unique Insights: The Marketing Blueprint Revolution",1,1,72,1,0
+"data science","article","qwen","Unlocking the Secrets of Data Science: How Algorithms Shape Our World",1,1,92,1,0
+"blockchain","article","qwen","Unveiling Blockchain's Darker Side: A Cryptocurrency's Shadowy Secrets",1,1,78,1,0
+"electric cars","youtube","qwen","Electric Elixir: How Electric Cars Are Revolutionizing Transportation",1,1,78,1,0
+"space exploration","article","qwen","Uncover the Mysteries of Space: Exploring the Universe's Secrets",1,1,78,1,0
+"wine","blog","qwen","Vintage Whispers: A Road Trip Through Wine Tastings",1,1,92,1,0
+"dancing","youtube","qwen","Beat the Time, Dance the Night Away",1,0,85,1,0
+"podcasting","blog","qwen","Podcast Mastery: Unleashing Your Content's Full Potential",1,0,85,1,0
+"freelancing","blog","qwen","Unlocking Your Freelancing Potential: A Step-by-Step Guide",1,1,92,1,0
+"vegan","blog","qwen","Beyond Meat: A Vegan's Guide to Delicious Meat-Free Alternatives",1,1,92,1,0
+"yoga","youtube","qwen","Yoga Nidra: Discover Serenity Through Deep Breathing",1,1,85,1,0
+"gaming","youtube","qwen","Unleash Your Gaming Passion: Tips & Tricks for Beginners",1,1,72,1,0
+"digital nomad","blog","qwen","From Freelance to Full-Time Adventure: Embracing the Digital Nomad Life",1,1,92,1,0
+"sourdough bread","blog","qwen","Deconstructing the Perfect Sourdough: 7 Secrets to Rise Above",1,1,92,1,0
+"intermittent fasting","book","qwen","Every Day Was a Diet — The Fasting Revolution",1,1,72,1,0
+"bitcoin","article","qwen","Uncover the Secrets of the Future: Inside Bitcoin's New Innovations",1,1,72,1,0
+"tennis","youtube","qwen","Unleash Your Inner Game: Tips for Better Tennis Performance",1,1,85,1,0
+"skincare","blog","qwen","Discover Your Perfect Skincare Routine with 7 Simple Tips",1,1,92,1,0
+"virtual reality","youtube","qwen","Unleash the Full Potential of Your Mind: A Journey Through Virtual Reality",1,1,72,1,0
+"board games","product","qwen","Board Games: Unleash Your Strategy Odyssey",1,1,72,1,0
+"tea","product","qwen","Why Green Tea Might Save Your Coffee Addiction",1,1,78,1,0
+"solo travel","blog","qwen","Navigating the Unknown: My Journey Through Solo Travel",1,1,92,1,0
+"home office","product","qwen","Unwind in Comfort: Nest Your Home Office",1,1,42,0,0
+"jazz","song","qwen","Jazz Beats Unleashed",1,1,87,1,0
+"ethical fashion","blog","qwen","Ethical Threads: Unveiling the Dark Side of Fashion",1,1,92,1,0
+"climate change","article","qwen","Survivors' Stories: How Climate Change Hit Home",1,1,87,1,0

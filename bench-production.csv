@@ -1,0 +1,51 @@
+keyword,category,title,source,readable,judge_score,usable
+"shirt","product","Blissful Breeze in Shirts","local-llm",1,45,0
+"laptop","product","","",0,0,0
+"productivity","book","Mastering the Art of Efficiency: 20 Simple Habits for Peak Productivity","local-llm",1,85,1
+"love","song","","",0,0,0
+"startup","book","The Startup Whisperer: Uncovering Hidden Secrets to Success","local-llm",1,78,1
+"crypto","article","Digital Gold: Exploring the Crypto Revolution","local-llm",1,92,1
+"parenting","book","Kindred Wings: A Guide to Parenting Through Challenges","local-llm",1,87,1
+"fitness","youtube","","",0,0,0
+"travel","blog","Nomad Mindset: How Travel Rewired My Life","local-llm",1,92,1
+"cooking","book","","",0,0,0
+"meditation","podcast","Awakening from the Day's Distracted Mind: Meditation for Mindfulness","local-llm",1,87,1
+"investing","article","Empower Your Future: Investing in Innovation Today","local-llm",1,78,1
+"photography","youtube","Hone Your Photography Skills: Tips for Any Photographer","local-llm",1,87,1
+"music","song","Echoes of Time: A Journey Through Music","local-llm",1,78,1
+"AI","article","From Chess to Cinema: How AI Is Elevating the Human Experience","local-llm",1,92,1
+"remote work","blog","Remote Revolution: Where Work and Life Collide for the Best Team","local-llm",1,72,1
+"mental health","podcast","Finding Balance: Navigating Life's Mental Health Challenges","local-llm",1,78,1
+"gardening","book","","",0,0,0
+"coffee","product","Start Your Day the Smart Way: Coffee Essentials for Blissful Living","local-llm",1,72,1
+"minimalism","book","Minimalism: Finding Balance in the Modern World","local-llm",1,85,1
+"creativity","book","Mindful Moments: Igniting Creativity in Everyday Solitude","local-llm",1,87,1
+"sleep","podcast","Melatonin Madness: A Quest for Better Sleep","local-llm",1,92,1
+"negotiation","book","Cracking the Negotiation Code: Secrets to Getting What You Want Without Giving Away Everything","local-llm",1,92,1
+"writing","book","","",0,0,0
+"marketing","article","Marketing Mastery: Strategies for Growth in 2023","local-llm",1,92,1
+"data science","article","Uncover Secrets of Data Science: How Insights Illuminate the Future","local-llm",1,78,1
+"blockchain","article","","",0,0,0
+"electric cars","youtube","Electric Future: How Electric Cars Will Shape The Future","local-llm",1,72,1
+"space exploration","article","Unveiling the Universe: Space Exploration's Journey to Our Very Existence","local-llm",1,78,1
+"wine","blog","Vintage Vines: Stories of Redemption in Wine","local-llm",1,92,1
+"dancing","youtube","Dancing Through Memories","local-llm",1,78,1
+"podcasting","blog","Exploring the Podium: Tips for Launching and Thriving in the Podcasting Scene","local-llm",1,92,1
+"freelancing","blog","Freelancing Success: Tips from a Full-Time Boss to You","local-llm",1,42,0
+"vegan","blog","Beyond Meat: Discover the Vegan Protein Revolution","local-llm",1,85,1
+"yoga","youtube","Yoga Zen: Inner Peace Through Flow","local-llm",1,92,1
+"gaming","youtube","Elevate Your Gaming Experience: Tips & Gear","local-llm",1,85,1
+"digital nomad","blog","Nomad's Guide to Thriving Abroad: Tips from the Digital Travelers","local-llm",1,72,1
+"sourdough bread","blog","From Cultures to Crusts: Exploring the Art of Homemade Sourdough Bread","local-llm",1,92,1
+"intermittent fasting","book","Intermittent Fasting: A 30-Day Transformation","local-llm",1,85,1
+"bitcoin","article","Bitcoin's Pulse: How Cryptocurrency Affects Finance","local-llm",1,87,1
+"tennis","youtube","Mastering Tennis: Tips from a Pro Coach","local-llm",1,92,1
+"skincare","blog","Revitalize Your Skin: 5 Natural Skincare Secrets","local-llm",1,92,1
+"virtual reality","youtube","Exploring the Future: Discover Virtual Reality's Potential","local-llm",1,78,1
+"board games","product","Playful Passions: Board Game Nights","local-llm",1,78,1
+"tea","product","Infused Moments: Savoring Tea's Refreshing Wisdom","local-llm",1,72,1
+"solo travel","blog","From Lonely to Lively: Solo Travel Transforms My Life","local-llm",1,87,1
+"home office","product","Workspace Escape: Transform Your Home into a Flexible Office","local-llm",1,78,1
+"jazz","song","","",0,0,0
+"ethical fashion","blog","Embrace Ethical Threads: How Sustainability Shapes Fashion Now","local-llm",1,87,1
+"climate change","article","Melting Ice Caps vs. Rising Seas: The Climate Change Countdown","local-llm",1,87,1

@@ -31,15 +31,17 @@ pub fn generate(
 
     if let Some(llm) = local_llm {
         let target_per_cat = (quantity as usize / categories.len().max(1)).max(1);
-        // Best-of-N multiplier — tier aware. We generate MORE candidates than
-        // we need, then rank by score and keep the top N. Core gets a generous
-        // multiplier (25 is cheap to over-generate, quality wins), Studio stays
-        // tight (200 is already 22+ min). (brief §4 Task 2.)
-        let mult: usize = match tier {
-            "studio" => 2,
-            "pro" => 3,
-            _ => 4, // core / default
-        };
+        // Best-of-N multiplier — FORCED TO 1x (brief §4 Task 1, 2026-08-03).
+        // Measured on a real 50-title batch: sorting the pool by calculate_score
+        // correlates r = -0.04 with judge quality — it ranks by noise while
+        // paying 4x generation time. A 1x multiplier is NOT a downgrade: same
+        // quality, ~4x less wall clock (Core 25: ~5.7 min -> ~1.4 min).
+        //
+        // DO NOT DELETE this pool/dedupe/sort scaffolding. The moment a real
+        // ranker exists (brief §4 Task 4 — holdout r >= 0.35 required), restore
+        // the multiplier as a ONE-LINE change:
+        //   let mult: usize = match tier { "studio" => 2, "pro" => 3, _ => 4 };
+        let mult: usize = 1;
         for cat in categories {
             // RAG: retrieve similar curated titles for few-shot prompting.
             // When keyword retrieval is empty (laptop, bitcoin, tennis, jazz,
@@ -56,14 +58,24 @@ pub fn generate(
             // Rotate ONE structural constraint per call to break formula
             // repetition (7/25 "From X to Y"). Qwen 1.5B handles a single
             // constraint; the full 6-rule block measured worse. (brief §4 Task 4)
-            let constraints = [
-                "",
-                "Make this one a question.",
-                "Open this one with a specific number.",
-                "Frame this one as a personal story or first-person experience.",
-                "Build this one on a contrast or a reversal.",
-                "Make this one short — three words or fewer.",
-            ];
+            // Set TF_NO_CONSTRAINTS=1 to A/B this off — Task 4 is the prime
+            // suspect for the widened bottom tail measured 2026-08-02
+            // (drift <50 went 3 -> 7, usable 94% -> 84%). A 1.5B juggling the
+            // relevance guard + cliche filter + a structural constraint inside
+            // a 3-attempt budget can exhaust its retries and return whatever
+            // survived rather than the best candidate.
+            let constraints: &[&str] = if std::env::var("TF_NO_CONSTRAINTS").is_ok() {
+                &[""]
+            } else {
+                &[
+                    "",
+                    "Make this one a question.",
+                    "Open this one with a specific number.",
+                    "Frame this one as a personal story or first-person experience.",
+                    "Build this one on a contrast or a reversal.",
+                    "Make this one short — three words or fewer.",
+                ]
+            };
             let mut ci = 0usize;
 
             for _ in 0..target_per_cat * mult {

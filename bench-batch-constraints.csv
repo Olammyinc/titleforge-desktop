@@ -1,0 +1,45 @@
+keyword,category,rank,title,source,judge_score,usable
+"coffee","product",1,"Every Morning's Little Secret: How I Started Drinking Coffee Again","local-llm",78,1
+"coffee","product",2,"What Flavor of Coffee Best Warms Your Soul?","local-llm",78,1
+"coffee","product",3,"Is Coffee the Best Brain Boost of All Time?","local-llm",92,1
+"coffee","product",4,"Every Morning's Little Pick Me Up: My Journey to Coffee Bliss","local-llm",72,1
+"coffee","product",5,"Drinking Life: Discover the Magic of Everyday Coffees","local-llm",72,1
+"coffee","product",6,"Did You Ever Wonder Why Coffee Is Called Coffee?","local-llm",85,1
+"coffee","product",7,"Everyday Bliss: Coffee","local-llm",85,1
+"coffee","product",8,"30 Reasons to Start Your Day with Coffee","local-llm",85,1
+"coffee","product",9,"Why Do We Need More Coffee in Our Lives?","local-llm",78,1
+"coffee","product",10,"19 Reasons Why You Need Coffee Today","local-llm",85,1
+"coffee","product",11,"Fuel for the Mind: The Essential Coffee Awakening","local-llm",72,1
+"coffee","product",12,"Upgrade Your Day: Espresso vs. Caffeine-Free Coffee","local-llm",42,0
+"coffee","product",13,"Experience Nature's Brew: Organic Coffee Without the Roast","local-llm",45,0
+"coffee","product",14,"10 Cups to Coffee Bliss","local-llm",78,1
+"coffee","product",15,"Coffee: From Dark Humor, Brighter Morning","local-llm",87,1
+"coffee","product",16,"Morning Muse: Brew Strong Coffee, Feel Lighter","local-llm",72,1
+"coffee","product",17,"Start Your Day Strong With Coffee","local-llm",78,1
+"coffee","product",18,"Drinking Coffee Like a Brave Explorer","local-llm",42,0
+"coffee","product",19,"From Coffee's Dark Roast To My Happy Hour","local-llm",45,0
+"remote work","blog",1,"Remote Work: The Modern Secret to Productive Laziness","local-llm",72,1
+"remote work","blog",2,"7 Easy Steps to Thriving in Remote Work","local-llm",85,1
+"remote work","blog",3,"What is the Future of Remote Work?","local-llm",78,1
+"remote work","blog",4,"Remote Work? It's Not What You Think It Is","local-llm",85,1
+"remote work","blog",5,"How to Thrive in Remote Work: Tips for Success","local-llm",92,1
+"remote work","blog",6,"What Does Remote Work Mean for Your Future Career?","local-llm",87,1
+"remote work","blog",7,"From Desk to Desk: My Journey into Remote Work's Wild West","local-llm",78,1
+"remote work","blog",8,"Is Remote Work the Next Big Thing? Or Just Another Buzzword?","local-llm",92,1
+"remote work","blog",9,"5 Tips for Thriving in Remote Work","local-llm",92,1
+"remote work","blog",10,"From Freelance to Flatland: My Journey into Remote Work","local-llm",78,1
+"remote work","blog",11,"Remote Work: The Perfect Flexibility Experiment","local-llm",78,1
+"remote work","blog",12,"5 Tips for Successful Remote Work","local-llm",92,1
+"remote work","blog",13,"From Commuter to Clicker: My Journey into Remote Work","local-llm",92,1
+"remote work","blog",14,"Remote Work: The Lifesaving Solution for Overworked Employees","local-llm",78,1
+"remote work","blog",15,"Remote Work: The Future","local-llm",25,0
+"remote work","blog",16,"Remote Work: The Modern-Day Work-Life Revolution","local-llm",78,1
+"remote work","blog",17,"Remote Work: The Future?","local-llm",78,1
+"remote work","blog",18,"Remote Revolution: How Work Is Evolving Beyond the Office","local-llm",92,1
+"remote work","blog",19,"Remote Revolution: How Work Is About to Be Upside-Down","local-llm",78,1
+"remote work","blog",20,"How to Thrive as a Remote Worker in Today's Digital Age","local-llm",92,1
+"remote work","blog",21,"Remote Bliss: Thriving Without Boundaries","local-llm",92,1
+"remote work","blog",22,"Remote Revolution: Where Work Meets Freedom","local-llm",92,1
+"remote work","blog",23,"From Joining the Office to Remote: My Journey","local-llm",42,0
+"remote work","blog",24,"Remote Work Isn't the New Normal — It's Here to Stay","local-llm",92,1
+"remote work","blog",25,"Remote Thrives, Not Thralls","local-llm",42,0
