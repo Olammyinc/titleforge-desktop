@@ -468,7 +468,7 @@ function startBackgroundTasks() {
     // Quick connectivity check before trying background operations
     invoke('background_verify', { key: _bgLicenseKey, email: _bgLicenseEmail })
       .catch(function () {}); // Silent — never show errors to user
-    checkAndInstallUpdate(true); // Silent update check
+    checkForUpdate(true); // Silent update check — stores result, never auto-downloads
   }, 30 * 60 * 1000); // Every 30 minutes
 }
 
@@ -2023,10 +2023,16 @@ function setupEnginePrompt() {
 }
 
 // ---- UPDATER ----
+// State machine: idle → checking → update-available → downloading → downloaded → restart
+// Uses separate Tauri IPC: check → download (returns bytesRid) → install (on explicit click)
+// Auto-check may download in the background, but never installs or restarts.
+var _pendingUpdate = null; // { version, rid, notes, pub_date }
+var _pendingBytesRid = null; // rid returned by plugin:updater|download (bytes to install)
+
 function setupUpdaterAutoCheck() {
   invoke('get_settings').then(function (settings) {
     if (settings.auto_update === 'true') {
-      checkAndInstallUpdate(true);
+       checkForUpdate(true); // silent: checks/downloads, never installs
     }
   }).catch(function (err) { console.error('get_settings for auto-update check failed:', err); });
 }
@@ -2036,14 +2042,17 @@ function setupUpdaterEvents() {
   if (window.__TAURI__ && window.__TAURI__.event) {
     window.__TAURI__.event.listen('tauri://update-status', function (ev) {
       var statusEl = document.getElementById('settingsUpdateStatus');
+      var checkBtn = document.getElementById('checkUpdateBtn');
       var payload = ev.payload || {};
       dumpDebug('Update status: ' + (payload.status || 'unknown') + (payload.error ? ': ' + payload.error : ''));
       if (payload.status === 'ERROR' && statusEl) {
         statusEl.textContent = 'Update failed: ' + (payload.error || 'unknown error');
         statusEl.style.color = '#b91c1c';
+        _resetCheckButton(checkBtn);
       } else if (payload.status === 'DONE' && statusEl) {
-        statusEl.textContent = 'Update downloaded. Restart to apply.';
+        statusEl.textContent = 'Update downloaded. Restart to install.';
         statusEl.style.color = '#16a34a';
+        _setRestartButton(checkBtn);
       }
     }).catch(function (e) { dumpDebug('Update event listener setup failed: ' + e); });
   }
@@ -2066,72 +2075,317 @@ function setupUpdaterControls() {
   if (checkBtn && !checkBtn._wired) {
     checkBtn._wired = true;
     checkBtn.addEventListener('click', function () {
-      checkAndInstallUpdate(false);
+      // Route click based on current button state
+      if (checkBtn.dataset.updateState === 'download-available') {
+        downloadPendingUpdate();
+      } else if (checkBtn.dataset.updateState === 'restart-ready') {
+        installAndRestart();
+      } else {
+        checkForUpdate(false);
+      }
     });
   }
 }
 
-function checkAndInstallUpdate(silent) {
+// Button state helpers — keeps the button and status label in sync
+function _setCheckButton(checkBtn) {
+  if (!checkBtn) return;
+  checkBtn.dataset.updateState = '';
+  checkBtn.textContent = 'Check for Updates';
+  checkBtn.disabled = false;
+}
+
+function _setDownloadButton(checkBtn, version) {
+  if (!checkBtn) return;
+  checkBtn.dataset.updateState = 'download-available';
+  checkBtn.textContent = 'Download v' + version;
+  checkBtn.disabled = false;
+}
+
+function _setRestartButton(checkBtn) {
+  if (!checkBtn) return;
+  checkBtn.dataset.updateState = 'restart-ready';
+  checkBtn.textContent = 'Restart to Install';
+  checkBtn.disabled = false;
+}
+
+function _resetCheckButton(checkBtn) {
+  _pendingBytesRid = null;
+  _setCheckButton(checkBtn);
+}
+
+// Minimal Tauri v2 Channel bridge for updater download events. The bundled
+// app uses the low-level invoke wrapper rather than the npm API package.
+function createUpdaterChannel(onMessage) {
+  if (!window.__TAURI_INTERNALS__ || typeof window.__TAURI_INTERNALS__.transformCallback !== 'function') return null;
+  var callbackId = window.__TAURI_INTERNALS__.transformCallback(function (event) {
+    if (typeof onMessage === 'function') onMessage(event);
+  });
+  return { toJSON: function () { return '__CHANNEL__:' + callbackId; } };
+}
+
+// STEP 1 — Check for an update. Stores the result (including rid) but never
+// auto-downloads. Silent mode is used by the auto-check-on-launch path;
+// manual mode shows status in the Settings panel.
+function checkForUpdate(silent) {
   var statusEl = document.getElementById('settingsUpdateStatus');
   var checkBtn = document.getElementById('checkUpdateBtn');
 
   if (!silent && checkBtn) {
     checkBtn.disabled = true;
+    checkBtn.textContent = 'Checking…';
   }
   if (!silent && statusEl) {
-    statusEl.textContent = 'Checking for updates...';
+    statusEl.textContent = 'Checking for updates…';
     statusEl.style.color = 'var(--text-secondary)';
   }
 
-  // Primary path: use invoke() to check and download via the updater plugin.
-  // This works without the @tauri-apps/plugin-updater npm package because
-  // the Rust plugin is already registered and responds to IPC commands.
   invoke('plugin:updater|check').then(function (result) {
     dumpDebug('Update check result: ' + JSON.stringify(result));
     if (result && result.version) {
+      // Store the full update object (rid is required for download)
+      _pendingUpdate = result;
+      _pendingBytesRid = null; // clear any stale download from a previous version
       if (!silent && statusEl) {
-        statusEl.textContent = 'Update v' + result.version + ' available. Downloading...';
+        statusEl.textContent = 'Update v' + result.version + ' available.';
         statusEl.style.color = '#16a34a';
       }
-      // Download and install the update in-app via the updater plugin
-      return invoke('plugin:updater|download_and_install').then(function () {
-        if (!silent && statusEl) {
-          statusEl.textContent = 'Update downloaded. Restart to apply.';
-          statusEl.style.color = '#16a34a';
-        }
-      }).catch(function (dlErr) {
-        dumpDebug('Update download failed: ' + (dlErr.message || dlErr));
-        // Fall back to JS API if download via invoke fails
-        if (window.__TAURI__ && window.__TAURI__.updater) {
-          return tryUpdaterJSAPI(silent, statusEl);
-        }
-        throw dlErr;
-      });
+      if (!silent) {
+        _setDownloadButton(checkBtn, result.version);
+      } else {
+        // Auto-update checks may download in the background, but installation
+        // and restart always require an explicit user click.
+        downloadPendingUpdate();
+      }
     } else {
+      _pendingUpdate = null;
+      _pendingBytesRid = null;
       var verEl = document.getElementById('settingsUpdateVersion');
-      var currentVer = (verEl && verEl.textContent) || '0.8.0';
+      var currentVer = (verEl && verEl.textContent) || '1.0.0';
       if (!silent && statusEl) {
-        statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
+        statusEl.textContent = 'You\'re up to date! (' + currentVer + ')';
         statusEl.style.color = '#16a34a';
+      }
+      if (!silent) {
+        _setCheckButton(checkBtn);
       }
     }
   }).catch(function (err) {
     var msg = typeof err === 'string' ? err : (err.message || 'Network error');
     dumpDebug('Update check failed: ' + msg);
-    // If invoke fails entirely, try the JS API as fallback
+    _pendingUpdate = null;
+    _pendingBytesRid = null;
+    // Try the JS API as fallback if invoke path fails
     if (window.__TAURI__ && window.__TAURI__.updater) {
-      return tryUpdaterJSAPI(silent, statusEl);
+      return _checkViaJSFallback(silent, statusEl, checkBtn);
     }
     if (!silent && statusEl) {
       statusEl.textContent = 'Could not check for updates: ' + msg;
       statusEl.style.color = '#b91c1c';
     }
-  }).finally(function () {
-    if (!silent && checkBtn) {
-      checkBtn.disabled = false;
-      checkBtn.textContent = 'Check for Updates';
+    if (!silent) {
+      _setCheckButton(checkBtn);
     }
   });
+}
+
+// STEP 2 — Download the stored update via plugin:updater|download.
+// Returns a bytesRid that is stored for the explicit install step.
+// On success, transitions to restart-ready (button says "Restart to Install").
+function downloadPendingUpdate() {
+  var statusEl = document.getElementById('settingsUpdateStatus');
+  var checkBtn = document.getElementById('checkUpdateBtn');
+
+  if (!_pendingUpdate || !_pendingUpdate.rid) {
+    if (statusEl) {
+      statusEl.textContent = 'No update ready to download. Check for updates first.';
+      statusEl.style.color = '#b91c1c';
+    }
+    return;
+  }
+
+  // Already downloaded — skip re-download, just show restart button
+  if (_pendingBytesRid) {
+    dumpDebug('Update already downloaded, showing restart button');
+    if (statusEl) {
+      statusEl.textContent = 'Update downloaded. Restart to install.';
+      statusEl.style.color = '#16a34a';
+    }
+    _setRestartButton(checkBtn);
+    return;
+  }
+
+  var version = _pendingUpdate.version;
+  if (checkBtn) {
+    checkBtn.disabled = true;
+    checkBtn.dataset.updateState = 'downloading';
+    checkBtn.textContent = 'Downloading…';
+  }
+  if (statusEl) {
+    statusEl.textContent = 'Downloading update v' + version + '…';
+    statusEl.style.color = 'var(--text-secondary)';
+  }
+
+  dumpDebug('Starting download for update v' + version + ' (rid: ' + _pendingUpdate.rid + ')');
+
+  var downloadChannel = createUpdaterChannel(function (event) {
+    var payload = event && (event.message || event);
+    dumpDebug('Update download event: ' + JSON.stringify(payload));
+  });
+  var downloadArgs = { rid: _pendingUpdate.rid };
+  if (downloadChannel) downloadArgs.onEvent = downloadChannel;
+  invoke('plugin:updater|download', downloadArgs).then(function (bytesRid) {
+    dumpDebug('Update v' + version + ' downloaded (bytesRid: ' + bytesRid + ')');
+    _pendingBytesRid = bytesRid;
+    if (statusEl) {
+      statusEl.textContent = 'Update downloaded. Restart to install.';
+      statusEl.style.color = '#16a34a';
+    }
+    _setRestartButton(checkBtn);
+  }).catch(function (dlErr) {
+    var msg = typeof dlErr === 'string' ? dlErr : (dlErr.message || 'Download failed');
+    dumpDebug('Update download failed: ' + msg);
+    _pendingBytesRid = null;
+    // Fallback to JS API if invoke path fails
+    if (window.__TAURI__ && window.__TAURI__.updater) {
+      return _downloadViaJSFallback(statusEl, checkBtn, version);
+    }
+    if (statusEl) {
+      statusEl.textContent = 'Download failed: ' + msg;
+      statusEl.style.color = '#b91c1c';
+    }
+    _setDownloadButton(checkBtn, version);
+  });
+}
+
+// STEP 3 — Install the downloaded update and restart the app.
+// Only called on explicit "Restart to Install" click; never auto-invoked.
+function installAndRestart() {
+  var statusEl = document.getElementById('settingsUpdateStatus');
+  var checkBtn = document.getElementById('checkUpdateBtn');
+
+  if (!_pendingUpdate || !_pendingUpdate.rid || !_pendingBytesRid) {
+    dumpDebug('installAndRestart called without a ready update — resetting');
+    if (statusEl) {
+      statusEl.textContent = 'No update downloaded. Check for updates first.';
+      statusEl.style.color = '#b91c1c';
+    }
+    _resetCheckButton(checkBtn);
+    return;
+  }
+
+  dumpDebug('Installing update via plugin:updater|install');
+  if (checkBtn) {
+    checkBtn.disabled = true;
+    checkBtn.dataset.updateState = 'installing';
+    checkBtn.textContent = 'Installing…';
+  }
+  if (statusEl) {
+    statusEl.textContent = 'Installing update…';
+    statusEl.style.color = 'var(--text-secondary)';
+  }
+
+  invoke('plugin:updater|install', { updateRid: _pendingUpdate.rid, bytesRid: _pendingBytesRid }).then(function () {
+    dumpDebug('Install succeeded — restarting app');
+    // Close the app; the updater applies the staged update on exit. The user
+    // explicitly confirmed installation by clicking this button.
+    window.close();
+  }).catch(function (err) {
+    var msg = typeof err === 'string' ? err : (err.message || 'Install failed');
+    dumpDebug('Install failed: ' + msg);
+    _pendingBytesRid = null;
+    if (statusEl) {
+      statusEl.textContent = 'Install failed: ' + msg + '. Try downloading again.';
+      statusEl.style.color = '#b91c1c';
+    }
+    // Allow retry — go back to download-available if we still have the update rid
+    if (_pendingUpdate && _pendingUpdate.rid) {
+      _setDownloadButton(checkBtn, _pendingUpdate.version);
+    } else {
+      _resetCheckButton(checkBtn);
+    }
+  });
+}
+
+// Legacy alias kept so any stale event handler doesn't throw
+function restartApp() {
+  installAndRestart();
+}
+
+// ---- JS API fallbacks (used only when invoke-path fails entirely) ----
+function _checkViaJSFallback(silent, statusEl, checkBtn) {
+  dumpDebug('Falling back to updater JS API for check');
+  return window.__TAURI__.updater.check().then(function (update) {
+    if (update && update.version) {
+      _pendingUpdate = { version: update.version, rid: update.rid || null, notes: update.notes, pub_date: update.pub_date };
+      _pendingBytesRid = null;
+      if (!silent && statusEl) {
+        statusEl.textContent = 'Update v' + update.version + ' available.';
+        statusEl.style.color = '#16a34a';
+      }
+      if (!silent) {
+        _setDownloadButton(checkBtn, update.version);
+      }
+      // If the JS API returned the update object directly, it may support
+      // .downloadAndInstall() which doesn't need a separate rid
+      if (update.downloadAndInstall) {
+        _pendingUpdate._jsObj = update;
+      }
+    } else {
+      _pendingUpdate = null;
+      _pendingBytesRid = null;
+      var verEl = document.getElementById('settingsUpdateVersion');
+      var currentVer = (verEl && verEl.textContent) || '1.0.0';
+      if (!silent && statusEl) {
+        statusEl.textContent = 'You\'re up to date! (' + currentVer + ')';
+        statusEl.style.color = '#16a34a';
+      }
+      if (!silent) {
+        _setCheckButton(checkBtn);
+      }
+    }
+  }).catch(function (err) {
+    var msg = typeof err === 'string' ? err : (err.message || 'Network error');
+    dumpDebug('Update check (JS fallback) failed: ' + msg);
+    _pendingUpdate = null;
+    _pendingBytesRid = null;
+    if (!silent && statusEl) {
+      statusEl.textContent = 'Could not check for updates: ' + msg;
+      statusEl.style.color = '#b91c1c';
+    }
+    if (!silent) {
+      _setCheckButton(checkBtn);
+    }
+  });
+}
+
+function _downloadViaJSFallback(statusEl, checkBtn, version) {
+  dumpDebug('Falling back to updater JS API for download');
+  if (_pendingUpdate && _pendingUpdate._jsObj && _pendingUpdate._jsObj.downloadAndInstall) {
+    return _pendingUpdate._jsObj.downloadAndInstall().then(function () {
+      _pendingBytesRid = '__js_fallback__';
+      if (statusEl) {
+        statusEl.textContent = 'Update downloaded. Restart to install.';
+        statusEl.style.color = '#16a34a';
+      }
+      _setRestartButton(checkBtn);
+    }).catch(function (err) {
+      var msg = typeof err === 'string' ? err : (err.message || 'Download failed');
+      dumpDebug('Update download (JS fallback) failed: ' + msg);
+      _pendingBytesRid = null;
+      if (statusEl) {
+        statusEl.textContent = 'Download failed: ' + msg;
+        statusEl.style.color = '#b91c1c';
+      }
+      _setDownloadButton(checkBtn, version);
+    });
+  }
+  // No JS object available — report error
+  if (statusEl) {
+    statusEl.textContent = 'Download not available. Please try again.';
+    statusEl.style.color = '#b91c1c';
+  }
+  _setDownloadButton(checkBtn, version);
 }
 
 // Check for updates and populate the Settings "Status" field WITHOUT
@@ -2140,50 +2394,36 @@ function checkAndInstallUpdate(silent) {
 // actually apply an update).
 function refreshUpdateStatusOnly() {
   var statusEl = document.getElementById('settingsUpdateStatus');
+  var checkBtn = document.getElementById('checkUpdateBtn');
   if (!statusEl) return;
+  // Do not replace a downloaded update resource with a fresh check result;
+  // the bytes rid is needed for the explicit install click.
+  if (_pendingUpdate && _pendingBytesRid) {
+    statusEl.textContent = 'Update downloaded. Restart to install.';
+    statusEl.style.color = '#16a34a';
+    _setRestartButton(checkBtn);
+    return;
+  }
   invoke('plugin:updater|check').then(function (result) {
     if (result && result.version) {
-      statusEl.textContent = 'Update v' + result.version + ' available (check above to install).';
+      _pendingUpdate = result;
+      _pendingBytesRid = null;
+      statusEl.textContent = 'Update v' + result.version + ' available.';
       statusEl.style.color = '#16a34a';
+      _setDownloadButton(checkBtn, result.version);
     } else {
+      _pendingUpdate = null;
+      _pendingBytesRid = null;
       statusEl.textContent = 'You\'re up to date.';
       statusEl.style.color = '#16a34a';
+      _setCheckButton(checkBtn);
     }
   }).catch(function () {
+    _pendingUpdate = null;
+    _pendingBytesRid = null;
     statusEl.textContent = 'Update check failed.';
     statusEl.style.color = '#b91c1c';
-  });
-}
-
-function tryUpdaterJSAPI(silent, statusEl) {
-  dumpDebug('Falling back to updater JS API');
-  return window.__TAURI__.updater.check().then(function (update) {
-    if (update && update.version) {
-      if (!silent && statusEl) {
-        statusEl.textContent = 'Update v' + update.version + ' available. Downloading...';
-        statusEl.style.color = '#16a34a';
-      }
-      return update.downloadAndInstall().then(function () {
-        if (!silent && statusEl) {
-          statusEl.textContent = 'Update installed. Restart to apply.';
-          statusEl.style.color = '#16a34a';
-        }
-      });
-    } else {
-      var verEl = document.getElementById('settingsUpdateVersion');
-      var currentVer = (verEl && verEl.textContent) || '0.8.0';
-      if (!silent && statusEl) {
-        statusEl.textContent = 'You\'re up to date! ' + currentVer + ' is the latest version.';
-        statusEl.style.color = '#16a34a';
-      }
-    }
-  }).catch(function (err) {
-    var msg = typeof err === 'string' ? err : (err.message || 'Network error');
-    dumpDebug('Update check (JS API) failed: ' + msg);
-    if (!silent && statusEl) {
-      statusEl.textContent = 'Could not check: ' + msg;
-      statusEl.style.color = '#b91c1c';
-    }
+    _setCheckButton(checkBtn);
   });
 }
 
