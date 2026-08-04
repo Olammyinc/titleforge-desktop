@@ -72,6 +72,15 @@ pub fn generate(
         // the multiplier as a ONE-LINE change:
         //   let mult: usize = match tier { "studio" => 2, "pro" => 3, _ => 4 };
         let mult: usize = 1;
+        // Small per-category requests need retry headroom: failed LLM attempts
+        // and near-duplicate rejection otherwise make a 10-title request
+        // return 8 even though the tier cap is not the constraint. Use the
+        // per-category size to avoid a quantity=25/26 cliff across categories.
+        let iteration_budget = if target_per_cat <= 12 {
+            target_per_cat * 2
+        } else {
+            target_per_cat * mult
+        };
         for cat in categories {
             // RAG: retrieve similar curated titles for few-shot prompting.
             // When keyword retrieval is empty (laptop, bitcoin, tennis, jazz,
@@ -127,7 +136,7 @@ pub fn generate(
             // legitimate for books anyway ("The Name of the Wind" and "Sapiens:
             // A Brief History"), so the proportion is left alone.
 
-            for _ in 0..target_per_cat * mult {
+            for _ in 0..iteration_budget {
                 let title = match llm.generate_one_clean(
                     keyword, cat, style, genre, &examples,
                     Some(constraints[ci % constraints.len()]), finetune,

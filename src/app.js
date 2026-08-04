@@ -813,18 +813,26 @@ function handleGenerate() {
     dumpDebug('generate: SUCCESS, titles count=' + (titles ? titles.length : 'null'));
     displayResults(titles, keyword);
     var count = (titles && titles.length) || 0;
-    showToast(count + (count === 1 ? ' title forged —' : ' titles forged —') + ' ready to publish.');
-    dailyUsage++;
-    invoke('record_generation', {
-      keyword: keyword,
-      categories: checkedCategories,
-      genre: genre,
-      style: selectedStyle,
-      titles: titles,
-    }).catch(function (err) { console.error('record_generation failed:', err); });
-    updateUsageDisplay();
-    saveToHistoryLocal(keyword, checkedCategories, genre, selectedStyle, titles);
-    genCountThisSession++;
+    if (count === 0) {
+      showToast('No titles generated. Try a different keyword, category, or AI mode.');
+    } else if (count < quantity) {
+      showToast(count + (count === 1 ? ' title forged' : ' titles forged') + ' of ' + quantity + ' requested — duplicates and low-quality candidates were filtered out.');
+    } else {
+      showToast(count + (count === 1 ? ' title forged —' : ' titles forged —') + ' ready to publish.');
+    }
+    if (count > 0) {
+      dailyUsage++;
+      invoke('record_generation', {
+        keyword: keyword,
+        categories: checkedCategories,
+        genre: genre,
+        style: selectedStyle,
+        titles: titles,
+      }).catch(function (err) { console.error('record_generation failed:', err); });
+      updateUsageDisplay();
+      saveToHistoryLocal(keyword, checkedCategories, genre, selectedStyle, titles);
+      genCountThisSession++;
+    }
   }).catch(function (err) {
     var errMsg = typeof err === 'string' ? err : (err.message || 'Something went wrong. Please try again.');
     dumpDebug('generate: FAILED — ' + errMsg + ' (err type: ' + (typeof err) + ', keys: ' + (err && typeof err === 'object' ? Object.keys(err).join(',') : 'N/A') + ')');
