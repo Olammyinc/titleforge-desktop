@@ -1,0 +1,356 @@
+{
+  "seed": 42,
+  "target": 35,
+  "pairs": [
+    {
+      "id": 40,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Start Your Day Brewed: A Journey Through Coffee",
+      "categoryB": "product",
+      "titleB": "Drinking Coffee Like a Brave Explorer",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 22,
+      "keyword": "minimalism",
+      "categoryA": "book",
+      "titleA": "The $2,000 a Month Minimalist",
+      "categoryB": "book",
+      "titleB": "Minimalism: Finding Balance in the Modern World",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 142,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "5 Tips for Thriving in Remote Work",
+      "categoryB": "blog",
+      "titleB": "What if Remote Work Became the New Normal?",
+      "originalChoice": "b",
+      "swapped": true
+    },
+    {
+      "id": 144,
+      "keyword": "startup",
+      "categoryA": "book",
+      "titleA": "The Startup Whisperer: Uncovering Hidden Secrets to Success",
+      "categoryB": "book",
+      "titleB": "Startup's Guide to Uncharted Ventures",
+      "originalChoice": "b",
+      "swapped": true
+    },
+    {
+      "id": 120,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "19 Reasons Why You Need Coffee Today",
+      "categoryB": "product",
+      "titleB": "'A Day in the Life: How Coffee Captivated Me",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 141,
+      "keyword": "tea",
+      "categoryA": "product",
+      "titleA": "Why I Switched From Coffee to Tea (And How It Changed My Afternoons)",
+      "categoryB": "product",
+      "titleB": "Tea Time: Discover the Blissful Brews That Transform Your Day",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 82,
+      "keyword": "AI",
+      "categoryA": "article",
+      "titleA": "The AI Tutor That Passed 1,000 Law Exams — And What It Means for Your Job",
+      "categoryB": "article",
+      "titleB": "AI Will Never Be Creative: The Human Brain's Irreplaceable Edge",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 66,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "How to Thrive as a Remote Worker in Today's Digital Age",
+      "categoryB": "blog",
+      "titleB": "10 Reasons Why Remote Work Isn't Just a Trend, It's Here to Stay",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 167,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Drinks vs. Coffee: Why Bitter Is the New Sweet",
+      "categoryB": "product",
+      "titleB": "Fuel for the Mind: The Essential Coffee Awakening",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 23,
+      "keyword": "board games",
+      "categoryA": "product",
+      "titleA": "The 5 Board Games That Ruined My Family Night (And Why We Keep Playing)",
+      "categoryB": "product",
+      "titleB": "How I Transform Board games and That will blow your mind",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 27,
+      "keyword": "virtual reality",
+      "categoryA": "youtube",
+      "titleA": "Unleash the Future: Exploring Virtual Reality",
+      "categoryB": "youtube",
+      "titleB": "Exploring the Future: Discover Virtual Reality's Potential",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 59,
+      "keyword": "marketing",
+      "categoryA": "article",
+      "titleA": "Stop Romanticizing Hustle Culture: It's Just Exhaustion with Better Marketing",
+      "categoryB": "article",
+      "titleB": "The $0 Marketing Tactic That Tripled Our Signups in 30 Days",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 153,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Morning Muse: Brew Strong Coffee, Feel Lighter",
+      "categoryB": "product",
+      "titleB": "Zen Breakers: How Coffee Cures Your Workday Blues",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 51,
+      "keyword": "digital nomad",
+      "categoryA": "blog",
+      "titleA": "The $2,847 Mistake That Nearly Ended My Digital Nomad Life",
+      "categoryB": "blog",
+      "titleB": "The Rise of 'Digital Nomad' Communities in Southeast Asia",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 100,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Every Moment a Brew: Discovering Blissful Coffee",
+      "categoryB": "product",
+      "titleB": "Everyday Bliss: Coffee",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 164,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Every Morning's First Comfort: Decoding the Magic in My Coffee",
+      "categoryB": "product",
+      "titleB": "Did You Ever Wonder Why Coffee Is Called Coffee?",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 192,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "Remote Bliss: Thriving Without Boundaries",
+      "categoryB": "blog",
+      "titleB": "From Freelance to Flatland: My Journey into Remote Work",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 64,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "From Joining the Office to Remote: My Journey",
+      "categoryB": "blog",
+      "titleB": "Remote Work Revolution: What Really Sets Teams Apart",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 151,
+      "keyword": "podcasting",
+      "categoryA": "blog",
+      "titleA": "Podcast Revolution: Discovering Hidden Gems in Your Favorite Shows",
+      "categoryB": "blog",
+      "titleB": "Exploring the Podium: Tips for Launching and Thriving in the Podcasting Scene",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 159,
+      "keyword": "tennis",
+      "categoryA": "youtube",
+      "titleA": "Why Planes Tennis YouTube Videos",
+      "categoryB": "youtube",
+      "titleB": "Why I Switched to a $200 Tennis Racket (and You Should Too)",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 145,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "What Does Remote Work Mean to You?",
+      "categoryB": "blog",
+      "titleB": "Remote Work: The Future Is Now, Not Just Possible",
+      "originalChoice": "b",
+      "swapped": true
+    },
+    {
+      "id": 42,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Coffee: From Dark Humor, Brighter Morning",
+      "categoryB": "product",
+      "titleB": "Is Coffee the Best Brain Boost of All Time?",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 108,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "What Does Coffee Really Do For Your Brain?",
+      "categoryB": "product",
+      "titleB": "Revitalize Your Day with the Perfect Cup of Coffee",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 0,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "5 Tips for Thriving in Remote Work",
+      "categoryB": "blog",
+      "titleB": "What is the Future of Remote Work?",
+      "originalChoice": "b",
+      "swapped": true
+    },
+    {
+      "id": 34,
+      "keyword": "meditation",
+      "categoryA": "podcast",
+      "titleA": "6 Ways to Reduce Anxiety Without Meditation",
+      "categoryB": "podcast",
+      "titleB": "Mindful Moments: Unlocking the Power of Meditation",
+      "originalChoice": "a",
+      "swapped": true
+    },
+    {
+      "id": 92,
+      "keyword": "writing",
+      "categoryA": "book",
+      "titleA": "The Unexpected Benefit of Writing by Hand",
+      "categoryB": "book",
+      "titleB": "The First Draft Is a Lie",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 163,
+      "keyword": "laptop",
+      "categoryA": "product",
+      "titleA": "Does This Make Laptop Pale Morning",
+      "categoryB": "product",
+      "titleB": "The 3 Laptop Specs That Matter More Than Speed",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 121,
+      "keyword": "remote work",
+      "categoryA": "blog",
+      "titleA": "Why Remote Work Failed for Me (and 3 Fixes That Worked)",
+      "categoryB": "blog",
+      "titleB": "Remote Work: The Future of Flexibility or a Mirage?",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 21,
+      "keyword": "ethical fashion",
+      "categoryA": "blog",
+      "titleA": "The Hidden Cost of Fast Fashion",
+      "categoryB": "blog",
+      "titleB": "Why Ethical fashion Is More Rich Than You Think",
+      "originalChoice": "b",
+      "swapped": true
+    },
+    {
+      "id": 24,
+      "keyword": "minimalism",
+      "categoryA": "book",
+      "titleA": "The $2,000 a Month Minimalist",
+      "categoryB": "book",
+      "titleB": "Why Do Ocean Train Minimalism?",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 154,
+      "keyword": "jazz",
+      "categoryA": "song",
+      "titleA": "The Fast Jazz Gold That That will blow your mind",
+      "categoryB": "song",
+      "titleB": "Notes of Midnight: Jazz Dreams",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 104,
+      "keyword": "blockchain",
+      "categoryA": "article",
+      "titleA": "Revolutionizing Finance: How Blockchain is Shaping the Future of Money",
+      "categoryB": "article",
+      "titleB": "9 Ways Blockchain Will Transform Your Science",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 191,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Why Is Drinking Coffee Good For You?",
+      "categoryB": "product",
+      "titleB": "Start Your Day Brewed: A Journey Through Coffee",
+      "originalChoice": "skip",
+      "swapped": true
+    },
+    {
+      "id": 26,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Drinking Life: Discover the Magic of Everyday Coffees",
+      "categoryB": "product",
+      "titleB": "Start Your Day Brewed: A Journey Through Coffee",
+      "originalChoice": "b",
+      "swapped": true
+    },
+    {
+      "id": 186,
+      "keyword": "coffee",
+      "categoryA": "product",
+      "titleA": "Is Coffee the Best Brain Boost of All Time?",
+      "categoryB": "product",
+      "titleB": "Start Your Day with the Roasted Happiness: A Guide to Blissful Coffee Exploration",
+      "originalChoice": "skip",
+      "swapped": true
+    }
+  ]
+}
