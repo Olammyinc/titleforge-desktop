@@ -210,7 +210,7 @@ Do these in this order:
 | # | Task | Why this order |
 |---|---|---|
 | **A** | **Tag beta and prove updater** — ✅ COMPLETE through `v1.0.0-beta.5` | Beta.2–beta.5 releases passed CI; Sandbox installation and updater flow were verified. |
-| **B** | **Track A — judge calibration** (§5b below) | **NEXT.** Never started. Blocks ranking for **both** products. Phase 0 needs ~10 min of the owner's time and gates every threshold. |
+| **B** | **Track A — judge calibration** — ❌ **NO-GO** | A0 completed: full self-agreement was 45.7%, below the preregistered 70% gate. Do not continue judge bake-off or build a ranker. |
 | **C** | **Phi-3.5-mini evaluation** (`PHI-3.5-MIGRATION.md`) | Targets the real remaining quality defect. Deliberately **after** B: a bigger model raises the average candidate, a judge lets you *pick*, and the standing guidance is to settle selection first because the benefits compound in that order. |
 
 **Do NOT pair Phi with Qwen** — see §5c. Desktop has no measured distinctness problem; pairing doubles the binding constraint (time) to solve a problem that is not there.
@@ -220,6 +220,26 @@ Do these in this order:
 ---
 
 ## 5b. Track A: find a judge that matches the owner's taste
+
+### Track A0 result — ❌ NO-GO (2026-08-04)
+
+The 35-pair swapped retest produced:
+
+- Overall self-agreement: **16/35 = 45.7%**
+- Decided-pair winner consistency: **16/16 = 100%**
+- Skip stability: **13/19 = 68.4%**
+- Cohen's kappa for decide-vs-skip: **0.31**
+- No consistent global left/right position bias
+
+The brief's hard rule evaluates the full self-agreement measure, including
+skips. Because `c = 45.7% < 70%`, Track A is closed as a valid negative result.
+The perfect decided-pair consistency is useful evidence but does not override
+the preregistered gate. Do not build a ranker, run a judge bake-off, or use the
+judge for ordering/best-of-N. Revealed preference remains the product taste
+signal.
+
+The next independent desktop quality task is Phi-3.5-mini evaluation, not judge
+selection.
 
 **Why this is the sprint.** Nothing can rank. `calculate_score` is r = −0.04; the DeepSeek judge agrees with the owner **51.6%** on pairs where both titles are already good. Every "generate more and keep the best" idea — best-of-N, dual-provider over-generation, a local ranker — is blocked on this one thing.
 
