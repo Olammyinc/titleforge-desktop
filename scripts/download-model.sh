@@ -90,10 +90,26 @@ if command -v curl &>/dev/null; then
     # --retry 5 with backoff: HF CDN throttles large parallel downloads and
     # transient 5xx/connects are common on CI runners. --retry-all-errors
     # also covers 429/5xx that plain --retry skips by default.
-    curl -L -o "$MODEL_FILE" "$MODEL_URL" --progress-bar \
-        --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 30
+    PART_FILE="$MODEL_FILE.part"
+    rm -f "$PART_FILE"
+    # --fail is essential: without it, an HTTP error page can be saved as a
+    # successful 3 KB "model" and only fail later at the size check.
+    if ! curl -L --fail -o "$PART_FILE" "$MODEL_URL" --progress-bar \
+        --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 30; then
+        rm -f "$PART_FILE"
+        echo "ERROR: model download failed after retries."
+        exit 1
+    fi
+    mv "$PART_FILE" "$MODEL_FILE"
 elif command -v wget &>/dev/null; then
-    wget -O "$MODEL_FILE" "$MODEL_URL" -q --show-progress --tries=5
+    PART_FILE="$MODEL_FILE.part"
+    rm -f "$PART_FILE"
+    if ! wget -O "$PART_FILE" "$MODEL_URL" -q --show-progress --tries=5; then
+        rm -f "$PART_FILE"
+        echo "ERROR: model download failed after retries."
+        exit 1
+    fi
+    mv "$PART_FILE" "$MODEL_FILE"
 else
     echo "ERROR: Neither curl nor wget found. Please install one."
     exit 1
