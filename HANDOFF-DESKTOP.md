@@ -1,5 +1,33 @@
 # Handoff — desktop app (`titleforge-desktop/`)
 
+> ## ⚠️ FIRST: history was rewritten and force-pushed on 2026-08-03
+>
+> **Before you touch anything, reset your clone:**
+>
+> ```bash
+> git fetch origin && git reset --hard origin/master
+> ```
+>
+> **Do NOT commit or push on the old history** — it re-introduces what was
+> removed and creates a divergent tree.
+>
+> Why: commits by the reviewing agent carried a `Co-Authored-By: Claude`
+> trailer that put "claude" in the GitHub Contributors panel. Removed at the
+> owner's instruction. 5 of 206 commits were rewritten, all from 2026-08-03;
+> everything older is untouched. **Trees are byte-identical — no file content
+> changed, no work lost.** Your commits are all present with the same messages
+> and content, at new hashes. Recovery tag: `backup-before-trailer-strip`.
+>
+> Commit hashes cited later in this file are the OLD ids. Current equivalents:
+>
+> | old | new | commit |
+> |---|---|---|
+> | `3b3c97a` | `734c51d` | category / fine-tune / genre / style plumbed in |
+> | `b398ca6` | `9eaf68d` | measured on real Qwen; guards split hard vs soft |
+> | `a8e49f7` | `f049974` | near-duplicate dedup; colon cap reverted |
+>
+> See `CONTEXT.md` §5 (2026-08-03 end of day) for the full record.
+
 > Written 2026-08-03 by the reviewing agent. **You implement; I audit and
 > diagnose.** This repo is yours to work in — an earlier draft of
 > `titleforge/HANDOFF-WEB.md` implied otherwise, which was an error.
