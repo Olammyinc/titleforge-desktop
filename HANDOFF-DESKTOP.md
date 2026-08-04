@@ -198,6 +198,88 @@ Auto-updater has never completed a real install→update cycle. Remove the dead
 
 ---
 
+## 5b. NEXT SPRINT — Track A: find a judge that matches the owner's taste
+
+**Why this is the sprint.** Nothing can rank. `calculate_score` is r = −0.04; the DeepSeek judge agrees with the owner **51.6%** on pairs where both titles are already good. Every "generate more and keep the best" idea — best-of-N, dual-provider over-generation, a local ranker — is blocked on this one thing.
+
+**The asset that makes it cheap:** the owner's 123 usable pairwise labels are a **reusable test set**. Any new judge can be scored against them for the price of an API call and none of his time. Judge iteration went from "30 minutes of the owner per attempt" to "one script run".
+
+### ⚠️ Read this before writing any rubric
+
+`tools/feature_bias.py` (committed `14625c2`) — **run it first.** It corrects a wrong bias profile that was doctrine in three documents. Gap = user% − judge%; positive means the judge UNDER-values the feature:
+
+| feature | n | owner picks | judge picks | gap | action |
+|---|---|---|---|---|---|
+| **colon** | 67 | 63% | 36% | **+27pp** | **DO NOT SUPPRESS — he likes colons more than the judge** |
+| len ≥50 | 57 | 63% | 56% | +7pp | leave alone |
+| **digit** | 52 | 44% | 69% | **−25pp** | **neutralise** |
+| **starts "The …"** | 37 | 46% | 65% | **−19pp** | **neutralise** |
+| `$` / parens | 15 / 12 | — | — | — | **INSUFFICIENT (n<20)** — do not act on |
+
+**Neutralise exactly two things: digits and "The …" openings.** Writing rules against colons or length moves the judge *away* from the owner — that was the original error. `$` and parens were the largest numbers in the old list and are below the evidence threshold entirely.
+
+### A0 — Measure the owner's noise ceiling FIRST (blocks every threshold)
+
+**Build `tools/gen_retest_pairs.py`.** Every GO threshold is currently arbitrary because nobody knows how often the owner agrees with *himself*. If he re-labels at 78%, then a perfect judge tops out near 78% and "65%" means 83% of achievable — a completely different conclusion from "barely above a coin flip."
+
+Resample ~35 already-labelled pairs (draw from chose-A, chose-B **and** skipped), **swap A/B presentation order**, reshuffle, emit `judge-retest.html` reusing `gen_judge_pairs.py`'s render function verbatim so the instrument is identical. ~10 minutes of the owner's time.
+
+Outputs: `c` = self-agreement (the ceiling); **his own position bias** — `judge-calibration.html:100` rendered `titleA` on the left with no shuffle, so if he favours a side, all 123 labels carry it; and skip stability.
+
+**Hard rule: if `c` < 0.70, Track A is dead** — there is no stable target to hit — and everything moves to the web tracks. That is a cheap, valid, publishable outcome.
+
+### A1 — Pre-register before running anything
+
+**Do NOT split train/holdout.** Usable labels are `remote work` 21, `coffee` 16, then 48 keywords with ≤3 each. A by-keyword split leaves ~60 with a ±12.6pp CI — a good judge and a coin flip become indistinguishable. **Splitting destroys this dataset.**
+
+Instead write `tools/judge-preregistration.md` **before** any candidate runs: the exact arms, SHA-256 of each rubric file, the primary metric with exclusions fixed, thresholds, and an iteration budget of **3 rubric versions maximum against these 123 labels, ever**. Pre-registration preserves validity *and* full n. The price is few shots; that is the correct price.
+
+### A2 — Freeze the current rubric before writing a new one
+
+Extract the live rubric verbatim to `tools/rubrics/judge_v1.txt` with a header: *every `judge_score` column in every CSV in this repo came from this text; do not edit, add a new file.* New rubrics are new files; new data gets a **new column**, never an overwrite. Otherwise a rubric change silently invalidates `bench-usability.csv`, `bench-production.csv`, every gate in `AI-WORK-BRIEF.md`, and the `judge_v1` floor-gate use that §6.2 6c explicitly preserves.
+
+### A3 — The bake-off
+
+Ask the judge **pairwise** for validation (it matches how the owner labelled) **and** pointwise (the product needs a scalar), then measure the gap — a win that only exists in the pairwise format does not reach users.
+
+- **Primary arm (carries the GO alone):** strongest Anthropic model + `judge_v2_pairwise`
+- **Secondary (exploratory, Holm-corrected, cannot trigger GO):** OpenAI / Gemini / GLM
+- **Control — `deepseek` + `judge_v1` must reproduce 55.3% / 51.6%. If it does not, STOP: the harness is broken and nothing else means anything.** (Hard rule #1, cheapest possible instantiation.)
+- **Control — `deepseek` + v2** isolates rubric effect from provider effect. Without it a v2 win is un-attributable.
+
+**Order swapping is mandatory** — ask every pair twice, (A,B) and (B,A). Swap consistency <80% disqualifies an arm before agreement is even looked at. Order-disagreements become ties at 0.5, never dropped; dropping them removes the hard pairs and inflates every arm.
+
+Emit results in **exactly the schema `calibrate_judge.py` already consumes**, so that script is reused **unmodified** — the harness that killed the old judge adjudicates its replacement.
+
+### A4 — What the numbers can and cannot settle
+
+At n=123: SE ≈ 4.5pp, CI ±8.8pp, so **beating chance needs ≥57.4%**. But **the paired McNemar test against v1 on the same items is far more powerful — a 10pp improvement over v1 IS detectable, while 10pp above a coin flip is not.** Report McNemar as the primary inferential statistic and the raw rate as descriptive. This roughly doubles what these labels can settle, for free.
+
+**Selection bias:** best-of-4 arms inflates the winner by ≈5pp — the same size as the effect being hunted. Hence one primary arm; a winning secondary earns only the right to be re-tested on fresh labels.
+
+**Run in parallel — highest expected value in this sprint:** collect **200 fresh labels**, sampled **judge-blind**. The existing pairs were binned on DeepSeek's *own* score gaps with the 16-19 band deliberately excluded, so the current test set is DeepSeek-conditioned. Cap per-keyword contribution and floor thin categories (`song` has 2, `podcast` 7).
+
+**GO** = swap consistency ≥80% **and** ≥65% overall **and** ≥62% in the ≥70 band **and** McNemar significant **and** no OVER-rewarded feature gap >20pp at n≥20 **and** pointwise within 5pp of pairwise.
+**CONDITIONAL (58-65%)** = usable as a broken-vs-fine floor gate only. **No user-visible ordering.**
+**NO-GO (<58%)** = record it in §5 with the rigour of the 2026-08-03 kill entry; revealed preference (now logging `chosen_rank` with randomised display) becomes the plan.
+
+---
+
+## 5c. Phi-3.5-mini + Qwen paired — NOT recommended
+
+The owner asked whether the web's dual-provider idea ports to desktop by pairing Phi with Qwen. Clear answer: **it solves a problem desktop does not measurably have.**
+
+| | Web | Desktop |
+|---|---|---|
+| distinctness | **70 distinct per 100** — a real defect | **25/25 unique**; 0 duplicates across 27 titles in six category-fit runs |
+| actual bottleneck | variety | **category-fit ceiling** (song/poem/book) + wall-clock time |
+
+Desktop's measured defect is that a 1.5B cannot hold category conventions — a **bigger** model fixes that, not a *second* one. **Phi replacing Qwen** targets the real problem (`PHI-3.5-MIGRATION.md` specs it). **Phi plus Qwen** doubles the already-binding constraint: Studio 200 goes ~11 min → ~28 min for Phi alone and worse paired (that figure was judged unshippable once); ~3.4 GB of weights resident plus two KV caches, **unmeasured on an 8 GB machine**; and a single `Mutex<Option<LocalLlm>>` slot with ~15 call sites assuming one model.
+
+**Two cheap checks that could flip this verdict:**
+1. **Studio-scale distinctness has never been measured** — 25/25 is Core scale. Raise `PER_CASE` in `tests/category_fit.rs` and measure at 200. If it degrades like the web's 100 did, pairing becomes relevant *for Studio only*.
+2. **Try the free version first** — the same model with partitioned frames and varied sampling behaves like two mildly different models. Constraint rotation already works here. Zero RAM, zero download, zero extra time.
+
 ## 6. How review works
 
 Flag me through the user when something is ready. I check claims against the
