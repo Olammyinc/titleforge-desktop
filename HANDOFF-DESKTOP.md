@@ -165,24 +165,17 @@ anything except the `product` result. Run twice — one run is an anecdote
 
 ## 5. Next tasks, in order
 
-### 5a. Revealed-preference position logging — DO THIS FIRST
+### 5a. Revealed-preference position logging — ✅ SHIPPED
 
-`revealed_preference` (`lib.rs:286`) records the chosen title and the passed-over
-ones, but **not the position each was displayed at**. When a user favourites the
-2nd title of 25, we know *what* they picked and not *that it was shown 2nd*.
+`revealed_preference` now records `chosen_rank`, `batch_size`, and
+`display_randomized`. Approximately 50% of batches with at least two titles are
+shuffled before rendering, and logging uses the actual displayed order. This is
+local-only and shipped in commit `8219a19`.
 
-Position bias dominates click data — people pick from the top. Without rank,
-every label is confounded and **cannot be corrected afterwards**. There is zero
-data today, so this is free to fix now and unrecoverable once beta testers start
-clicking.
+Position bias can now be measured and corrected in revealed-preference data.
 
-Add: displayed rank, batch size. Ideally randomise display order for a slice of
-batches — that turns favourites from correlational into near-experimental data.
-Stays local-only; no telemetry, no upload. That promise is what the product is
-sold on.
-
-This matters because revealed preference is now the **primary** label source —
-it is the only one measured to reflect the user's actual taste.
+Revealed preference remains the primary taste signal because it reflects the
+user's actual choice. No telemetry or upload was added.
 
 ### 5b. Phi-3.5-mini evaluation
 
@@ -191,23 +184,33 @@ Studio 200 goes from ~11 min to a projected **~28 min**, which is probably
 unshippable. A longer one-time *download* is accepted by the user; a longer
 *generation* on every batch is not the same thing and must be measured first.
 
-### 5c. Still queued (unchanged, `CONTEXT.md` §6.5)
+### 5c. Release/updater — ✅ BETA CYCLE SHIPPED; CLEAN TEST COMPLETE
 
-Auto-updater has never completed a real install→update cycle. Remove the dead
-`candle-core` / `candle-transformers` / `tokenizers` deps. Tag the beta.
+Beta.2 through beta.5 were built and released. CI passed across Windows,
+macOS, and Linux; Qwen smoke tests and release/signing jobs passed. The Sandbox
+confirmed beta.4 installation and beta.5 updater behavior. The updater now uses
+check → download → explicit install/restart, with green reserved for up-to-date
+and amber for an available/downloaded update.
+
+Remaining release hardening: migrate the updater endpoint from the manually
+maintained Netlify `updates.json` to GitHub Releases, and remove dead
+`candle-core` / `candle-transformers` / `tokenizers` dependencies during a
+separate cleanup pass.
 
 ---
 
 ## 5a-PRIORITY. Read this first — the order changed on 2026-08-04
 
-**Context:** the web app just shipped dual-provider generation and now returns **100/100 distinct titles**. Desktop has not been touched since 05:50 on 2026-08-04 and **has still never been released**. It is now the laggard.
+**Context:** the web app shipped dual-provider generation and the desktop beta
+release/updater cycle is now complete through beta.5. Desktop's next substantive
+quality task is Track A judge calibration.
 
 Do these in this order:
 
 | # | Task | Why this order |
 |---|---|---|
-| **A** | **Tag the beta** (`v1.0.0-beta.2`, then a `.3` to prove the updater) | Everything gating it is green. §6.4b item 2 — "auto-updater has completed a real install → update cycle" — **cannot be tested any other way**; it needs one release to install and a second to update to. Blocked on this for days. A failed release costs nothing right now. |
-| **B** | **Track A — judge calibration** (§5b below) | Never started. Blocks ranking for **both** products. Phase 0 needs ~10 min of the owner's time and gates every threshold — start it in parallel with A. |
+| **A** | **Tag beta and prove updater** — ✅ COMPLETE through `v1.0.0-beta.5` | Beta.2–beta.5 releases passed CI; Sandbox installation and updater flow were verified. |
+| **B** | **Track A — judge calibration** (§5b below) | **NEXT.** Never started. Blocks ranking for **both** products. Phase 0 needs ~10 min of the owner's time and gates every threshold. |
 | **C** | **Phi-3.5-mini evaluation** (`PHI-3.5-MIGRATION.md`) | Targets the real remaining quality defect. Deliberately **after** B: a bigger model raises the average candidate, a judge lets you *pick*, and the standing guidance is to settle selection first because the benefits compound in that order. |
 
 **Do NOT pair Phi with Qwen** — see §5c. Desktop has no measured distinctness problem; pairing doubles the binding constraint (time) to solve a problem that is not there.
