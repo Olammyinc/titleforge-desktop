@@ -901,17 +901,33 @@ function displayResults(titles, currentKeyword) {
       return;
     }
 
-    // ── Revealed-preference batch id (brief §4 Task 2b) ──
+    // ── Revealed-preference batch id (brief §4 Task 2b + handoff 5a) ──
     // One id per generated batch. Passed to toggle_favorite so favorites made
     // from THIS batch are grouped, and the titles they passed over are known.
     // Purely local — logged to SQLite, never sent anywhere.
     var batchId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
-    var batchTitles = titles.map(function (t) { return t.title; }).filter(Boolean);
 
+    // ── Display-order randomization (handoff 5a) ──
+    // Position bias dominates click data — people pick from the top. For ~50%
+    // of batches we SHUFFLE the display order before rendering, so favourites
+    // from those batches are near-experimental rather than correlational.
+    // batchTitles is built from the ACTUAL displayed order (post-shuffle), so
+    // the rank the backend records is the rank the user genuinely saw.
+    var displayRandomized = Math.random() < 0.5 && titles.length >= 2;
+    var displayOrder = titles.slice();
+    if (displayRandomized) {
+      for (var i = displayOrder.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = displayOrder[i];
+        displayOrder[i] = displayOrder[j];
+        displayOrder[j] = tmp;
+      }
+    }
+    var batchTitles = displayOrder.map(function (t) { return t.title; }).filter(Boolean);
     var seoLegend = document.getElementById('seoLegend');
     if (seoLegend) seoLegend.style.display = (titles && titles.length) ? 'flex' : 'none';
 
-  titles.forEach(function (item, idx) {
+  displayOrder.forEach(function (item, idx) {
     var div = document.createElement('div');
     div.className = 'result-item';
 
@@ -991,7 +1007,7 @@ function displayResults(titles, currentKeyword) {
       starBtn.innerHTML = isFav ? '\u2605' : '\u2606';
       (function (titleText, btn) {
         btn.addEventListener('click', function () {
-          toggleFavorite(titleText, currentKeyword, item.score || 0, (item.categories || [''])[0], btn, batchTitles, batchId);
+          toggleFavorite(titleText, currentKeyword, item.score || 0, (item.categories || [''])[0], btn, batchTitles, batchId, displayRandomized);
         });
       })(item.title, starBtn);
       body.appendChild(starBtn);
@@ -1351,7 +1367,7 @@ function isFavorited(titleText) {
   return dashFavorites.some(function (f) { return f.title === titleText; });
 }
 
-function toggleFavorite(titleText, sourceKeyword, score, category, starBtn, batchTitles, batchId) {
+function toggleFavorite(titleText, sourceKeyword, score, category, starBtn, batchTitles, batchId, displayRandomized) {
   invoke('toggle_favorite', {
     title: titleText,
     keyword: sourceKeyword || '',
@@ -1359,6 +1375,7 @@ function toggleFavorite(titleText, sourceKeyword, score, category, starBtn, batc
     category: category || '',
     batchTitles: batchTitles || null,
     batchId: batchId || null,
+    displayRandomized: !!displayRandomized,
   }).then(function (nowFavorited) {
     if (nowFavorited) {
       dashFavorites.unshift({ title: titleText, keyword: sourceKeyword || '', score: score || 0, category: category || '', created_at: new Date().toISOString() });

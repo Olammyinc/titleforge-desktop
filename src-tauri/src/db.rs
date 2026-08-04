@@ -64,6 +64,9 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
             category TEXT,
             chosen_title TEXT NOT NULL,
             passed_over_titles TEXT NOT NULL DEFAULT '[]',
+            chosen_rank INTEGER,
+            batch_size INTEGER,
+            display_randomized INTEGER NOT NULL DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now'))
         );
 

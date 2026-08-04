@@ -245,6 +245,7 @@ fn toggle_favorite(
     category: String,
     batch_titles: Option<Vec<String>>,
     batch_id: Option<String>,
+    display_randomized: Option<bool>,
     state: tauri::State<AppState>,
 ) -> Result<bool, String> {
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
@@ -272,20 +273,33 @@ fn toggle_favorite(
         )
         .map_err(|e| e.to_string())?;
 
-        // ── Revealed-preference capture (brief §4 Task 2b) ──
+        // ── Revealed-preference capture (brief §4 Task 2b + handoff 5a) ──
         // When the user favorites ONE title out of a batch, the rest are the
         // ones they passed over — that is (batch - 1) labelled comparisons
         // from a single click, from the actual target user. Purely local.
         // No telemetry, no upload: this stays in the user's SQLite.
+        //
+        // handoff 5a: ALSO record the DISPLAYED RANK of the chosen title and
+        // the batch size. Position bias dominates click data — people pick
+        // from the top. Without rank, every label is confounded and cannot
+        // be corrected afterwards. display_randomized marks batches whose
+        // order was shuffled (a slice of batches), so those favourites are
+        // near-experimental rather than correlational.
         if let Some(batch) = batch_titles {
             if batch.len() >= 2 && batch.iter().any(|t| *t == title) {
                 let passed: Vec<&String> = batch.iter().filter(|t| **t != title).collect();
                 let passed_json = serde_json::to_string(&passed).unwrap_or_else(|_| "[]".to_string());
                 let bid = batch_id.unwrap_or_else(|| format!("{}-{}", keyword, category));
+                // 1-based display rank of the chosen title within the batch.
+                let chosen_rank = batch.iter().position(|t| *t == title)
+                    .map(|i| (i + 1) as i64)
+                    .unwrap_or(0);
+                let batch_size = batch.len() as i64;
+                let rand = if display_randomized.unwrap_or(false) { 1 } else { 0 };
                 db.execute(
-                    "INSERT INTO revealed_preference (batch_id, keyword, category, chosen_title, passed_over_titles)
-                     VALUES (?1, ?2, ?3, ?4, ?5)",
-                    rusqlite::params![bid, keyword, category, title, passed_json],
+                    "INSERT INTO revealed_preference (batch_id, keyword, category, chosen_title, passed_over_titles, chosen_rank, batch_size, display_randomized)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    rusqlite::params![bid, keyword, category, title, passed_json, chosen_rank, batch_size, rand],
                 )
                 .map_err(|e| e.to_string())?;
             }
