@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-08-04 (web 100-title batch measured + near-dupe dedup; desktop 5a position logging)
+> **Last updated:** 2026-08-04 (web 100-title batch + near-dupe dedup, appeal-score honesty, multi-provider cascade; desktop 5a position logging; CONTEXT refreshed to reality)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
@@ -168,15 +168,16 @@ Deploy: `npx netlify deploy --prod`, git push, or drag-and-drop.
 | File | Lines | Purpose |
 |---|---|---|
 | `src/index.html` | 373 | Single-page app: sidebar nav, generator, dashboard panel, settings panel, activation overlay |
-| `src/app.js` | 1862 | Desktop UI logic: license gate, background verify, generation (local + AI), dashboard rendering via `invoke()`, settings with API key management |
+| `src/app.js` | 2109 | Desktop UI logic: license gate, background verify, generation (local + AI), dashboard rendering via `invoke()`, settings with API key management, revealed-preference display randomization (~50% of batches) |
 | `src/styles.css` | 3556 | Full stylesheet (base + desktop-specific: sidebar, activation overlay, engine toggle) |
 | `src/logo.svg` | — | Same amber logo as web |
-| `src-tauri/src/lib.rs` | 1025 | All IPC commands: generation, history, favorites, projects, settings, license validation, background verify, AI, tier gating. `AppState` = `Mutex<Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>` |
-| `src-tauri/src/engine.rs` | 253 | 2-pass orchestrator: LLM (Pass 1) → curated fallback (Pass 2). EGCG retired July 31. Deduplication + SEO scoring. Passes few-shot examples via `retrieve_similar()`. |
-| `src-tauri/src/title_gen.rs` | 1577 | **EGCG algorithm (retired from pipeline, kept for benchmarks)** — 3 modes (exemplar-guided template fill / phrase stitching / keyword-embedded exemplar). `strip_placeholders()` fix for `{placeholder}` leak. Includes `retrieve_similar(keyword, category, k)` for LLM few-shot + curated retrieval. |
-| `src-tauri/src/local_llm.rs` | 398 | llama-cpp-2 wrapper — `LlamaModel`, `generate_chat_raw()` with batched prefill + T=0.8 top-k sampling, `generate_one_clean()` with RAG + retry. Prefers Qwen2.5-1.5B then SmolLM2 fallbacks. n_ctx=1024. |
-| `src-tauri/src/seo.rs` | 368 | Local SEO scoring — 9 signals (length, keyword presence/density, search patterns, question, number/year, Flesch reading, power words, uniqueness). Zero API calls. |
-| `src-tauri/src/db.rs` | 152 | SQLite schema (8 tables) + seed data import from `seed-data.json` |
+| `src-tauri/src/lib.rs` | 1108 | All IPC commands: generation, history, favorites, projects, settings, license validation, background verify, AI, tier gating, revealed-preference position logging. `AppState` = `Mutex<Connection>` + `Mutex<title_gen::Generator>` + `Mutex<Option<LocalLlm>>` |
+| `src-tauri/src/engine.rs` | 383 | 2-pass orchestrator: LLM (Pass 1) → curated fallback (Pass 2). EGCG retired July 31. Deduplication + SEO scoring. Passes few-shot examples via `retrieve_similar()`. Takes a `FineTune`; skips SEO + curated for NAME categories. |
+| `src-tauri/src/title_gen.rs` | 1408 | **EGCG algorithm (retired from pipeline, kept for benchmarks)** — 3 modes. `strip_placeholders()` fix for `{placeholder}` leak. Includes `retrieve_similar(keyword, category, k)` for LLM few-shot + curated retrieval. |
+| `src-tauri/src/local_llm.rs` | 518 | llama-cpp-2 wrapper — `LlamaModel`, `generate_chat_raw()` with batched prefill + T=0.8 top-k sampling, `generate_one_clean()` with RAG + retry, category-shape guards. Prefers Qwen2.5-1.5B then SmolLM2 fallbacks. n_ctx=1024. |
+| `src-tauri/src/prompt_spec.rs` | 554 | Per-category output conventions (all 16), style descriptions, fine-tune parsing + hard-constraint QC. Mirrors web `CATEGORY_CONVENTIONS`. |
+| `src-tauri/src/seo.rs` | 325 | Local SEO scoring — 9 signals (length, keyword presence/density, search patterns, question, number/year, Flesch reading, power words, uniqueness). Zero API calls. Node ported to web `seo.js`. |
+| `src-tauri/src/db.rs` | 146 | SQLite schema (8 tables + revealed_preference with rank/randomized columns) + seed data import from `seed-data.json` |
 | `src-tauri/src/main.rs` | 5 | Entry point → `titleforge_lib::run()` |
 | `src-tauri/tauri.conf.json` | 66 | App config, updater endpoint, CSP, bundle config |
 | `src-tauri/Cargo.toml` | 37 | Rust dependencies |
@@ -1112,11 +1113,11 @@ EGCG has measured 20%, 24%, and 16% across three runs. Qwen 96% and 94%. **One r
 **6. Batch template diversity is weak.**
 7/25 titles in the measured batch shared a "From X to Y" frame. Uniqueness is solved; formula repetition is not. **Task 1 already tested the obvious fix and it failed** — quality rules dropped Qwen to 75.2/77.6 mean vs 81.0 baseline. Qwen 1.5B cannot hold multi-constraint prompts. **Do not re-attempt prompt rules on the 1.5B.** The path is a larger model (Qwen2.5-3B) or post-generation structural dedup.
 
-**7. WEB: appeal score is self-graded and inflated.**
-The model writes and scores in one pass. Evidence: EGCG self-scored 60-100 on titles the judge scored 15-30. This is a headline Pro feature; if users learn to distrust it, it is worthless. Fix: separate scoring pass, or force "identify your weakest title and score it below 60."
+**7. WEB: appeal score is self-graded and inflated. — ✅ FIXED 2026-08-04 (`d91a256`).**
+Prompt reframed to "would a real reader CLICK this" with honest bands (80-92/60-75/30-55, hard cap 92) + forced self-critique of weakest titles in all 3 modes; `calibrateScore()` clamps at 92. Verified live: 100-title batch scores 64-88.
 
-**8. Cloud AI has never been tested for batch behaviour.**
-All cloud measurements are k=1. The web app sells 10/100 titles per request. Nobody has checked whether cloud produces 100 *distinct* titles or repeats itself. **This is exactly the mistake that hid Qwen's determinism for weeks.** Assume nothing.
+**8. Cloud AI batch behaviour — ✅ MEASURED + FIXED 2026-08-04 (`085ed5e`).**
+First-ever 100-title Pro batch: 100/100 returned, 8.5s, but only **~70 genuinely distinct** (14 titles shared one frame). Near-duplicate dedup (exact text OR opening-4-word signature) + stronger VARIETY rule. Re-test: 0 near-dupe frames. Sales-copy implication: "up to 100 titles" delivers ~70-96 distinct — adjust the promise before launch.
 
 #### BACKLOG — real work, not urgent
 
