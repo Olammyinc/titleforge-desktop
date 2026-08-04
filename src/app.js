@@ -2051,7 +2051,7 @@ function setupUpdaterEvents() {
         _resetCheckButton(checkBtn);
       } else if (payload.status === 'DONE' && statusEl) {
         statusEl.textContent = 'Update downloaded. Restart to install.';
-        statusEl.style.color = '#16a34a';
+        statusEl.style.color = '#d97706';
         _setRestartButton(checkBtn);
       }
     }).catch(function (e) { dumpDebug('Update event listener setup failed: ' + e); });
@@ -2148,7 +2148,7 @@ function checkForUpdate(silent) {
       _pendingBytesRid = null; // clear any stale download from a previous version
       if (!silent && statusEl) {
         statusEl.textContent = 'Update v' + result.version + ' available.';
-        statusEl.style.color = '#16a34a';
+        statusEl.style.color = '#d97706';
       }
       if (!silent) {
         _setDownloadButton(checkBtn, result.version);
@@ -2209,7 +2209,7 @@ function downloadPendingUpdate() {
     dumpDebug('Update already downloaded, showing restart button');
     if (statusEl) {
       statusEl.textContent = 'Update downloaded. Restart to install.';
-      statusEl.style.color = '#16a34a';
+      statusEl.style.color = '#d97706';
     }
     _setRestartButton(checkBtn);
     return;
@@ -2239,7 +2239,7 @@ function downloadPendingUpdate() {
     _pendingBytesRid = bytesRid;
     if (statusEl) {
       statusEl.textContent = 'Update downloaded. Restart to install.';
-      statusEl.style.color = '#16a34a';
+      statusEl.style.color = '#d97706';
     }
     _setRestartButton(checkBtn);
   }).catch(function (dlErr) {
@@ -2321,7 +2321,7 @@ function _checkViaJSFallback(silent, statusEl, checkBtn) {
       _pendingBytesRid = null;
       if (!silent && statusEl) {
         statusEl.textContent = 'Update v' + update.version + ' available.';
-        statusEl.style.color = '#16a34a';
+        statusEl.style.color = '#d97706';
       }
       if (!silent) {
         _setDownloadButton(checkBtn, update.version);
@@ -2366,7 +2366,7 @@ function _downloadViaJSFallback(statusEl, checkBtn, version) {
       _pendingBytesRid = '__js_fallback__';
       if (statusEl) {
         statusEl.textContent = 'Update downloaded. Restart to install.';
-        statusEl.style.color = '#16a34a';
+        statusEl.style.color = '#d97706';
       }
       _setRestartButton(checkBtn);
     }).catch(function (err) {
@@ -2400,7 +2400,7 @@ function refreshUpdateStatusOnly() {
   // the bytes rid is needed for the explicit install click.
   if (_pendingUpdate && _pendingBytesRid) {
     statusEl.textContent = 'Update downloaded. Restart to install.';
-    statusEl.style.color = '#16a34a';
+    statusEl.style.color = '#d97706';
     _setRestartButton(checkBtn);
     return;
   }
@@ -2409,7 +2409,7 @@ function refreshUpdateStatusOnly() {
       _pendingUpdate = result;
       _pendingBytesRid = null;
       statusEl.textContent = 'Update v' + result.version + ' available.';
-      statusEl.style.color = '#16a34a';
+      statusEl.style.color = '#d97706';
       _setDownloadButton(checkBtn, result.version);
     } else {
       _pendingUpdate = null;
