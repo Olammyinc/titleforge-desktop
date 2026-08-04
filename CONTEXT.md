@@ -1,6 +1,6 @@
 # TitleForge — Full Project Context
 
-> **Last updated:** 2026-08-03 (judge failed calibration → ranker stopped; category collapse; webapp SEO + admin pricing/keys)
+> **Last updated:** 2026-08-04 (desktop 5a position logging + web appeal-score honesty + web category fit measured)
 > **Repos:** `github.com/Olammyinc/titleforge` (web) · `github.com/Olammyinc/titleforge-desktop` (desktop)
 > **Canonical:** This file at `paul/CONTEXT.md` is the single source of truth for both products. `titleforge-desktop/CONTEXT.md` is a read-only mirror of §3 and §6 only.
 
