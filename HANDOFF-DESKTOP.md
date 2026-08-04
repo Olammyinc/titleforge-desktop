@@ -198,7 +198,25 @@ Auto-updater has never completed a real install→update cycle. Remove the dead
 
 ---
 
-## 5b. NEXT SPRINT — Track A: find a judge that matches the owner's taste
+## 5a-PRIORITY. Read this first — the order changed on 2026-08-04
+
+**Context:** the web app just shipped dual-provider generation and now returns **100/100 distinct titles**. Desktop has not been touched since 05:50 on 2026-08-04 and **has still never been released**. It is now the laggard.
+
+Do these in this order:
+
+| # | Task | Why this order |
+|---|---|---|
+| **A** | **Tag the beta** (`v1.0.0-beta.2`, then a `.3` to prove the updater) | Everything gating it is green. §6.4b item 2 — "auto-updater has completed a real install → update cycle" — **cannot be tested any other way**; it needs one release to install and a second to update to. Blocked on this for days. A failed release costs nothing right now. |
+| **B** | **Track A — judge calibration** (§5b below) | Never started. Blocks ranking for **both** products. Phase 0 needs ~10 min of the owner's time and gates every threshold — start it in parallel with A. |
+| **C** | **Phi-3.5-mini evaluation** (`PHI-3.5-MIGRATION.md`) | Targets the real remaining quality defect. Deliberately **after** B: a bigger model raises the average candidate, a judge lets you *pick*, and the standing guidance is to settle selection first because the benefits compound in that order. |
+
+**Do NOT pair Phi with Qwen** — see §5c. Desktop has no measured distinctness problem; pairing doubles the binding constraint (time) to solve a problem that is not there.
+
+**Everything the old §6.5 asked for is done** — VC++ fix committed, clean-machine test passed end to end, CI green on three platforms, `release` job dry-run succeeded, Mac/Linux SHA256s published. Do not redo any of it.
+
+---
+
+## 5b. Track A: find a judge that matches the owner's taste
 
 **Why this is the sprint.** Nothing can rank. `calculate_score` is r = −0.04; the DeepSeek judge agrees with the owner **51.6%** on pairs where both titles are already good. Every "generate more and keep the best" idea — best-of-N, dual-provider over-generation, a local ranker — is blocked on this one thing.
 
