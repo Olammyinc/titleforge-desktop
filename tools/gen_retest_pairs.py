@@ -146,6 +146,7 @@ def main():
         if replacements != 1:
             raise InputError("renderer output did not contain its PAIRS payload")
         html = html.replace("a.download = 'judge-user-labels.json'", "a.download = 'judge-retest-user-labels.json'")
+        html = html.replace("const STORE_KEY = 'titleforge_judge_pairs_v1';", "const STORE_KEY = 'titleforge_judge_retest_v1';")
         with open(OUT_JSON, "w", encoding="utf-8") as fh:
             json.dump({"seed": args.seed, "target": args.target, "pairs": retest}, fh, indent=2, ensure_ascii=False)
         with open(OUT_HTML, "w", encoding="utf-8") as fh:
