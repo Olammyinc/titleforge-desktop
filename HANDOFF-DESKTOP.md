@@ -177,12 +177,21 @@ Position bias can now be measured and corrected in revealed-preference data.
 Revealed preference remains the primary taste signal because it reflects the
 user's actual choice. No telemetry or upload was added.
 
-### 5b. Phi-3.5-mini evaluation
+### 5b. Phi-3.5-mini evaluation — ❌ NO-GO (current CPU)
 
-Full spec in `PHI-3.5-MIGRATION.md`. The headline risk: ~2.5× the parameters, so
-Studio 200 goes from ~11 min to a projected **~28 min**, which is probably
-unshippable. A longer one-time *download* is accepted by the user; a longer
-*generation* on every batch is not the same thing and must be measured first.
+The isolated bake-off followed `PHI-3.5-MIGRATION.md` without changing
+production. The MIT Q4_K_M quant was verified at 2,393,232,672 bytes with the
+SHA256 recorded in `CONTEXT.md`. On CPU it loaded in 17.2s; product/laptop
+returned valid `SkyBook` in 76.2s, while book/self-help failed after 127.2s and
+song/heartbreak failed after 143.2s. Total: 346.6s and 1/3 successful. Qwen is
+approximately 7s/title on the same machine, so Phi was about 12x slower.
+
+The required `PER_CASE=8` category-fit run was stopped after 15 minutes without
+completion. Verdict: **No-Go for replacing Qwen or shipping Phi**. No production
+model constants changed. Harness commits: `b52f3a5`, `27eb6e4`.
+
+A longer one-time download was accepted by the user; the measured per-batch
+generation cost was not. Do not pair Phi with Qwen.
 
 ### 5c. Release/updater — ✅ BETA CYCLE SHIPPED; CLEAN TEST COMPLETE
 
@@ -211,7 +220,7 @@ Do these in this order:
 |---|---|---|
 | **A** | **Tag beta and prove updater** — ✅ COMPLETE through `v1.0.0-beta.5` | Beta.2–beta.5 releases passed CI; Sandbox installation and updater flow were verified. |
 | **B** | **Track A — judge calibration** — ❌ **NO-GO** | A0 completed: full self-agreement was 45.7%, below the preregistered 70% gate. Do not continue judge bake-off or build a ranker. |
-| **C** | **Phi-3.5-mini evaluation** (`PHI-3.5-MIGRATION.md`) | Targets the real remaining quality defect. Deliberately **after** B: a bigger model raises the average candidate, a judge lets you *pick*, and the standing guidance is to settle selection first because the benefits compound in that order. |
+| **C** | **Phi-3.5-mini evaluation** — ❌ **NO-GO** | Isolated CPU bake-off completed; ~12x slower than Qwen and 2/3 smoke cases failed. Keep Qwen in production. |
 
 **Do NOT pair Phi with Qwen** — see §5c. Desktop has no measured distinctness problem; pairing doubles the binding constraint (time) to solve a problem that is not there.
 
