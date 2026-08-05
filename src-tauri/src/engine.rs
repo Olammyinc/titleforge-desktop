@@ -10,7 +10,10 @@ use crate::TitleResult;
 /// punctuation-stripped). Catches the near-duplicate family that exact-match
 /// dedup misses — measured 2026-08-03, a 4-title book batch came back as four
 /// variations on "Remote Revolution".
-pub(crate) fn shares_opening(a: &str, b: &str, n: usize) -> bool {
+/// `pub` (not `pub(crate)`) so `tests/yield_curve.rs` can apply the SAME dedup
+/// rule the engine applies. A measurement that reimplements the rule measures
+/// its own reimplementation.
+pub fn shares_opening(a: &str, b: &str, n: usize) -> bool {
     // Function-word openings ("how to", "the best", "why you") are common to
     // many perfectly distinct titles. Flagging those would reject legitimate
     // variety and cost fire rate, so a shared opening only counts when it
@@ -231,7 +234,10 @@ pub fn generate(
 /// Few-shot exemplars for the local LLM when keyword retrieval is empty.
 /// Returns the highest-`appeal_score` curated titles in the category — strong,
 /// on-voice titles the model can imitate even without a keyword-specific match.
-fn fetch_top_appeal_fewshot(conn: &Connection, category: &str, limit: i64) -> Vec<String> {
+/// `pub` so measurement harnesses can supply the SAME few-shot fallback
+/// production uses. Passing an empty example slice is not production behaviour
+/// and biases results — that mistake produced the bogus Phi verdict.
+pub fn fetch_top_appeal_fewshot(conn: &Connection, category: &str, limit: i64) -> Vec<String> {
     match conn.prepare(
         "SELECT title FROM curated_titles WHERE category = ?1 ORDER BY appeal_score DESC LIMIT ?2"
     ) {
