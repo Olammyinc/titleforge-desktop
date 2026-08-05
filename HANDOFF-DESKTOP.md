@@ -228,7 +228,30 @@ Do these in this order:
 
 ---
 
-## 5b. Track A: find a judge that matches the owner's taste
+## 5b. Track A — ❌ CLOSED 2026-08-05. Do not run any of the below.
+
+**A0 measured the owner's noise ceiling and it failed the gate.** Everything from A1 onward (pre-registration, rubric v2, the provider bake-off, ensembling) is **cancelled**. The spec is kept below only as a record of what was designed and why it is moot.
+
+**The numbers, recomputed by the reviewing agent from the raw retest data** (the originally-recorded figures were not reproducible — `gen_retest_pairs.py` writes the *swapped* display order, so comparison must be by title text, not slot letter):
+
+| | value |
+|---|---|
+| owner vs himself, decided pairs | **5/8 = 62.5%** (recorded as 16/16 = 100% — not reproducible) |
+| owner vs himself, all 35 | **15/35 = 42.9%** |
+| preregistered gate | `c ≥ 0.70` |
+
+**The reframe that matters more than the No-Go:** the DeepSeek judge agrees with the owner **55.3%** on decided pairs; the owner agrees with **himself 62.5%**. The judge was at ~89% of the achievable ceiling. **It was never the broken component — the target is unstable.**
+
+That is why A1-A4 are cancelled rather than deferred: a better rubric, a better provider, or an ensemble would all be chasing a ceiling that is roughly where the current judge already sits. **Revealed preference is the only remaining taste signal** — behaviour rather than stated preference, already accruing with randomised display order since `8219a19`.
+
+**Caveat, stated because it should not be over-read:** n=8 decided-both-times is very small. The honest claim is "the ceiling is low and we do not know precisely how low", not "the ceiling is 62.5%". It also means every figure derived from the original 123 labels — including `tools/feature_bias.py` — is **directional, not precise**.
+
+---
+
+<details>
+<summary>Original Track A spec (superseded — kept for the record)</summary>
+
+### Track A: find a judge that matches the owner's taste
 
 ### Track A0 result — ❌ NO-GO (2026-08-04)
 
@@ -314,6 +337,8 @@ At n=123: SE ≈ 4.5pp, CI ±8.8pp, so **beating chance needs ≥57.4%**. But **
 **NO-GO (<58%)** = record it in §5 with the rigour of the 2026-08-03 kill entry; revealed preference (now logging `chosen_rank` with randomised display) becomes the plan.
 
 ---
+
+</details>
 
 ## 5c. Phi-3.5-mini + Qwen paired — NOT recommended
 

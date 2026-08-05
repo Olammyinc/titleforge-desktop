@@ -102,7 +102,9 @@ impl LocalLlm {
             Ok(t) => t, Err(e) => bail!("F: str_to_token: {:?}", e),
         };
         let n_prompt = tokens.len();
-        let eos = self.model.token_eos();
+        // Retained for the banned-first-token set below; the stop condition
+        // now uses is_eog_token, which covers multi-EOG models.
+        let _eos = self.model.token_eos();
         let max_new = 60;
 
         if diag { eprintln!("[llm-diag] n_prompt={} n_ctx={}", n_prompt, ctx.n_ctx()); }
@@ -164,7 +166,23 @@ impl LocalLlm {
                 None,
                 &mut rng,
             );
-            if next == Some(eos) { break; }
+            // Stop on ANY end-of-generation token, not just `token_eos()`.
+            //
+            // A model can have several: Phi-3.5 uses `<|end|>` to close an
+            // assistant turn and `<|endoftext|>` to close the document, and
+            // `token_eos()` returns only one of them. Comparing against that
+            // single id meant Phi never terminated — it ran to `max_tokens`
+            // on every call and leaked its own turn markers into the output
+            // ("...Distance Teams\"<|end|><|assistant|> \"Remote Work...").
+            // That inflated every Phi timing and failed QC on the junk, which
+            // together produced a bogus "12x slower, 1/3 success" verdict.
+            //
+            // `is_eog_token` wraps llama_token_is_eog and covers all of them.
+            // It is a superset of the old check, so Qwen (whose `<|im_end|>`
+            // IS what token_eos returns) is unaffected — verified by re-running
+            // category_fit. Invisible until a second model was tried; hard
+            // rule #1, fourth occurrence.
+            if next.map(|t| self.model.is_eog_token(t)).unwrap_or(false) { break; }
         }
 
         if gen_tokens.is_empty() { bail!("J: no tokens generated"); }
@@ -508,6 +526,16 @@ fn sample_token<R: Rng>(
 }
 
 fn clean_output(raw: &str) -> String {
+    // Truncate at the first chat special token. Defence in depth alongside the
+    // is_eog_token stop: a model that emits `<|end|>`, `<|assistant|>` or
+    // `<|im_end|>` mid-stream is starting a new turn, and everything after it
+    // belongs to that turn, not this title. Measured on Phi-3.5, which returned
+    // `Mastering Remote Productivity: ...<|end|><|assistant|> "Remote Work...`
+    // as a single "title" before the stop condition was fixed.
+    let raw = match raw.find("<|") {
+        Some(i) => &raw[..i],
+        None => raw,
+    };
     let text = raw.trim();
     let text = text.strip_prefix("```json").unwrap_or(text).strip_prefix("```").unwrap_or(text);
     let text = text.strip_suffix("```").unwrap_or(text);

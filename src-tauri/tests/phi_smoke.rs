@@ -21,14 +21,65 @@ fn phi_smoke() {
     };
     eprintln!("[phi_smoke] Loaded in {:.1}s", load_start.elapsed().as_secs_f64());
 
+    // HARNESS CHECK BEFORE ANY QUALITY CLAIM (brief hard rule #1, and the
+    // explicit warning in PHI-3.5-MIGRATION.md §3.3). generate_chat_raw builds
+    // its prompt via model.chat_template() + apply_chat_template(). If a GGUF
+    // carries no template, that returns Err and generation silently produces
+    // NOTHING — which looks identical to "the model is bad". The first run of
+    // this harness reported 1/3 success with no template check; that is the
+    // signature of a format mismatch, so verify it before blaming the model.
+    match llm.debug_prompt_tokens("You are a title generator.", "Write one book title about coffee.") {
+        Some(n) => eprintln!("[phi_smoke] CHAT TEMPLATE OK — prompt tokenised to {} tokens", n),
+        None => {
+            eprintln!("[phi_smoke] *** CHAT TEMPLATE MISSING/UNUSABLE ***");
+            eprintln!("[phi_smoke] Every 'failure' below is a HARNESS defect, not a model verdict.");
+            eprintln!("[phi_smoke] Do NOT record a quality or speed conclusion from this run.");
+        }
+    }
+
+    // Build mode matters more than anything else here: llama.cpp inference in a
+    // debug build is routinely 5-20x slower, which is the same magnitude as the
+    // '12x slower than Qwen' figure this harness produced.
+    #[cfg(debug_assertions)]
+    eprintln!("[phi_smoke] *** DEBUG BUILD — timings are MEANINGLESS. Re-run with --release. ***");
+    #[cfg(not(debug_assertions))]
+    eprintln!("[phi_smoke] release build — timings are valid");
+
     let tests: &[(&str, &str)] = &[
         ("laptop", "product"),
         ("self-help", "book"),
         ("heartbreak", "song"),
     ];
 
+    // FAIR-CONDITIONS CASES. The three cases above run with NO few-shot
+    // examples and with single-word/hyphenated keywords. Both are unlike
+    // production and both bias the result against the model:
+    //   * production always supplies exemplars (retrieve_similar, then
+    //     fetch_top_appeal_fewshot as a fallback) — never an empty slice.
+    //   * `curated_is_relevant` requires a >=4-char keyword word IN the title,
+    //     so "self-help" demands "self"/"help" and "heartbreak" demands
+    //     "heartbreak". A good book or song title legitimately contains
+    //     neither, so the drift guard rejects correct output. CONTEXT.md
+    //     records this as a known limitation for single-word keywords.
+    // Without these controls a QC rejection is indistinguishable from "the
+    // model cannot generate" — which is the claim this harness is used to make.
+    let fair_examples: Vec<String> = vec![
+        "The Quiet Revolution".to_string(),
+        "Atomic Habits".to_string(),
+        "Deep Work".to_string(),
+    ];
+    let fair: &[(&str, &str)] = &[("remote work", "blog"), ("coffee", "product")];
+
     let mut failures = 0u32;
     let total_start = Instant::now();
+
+    for (kw, cat) in fair {
+        let start = Instant::now();
+        let r = llm.generate_one_clean(kw, cat, "normal", "any", &fair_examples, None, &Default::default());
+        eprintln!("[phi_smoke] FAIR {:>6.2}s  {} {:>12}  {}",
+            start.elapsed().as_secs_f64(), cat, kw,
+            r.unwrap_or_else(|| "NONE".to_string()));
+    }
 
     for (kw, cat) in tests {
         let start = Instant::now();
