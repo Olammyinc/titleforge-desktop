@@ -367,3 +367,62 @@ Useful things to make review fast: say plainly what is **measured** vs
 **implemented**, put the numbers in the commit message, and record results that
 went the wrong way. A failed variant is a result — it closes off a direction.
 Three of the six runs behind `a8e49f7` were failures and they are all written up.
+
+---
+
+## 6. NEXT MEASUREMENT — "how many titles can we honestly promise?"
+
+**The question:** what is the largest number of titles per (keyword, category) that are *all* distinct and *all* usable? That number is the honest product promise, and right now nobody knows it.
+
+### ⚠️ Read first: the previous answer to this was wrong
+
+CONTEXT.md §5 (2026-08-03) records a depth curve — *"ranks 1-5 mean 81.2 → 21-25 mean 64.4"* — and it has been cited as evidence that quality decays with batch depth. **Do not build on it.** Re-audited 2026-08-05:
+
+1. **It is 1 of 2 keywords.** The same run measured `remote work` and found *no ordering at all*: ranks 6-10 averaged 50.6, ranks 11-15 averaged 85.2.
+2. **"Rank" was `calculate_score` order, not generation order.** `engine.rs:186` sorts the pool by score before returning, and `calculate_score` correlates **r = −0.04** with quality. Those buckets are positions in a noise-sorted list. A clean decline under a noise sort is probably coincidence; the flat second keyword is what a noise sort predicts.
+3. **The stated mechanism does not exist.** "Depth exhaustion" implies the model runs out of ideas as a batch progresses. But **every title is an independent call** — `generate_one_clean` per title on desktop, independent 5-title chunks on web. No title sees any other. There is nothing to exhaust.
+
+**The real mechanism is dedup pressure on a fixed distribution.** Sampling repeatedly from one model for one keyword produces increasing collisions; dedup rejects them; later slots keep whatever survived, which skews weaker. This predicts the web result exactly — one provider yielded ~70 distinct per 100, two providers yielded 100/100, because a second distribution adds distinct mass rather than depth.
+
+**Consequence for the design: the limit is DISTINCT MASS per distribution, not depth.** So the measurement must count *distinct usable yield*, not score-by-position.
+
+### What to measure
+
+For a single (keyword, category), generate progressively and record, **in acceptance order**:
+
+- `attempt_index` — how many generations were requested so far
+- `accepted_index` — position among titles that survived dedup
+- `title`, `judge_score`, `usable` (≥70)
+- `rejected_reason` when dropped (duplicate / QC / drift)
+
+Then report:
+
+1. **Distinct-usable yield curve:** cumulative count of accepted titles scoring ≥70, against attempts. **The number where this curve flattens is the answer.**
+2. **Marginal quality:** mean judge score of accepted titles in each successive block of 10, in acceptance order. Detects whether late survivors are genuinely weaker.
+3. **Rejection mix by block** — if late rejections are mostly `duplicate`, the ceiling is distinct mass (fixable with a second provider/model). If mostly QC/drift, it is model quality (not fixable that way). **This distinction decides whether dual-provider helps.**
+
+### Method requirements — these are what make it valid
+
+- **Preserve acceptance order. Do NOT sort by score.** On desktop that means capturing order *before* `engine.rs:186`, or temporarily disabling the sort in the harness. Sorting by `calculate_score` is what invalidated the previous attempt.
+- **Judge for AGGREGATE MEANS ONLY.** This is consistent with §6.2 6c — *"Use it for pass-rate/drift/floor gating only. Every historical mean and tail number remains meaningful."* Block means over ~10 titles average out per-title noise. **Do not** use the judge to order individual titles; that is the use that failed calibration.
+- **Reuse `call_judge()` from `bench_batch_quality.rs` verbatim.** A new rubric makes the numbers incomparable with every prior measurement.
+- **≥3 keywords, ≥2 categories.** The previous attempt used 2 keywords and the two disagreed. One keyword is an anecdote.
+- **Run twice** (hard rule #7).
+- Target **N = 60 attempts** per (keyword, category) — comfortably past any plausible ceiling without unbounded runtime.
+
+### Cost / runtime
+
+- **Web:** ~60 titles per cell is well within the existing cloud harness. Judging ~360 titles is a few dollars at most. Use `scripts/measure-batch-uniqueness.js` conventions (Pro token, 65s backoff on 429).
+- **Desktop:** Qwen at ~6.8s/title ⇒ 60 titles ≈ 7 min per cell; 6 cells ≈ 40 min per run, ×2 runs. Acceptable unattended.
+
+### What the answer changes
+
+The current promise is *"up to 100 titles"* (web Pro) and 25/50/200 (desktop tiers). Those are **capacity** claims with no evidence behind them.
+
+Once the yield curve exists, the honest promise becomes a per-category number — e.g. *"up to N per category"* — and the request cap can be `min(requested, N × categories_selected)`, which is both defensible and reads as a quality claim. **§6.4b item 5 requires every sales-page claim to match measured reality before payments switch on; this is the measurement that satisfies it for batch size.**
+
+### What NOT to conclude
+
+- Do not report a "cliff" unless the yield curve actually shows one. A gentle slope is a different product answer from a cliff.
+- Do not compare desktop and cloud numbers to each other — different models, different pipelines.
+- If late rejections are dominated by `duplicate`, that is **not** a quality ceiling and must not be reported as one.

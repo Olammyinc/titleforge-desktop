@@ -321,6 +321,32 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-08-05 (review) — "DEPTH EXHAUSTION" IS NOT ESTABLISHED. Do not cite the rank curve.
+
+**Supersedes the depth-exhaustion claim in the 2026-08-03 batch-scale entry** (*"ranks 1-5 mean 81.2 → 6-10 77.2 → 11-15 73.0 → 16-20 71.0 → 21-25 64.4"*). That curve has been cited since as evidence that quality decays with batch depth. **It does not support that conclusion.** Three reasons, all checkable in the same entry and in `engine.rs`:
+
+1. **It is 1 of 2 keywords.** The same run measured `remote work` and found *no ordering at all* — ranks 6-10 averaged **50.6**, ranks 11-15 averaged **85.2**. The entry records this two paragraphs later, under "Cause 2". One keyword trended, the other did the opposite.
+2. **"Rank" was `calculate_score` order, not generation order.** `engine.rs:186` sorts the pool by score descending before returning, and `calculate_score` correlates **r = −0.04** with quality — the sort key is noise. Those buckets are positions in a randomly-ordered list. A clean decline under a noise sort is most likely coincidence, and the flat second keyword is exactly what a noise sort predicts.
+3. **The proposed mechanism does not exist.** "Depth exhaustion" implies the model runs out of ideas as a batch progresses. But **every title is an independent model call** — `generate_one_clean` per title on desktop, independent 5-title chunks on web. No title sees any other; there is no shared context to exhaust.
+
+#### What is actually happening — dedup pressure, not depth
+
+Sampling repeatedly from **one** distribution for **one** keyword produces increasing collisions. Dedup rejects them, so later slots keep whatever survived, which skews weaker. This is a **selection** effect on a fixed distribution, not a decay curve.
+
+It predicts the web result exactly: one provider yielded ~70 distinct per 100; two providers yielded 100/100 (2026-08-04). A second *distribution* adds distinct mass. Nothing about "depth" would explain that.
+
+**Design consequence: the ceiling is DISTINCT MASS per distribution.** That is why dual-provider worked, and it is the right frame for sizing batches.
+
+#### What remains true
+
+Batch-scale output *does* score below single-title sampling — **73.6, later 76.2 after the multiplier went to 1×, against an 80.0 k=1 baseline**. That gap is real and measured. What is **not** established is its *shape*: whether it is a cliff, a gentle slope, or an artifact of which titles survive dedup.
+
+**Therefore there is currently NO evidenced answer to "how many titles can we honestly promise per category."** The tier caps (web Pro 100; desktop 25/50/200) are capacity claims with no measurement behind them, and §6.4b item 5 requires exactly that evidence before payments switch on.
+
+**The measurement that would settle it is specified in `HANDOFF-DESKTOP.md` §6 / `HANDOFF-WEB.md` §6** — distinct-usable yield in *acceptance* order (never score-sorted), with the rejection reason recorded per block, so a `duplicate`-dominated ceiling (fixable with a second distribution) is distinguishable from a QC-dominated one (a real quality limit).
+
+**Method note for whoever runs it:** the judge may be used for **block means only**. That is consistent with §6.2 6c — *"every historical mean and tail number remains meaningful"* — because averaging ~10 titles cancels per-title noise. It must **not** be used to order individual titles; that is the use that failed calibration.
+
 ### 2026-08-05 (review) — Phi No-Go CONFIRMED on speed, but the "1/3 success" figure is a harness artifact, not a model verdict.
 
 **Re-ran `phi_smoke` in release mode with a chat-template check added.** Both of the reviewer's suspicions were tested; one was wrong and one was right.
