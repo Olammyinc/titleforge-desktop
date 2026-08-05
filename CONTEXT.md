@@ -321,6 +321,49 @@ Deduced locally, zero API calls. 9 weighted signals → 0–100:
 
 ## 5. Change Log (Rolling)
 
+### 2026-08-05 — MEASURED: the batch ceiling is REPETITION, not quality. Promise 10 per category.
+
+**Two runs of the new `tests/yield_curve.rs`** (4 cells × 40 attempts each, acceptance order preserved, no score sorting, no judge call). This is the evidenced answer to "how many titles can we honestly promise", replacing the retracted depth-exhaustion curve.
+
+| cell | run 1 @40 | run 2 @40 | mean |
+|---|---|---|---|
+| coffee / blog | 33 | 28 | 30.5 |
+| coffee / product | 32 | 33 | 32.5 |
+| sourdough bread / article | 27 | 31 | 29.0 |
+| remote work / blog | **14** | **23** | 18.5 |
+| **total distinct / 160** | **106 (66%)** | **115 (72%)** | |
+| **duplicate : QC** | **53 : 1** | **44 : 1** | |
+
+#### The finding: quality is not the constraint
+
+**Across 320 generations, QC rejected 2 titles.** The model produces an acceptable title on almost every attempt and simply **repeats ideas**. Rejections are ~98% duplicates.
+
+**So the ceiling is DISTINCT MASS per distribution, and a second model/provider raises it.** This is the same mechanism as the 2026-08-04 web result (one provider ~70 distinct per 100; two providers 100/100). It validates dual-provider on desktop **on merit** — the blocker there remains wall-clock time, not benefit.
+
+#### What delivery record supports
+
+| promise | delivered | worst case |
+|---|---|---|
+| **10 per category** | **8/8 cell-runs** | 22 attempts |
+| 15 per category | 7/8 | 24 attempts |
+| 20 per category | 7/8 | 32 attempts |
+
+**Promise 10 per category. Target 20 internally with ~2× headroom. Report the actual count** (the `N of Q requested` toast already does). With 16 categories that is 160 at full spread, so the headline number is unaffected.
+
+**Implication for the multiplier:** at 1×, a 20-title request is 20 attempts, which delivered as few as **9**. ~2× is the floor and still misses on a bad draw. Consistent with the `10 requested → 8 returned` bug already patched.
+
+#### ⚠️ A run-1 conclusion that did NOT survive run 2
+
+Run 1 alone suggested *"some keywords are structurally thin and you cannot tell which in advance"* — `remote work` yielded 14/40 and flatlined. **Run 2 gave 23/40 on the same keyword and settings, a 64% swing.** The variance is **run-to-run, not keyword-to-keyword**. `remote work` does average lower (18.5 vs 29–32.5), so the direction holds, but 14 was the bottom of its range and the magnitude was badly overstated.
+
+**Hard rule #7 caught this before it reached sales copy.** A single run of any cell here is not reliable — T=0.8 sampling variance is large enough to move a cell by two thirds.
+
+#### Caveats
+
+- 8 cell-runs is a small base for estimating a failure rate. 15 and 20 both failed only in the single anomalous cell-run.
+- **Desktop/Qwen only.** The cloud pipeline is a different model and must be measured separately — spec in `HANDOFF-WEB.md` §6.
+- No judge call by design: distinctness and fire rate are objective, and the judge failed calibration for ordering.
+
 ### 2026-08-05 (review) — "DEPTH EXHAUSTION" IS NOT ESTABLISHED. Do not cite the rank curve.
 
 **Supersedes the depth-exhaustion claim in the 2026-08-03 batch-scale entry** (*"ranks 1-5 mean 81.2 → 6-10 77.2 → 11-15 73.0 → 16-20 71.0 → 21-25 64.4"*). That curve has been cited since as evidence that quality decays with batch depth. **It does not support that conclusion.** Three reasons, all checkable in the same entry and in `engine.rs`:
