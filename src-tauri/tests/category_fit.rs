@@ -35,7 +35,9 @@ const CASES: &[(&str, &str)] = &[
     ("sourdough bread", "product"),
     ("sourdough bread", "poem"),
 ];
-const PER_CASE: u32 = 4;
+// Evaluation protocol: the Phi migration brief requires >=8 per case so a
+// single sampled title cannot decide category fit.
+const PER_CASE: u32 = 8;
 
 fn init_db() -> Connection {
     let conn = Connection::open_in_memory().expect("mem");
