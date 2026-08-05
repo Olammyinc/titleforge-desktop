@@ -426,3 +426,111 @@ Once the yield curve exists, the honest promise becomes a per-category number �
 - Do not report a "cliff" unless the yield curve actually shows one. A gentle slope is a different product answer from a cliff.
 - Do not compare desktop and cloud numbers to each other — different models, different pipelines.
 - If late rejections are dominated by `duplicate`, that is **not** a quality ceiling and must not be reported as one.
+
+---
+
+## 7. NEXT ACTIONS — prioritised 2026-08-05 (read this before picking work)
+
+**Owner confirmed:** `TF_DUAL_ENABLED=1` **is set in Netlify**, so production serves the dual-provider path. Cross-provider overlap **was measured** — but the result is lost (see W1). Both items are struck from the open list.
+
+### ✅ Already done — do not redo
+
+| item | evidence |
+|---|---|
+| Release pipeline end to end | 4 real releases, beta.2→beta.5, full signed artifact sets |
+| Auto-updater install→update cycle | beta.4 installed in Sandbox, beta.5 as target |
+| First-launch download on clean machine | verified 2026-08-02 |
+| Cloud batch behaviour measured | dual-provider 100/100 distinct, 11.5–15.8s |
+| Timeout budget hierarchy (old "C1") | `PROVIDER_TIMEOUT_MS`=11000 + `deadlineAt`, `generate.js:19,213` |
+| SEO port tested | `check-seo.js`, 9 tests ported |
+| Desktop yield measured | 2 runs, `yield-curve-run*.csv` |
+
+**§6.4b gates 1, 2, 3 and 6 are closed. Four remain: 4, 5, 7, 8.** Those four are the critical path to switching payments on.
+
+---
+
+### CRITICAL PATH — everything below feeds §6.4b
+
+#### W1. Make `measure-provider-overlap.js` persist its result, then re-run *(small, do first)*
+
+The overlap measurement **was run**, but `scripts/measure-provider-overlap.js:130` only does `console.log` — no file is written. The number went to a terminal and is gone. **Every other measurement script in this project writes a CSV** (`category-fit-run*.csv`, `batch-uniqueness.csv`, `yield-curve*.csv`); this one is the exception and that is why the result was lost.
+
+Add CSV output matching those conventions, re-run once, and record the number in `CONTEXT.md` §5. It is what tells you whether **1.5× overgeneration is correct or merely lucky** — low overlap means you could drop to ~1.2× and save tokens; high overlap means 1.5× is barely enough.
+
+**Rule going forward: a measurement that only prints to stdout has not been taken.**
+
+#### W2. Cloud yield measurement *(the big one — sets the web promise)*
+
+Full spec in §6 above. Desktop is now measured; **cloud is not**, and the numbers do not transfer — different model, different pipeline.
+
+Desktop found: **53:1 and 44:1 duplicate-to-QC**, i.e. the ceiling is repetition, not quality, and **10 per category** was the only figure delivered in 8/8 cell-runs. Run the equivalent on cloud. Needs a Pro token (`TF_PRO_TOKEN`); guest is capped at 10 titles so it cannot measure itself.
+
+**This blocks §6.4b item 5** — you cannot make the sales page match reality until you know what the web engine actually delivers per category.
+
+#### W3. Sales copy ← blocked on W2 *(§6.4b item 5)*
+
+Current claim is *"up to 100 titles"*. Once W2 lands, replace with a per-category number and cap requests at `min(requested, N × categories_selected)`.
+
+Desktop's evidenced number is **10 per category** (8/8), target 20 internally with ~2× headroom. With 16 categories that is 160 at full spread, so the headline is unaffected. Do not copy desktop's 10 to the web page — use W2's number.
+
+#### D1. Raise the desktop multiplier from 1× *(measured need)*
+
+`engine.rs:77` is `let mult: usize = 1`. The yield data says that under-delivers **by construction**: a 20-title request is 20 attempts, which produced as few as **9** distinct. ~2× is the floor and still misses on a bad draw.
+
+The small-request retry headroom already added is the right idea; this extends it to the general case. **Re-run `yield_curve` and `category_fit` after changing it** — more attempts per slot changes wall-clock, and Studio time is already a gate (§6.4b item 4).
+
+#### D2. Studio batch-time honesty *(§6.4b item 4)*
+
+Recorded as 22.6 min best / 45.3 min worst against a softened "up to 200" claim. Those figures predate the 1× multiplier and are stale. Re-measure, and re-measure again after D1 since it directly increases attempts.
+
+#### D3. Stripe licence flow end to end *(§6.4b item 7)*
+
+Never tested with a real Stripe test purchase. Mocks lie — this needs the real checkout → webhook → key generation → email → activation path.
+
+#### D4. CORS + rate limiting on the licence endpoint *(§6.4b item 8)*
+
+Long-standing backlog item, and the last purely-technical gate.
+
+---
+
+### SECONDARY — worth doing, not blocking payments
+
+#### W4. Cross-medium dedup *(confirmed still open)*
+
+`generate.js:1141` returns `crossMediumData` before the dedup block at `:1203`, so cross-medium output is entirely un-deduped.
+
+**The naive fix is wrong.** Cross-medium exists to express *the same idea* across media — a book title and its YouTube counterpart *should* rhyme. Apply the existing signature dedup **within each medium bucket independently**, never across buckets.
+
+#### W5. Confirm `gemini-3.5-flash-lite` is stable and generally available
+
+Now a hard production dependency for the primary generation path, selected on an unusual availability pattern (2.0-flash, 2.5-flash and 2.5-flash-lite all reported unavailable while 3.5-flash-lite worked). If that id shifts, the web app loses a provider. Record where the id came from.
+
+#### D5. Phi-3.5 — properly evaluate, or formally park
+
+The 2026-08-04 No-Go was invalid: it measured a stop-token bug (`token_eos` vs `is_eog_token`, fixed in `1dd414f`) plus an unoptimised build. Corrected figure is **~2.5× Qwen**, matching the original projection — *not* the "~12×" recorded.
+
+**Phi is unevaluated, not rejected.** It produced clean output whenever it completed. `phi_smoke` now has a chat-template check and a debug/release assertion, so a fair run is possible. At ~2.5×, Studio 200 ≈ 28 min, which is the real question. Either measure it properly with `category_fit` under `TF_MODEL_PATH`, or park it explicitly — but do not carry "12× slower / produces garbage" forward.
+
+#### D6. Housekeeping
+
+- Remove dead `candle-core` / `candle-transformers` / `tokenizers` deps (`AI-WORK-BRIEF.md` §6). Verify with `cargo build --release`.
+- Migrate the updater endpoint from manually-maintained Netlify metadata to GitHub Releases — the manual step already caused one stale-metadata incident.
+
+---
+
+### ⛔ Do not start these
+
+- **A ranker, a judge bake-off, or a labelled dataset.** Closed 2026-08-05. The user agrees with *himself* only 62.5% on decided pairs, so the judge at 55.3% is near the achievable ceiling. The target is unstable — a better judge cannot fix that.
+- **Qwen2.5-3B** — `qwen-research` licence, not usable in a paid product.
+- **Prompt-rule experiments on the 1.5B**, **colon-proportion caps**, **`LlamaSampler::grammar()`** — all measured and closed. See §2.
+- **Pairing Phi with Qwen** — desktop's ceiling is distinct mass, but pairing doubles wall-clock, which is already a gate. If a second distribution is wanted on desktop, it replaces rather than supplements. See §5c.
+
+---
+
+### Standing rules that earned their place this week
+
+1. **A measurement that only prints to stdout has not been taken.** Write the CSV (W1 is the cautionary tale).
+2. **Run it twice.** Rule #7 caught two wrong conclusions on 2026-08-05 alone — a "thin keyword" finding that swung 14→23 on re-run, and the Phi verdict.
+3. **Suspect the harness before the model.** Four "model limitations" in this project's history have been plumbing, most recently the stop-token bug.
+4. **Never pass `&[]` examples to `generate_one_clean` in a measurement.** Production always supplies few-shot; an empty slice biases the result and produced the bogus Phi numbers.
+5. **Never sort by `calculate_score` before measuring order-dependent things.** It is r = −0.04 against quality; sorting by it destroyed the previous yield attempt.
