@@ -64,26 +64,15 @@ pub fn generate(
 
     if let Some(llm) = local_llm {
         let target_per_cat = (quantity as usize / categories.len().max(1)).max(1);
-        // Best-of-N multiplier — FORCED TO 1x (brief §4 Task 1, 2026-08-03).
-        // Measured on a real 50-title batch: sorting the pool by calculate_score
-        // correlates r = -0.04 with judge quality — it ranks by noise while
-        // paying 4x generation time. A 1x multiplier is NOT a downgrade: same
-        // quality, ~4x less wall clock (Core 25: ~5.7 min -> ~1.4 min).
-        //
-        // DO NOT DELETE this pool/dedupe/sort scaffolding. The moment a real
-        // ranker exists (brief §4 Task 4 — holdout r >= 0.35 required), restore
-        // the multiplier as a ONE-LINE change:
-        //   let mult: usize = match tier { "studio" => 2, "pro" => 3, _ => 4 };
-        let mult: usize = 1;
-        // Small per-category requests need retry headroom: failed LLM attempts
-        // and near-duplicate rejection otherwise make a 10-title request
-        // return 8 even though the tier cap is not the constraint. Use the
-        // per-category size to avoid a quantity=25/26 cliff across categories.
-        let iteration_budget = if target_per_cat <= 12 {
-            target_per_cat * 2
-        } else {
-            target_per_cat * mult
-        };
+        // FILL model, not best-of-N: the budget buys distinct titles, not
+        // selection. A flat 2x gives retry headroom for failed LLM attempts
+        // and near-duplicate rejection on every request (small batches
+        // especially: a 10-title ask otherwise returns 8). Right regardless
+        // of tier - calculate_score correlates r=-0.04 with judge quality
+        // (Task 1, 2026-08-03), so there is nothing to rank by. Restore
+        // multiplier headroom ONLY when a validated ranker exists
+        // (holdout r >= 0.35).
+        let iteration_budget = target_per_cat * 2;
         for cat in categories {
             // RAG: retrieve similar curated titles for few-shot prompting.
             // When keyword retrieval is empty (laptop, bitcoin, tennis, jazz,
@@ -140,6 +129,7 @@ pub fn generate(
             // A Brief History"), so the proportion is left alone.
 
             for _ in 0..iteration_budget {
+                if pool.len() >= target_per_cat { break; }
                 let title = match llm.generate_one_clean(
                     keyword, cat, style, genre, &examples,
                     Some(constraints[ci % constraints.len()]), finetune,
@@ -185,10 +175,11 @@ pub fn generate(
                 });
             }
 
-            // Best-of-N: rank the pool by score, keep the top target_per_cat.
-            pool.sort_by(|a, b| b.score.cmp(&a.score));
-            pool.truncate(target_per_cat);
-            results.extend(pool);
+            // No score sort: calculate_score correlates r=-0.04 with judge
+            // quality (Task 1, 2026-08-03) - it ranks by noise. Acceptance
+            // order is the correct selection under the FILL model. Restore
+            // best-of-N here ONLY when a validated ranker exists (holdout r >= 0.35).
+            results.extend(pool.into_iter().take(target_per_cat));
         }
     }
 
