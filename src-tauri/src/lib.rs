@@ -15,6 +15,10 @@ pub struct AppState {
     pub db: Mutex<rusqlite::Connection>,
     pub generator: std::sync::Mutex<title_gen::Generator>,
     pub local_llm: std::sync::Mutex<Option<local_llm::LocalLlm>>,
+    /// Cancel flag for the in-flight generation (U1). Set by `cancel_generation`;
+    /// cleared at the start of each `generate_titles`. The engine's streaming
+    /// loop polls it between attempts so a Studio-scale run can be stopped.
+    pub cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -119,6 +123,11 @@ async fn generate_titles(
     // These are millisecond operations — safe to lock.
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let ft = prompt_spec::FineTune::from_json(finetune.as_ref());
+    // Clear any prior cancel so this run starts clean, then thread the cancel
+    // flag into the streaming loop so the UI side can stop a long run (U1).
+    state.cancel.store(false, std::sync::atomic::Ordering::Relaxed);
+    let cancel_flag = std::sync::Arc::clone(&state.cancel);
+    let should_cancel = move || cancel_flag.load(std::sync::atomic::Ordering::Relaxed);
     // Use the streaming variant so the UI can render ACROSS titles as they
     // land (U1): emit a Tauri event per accepted title. The label keeps the
     // tauri:// convention used elsewhere. Emit is non-blocking/best-effort —
@@ -131,7 +140,16 @@ async fn generate_titles(
             serde_json::json!({ "accepted": accepted, "title": r.title }),
         );
     };
-    engine::generate_streaming(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier, &ft, &mut emit_fn)
+    engine::generate_streaming(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier, &ft, &mut emit_fn, &should_cancel)
+}
+
+/// Set the cancel flag for any in-flight generation (U1). The engine's
+/// streaming loop polls this between attempts and stops early; partial results
+/// already produced are returned. Safe to call anytime; no-op if not generating.
+#[tauri::command]
+fn cancel_generation(state: tauri::State<'_, AppState>) -> Result<(), String> {
+    state.cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+    Ok(())
 }
 
 #[tauri::command]
@@ -1222,9 +1240,11 @@ pub fn run() {
             db: Mutex::new(conn),
             generator: std::sync::Mutex::new(generator),
             local_llm: std::sync::Mutex::new(None),
+            cancel: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         })
         .invoke_handler(tauri::generate_handler![
             generate_titles,
+            cancel_generation,
             generate_with_ai,
             get_categories,
             get_usage_stats,

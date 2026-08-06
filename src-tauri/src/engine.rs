@@ -58,13 +58,17 @@ pub fn generate(
     // Public wrapper — existing callers (harnesses, tests) unchanged. The
     // streaming variant is `generate_streaming`, used by the Tauri command so
     // the UI can render each ACCEPTED title as it lands (U1).
-    generate_streaming(conn, generator, local_llm, keyword, categories, style, genre, quantity, tier, finetune, &mut |_| {})
+    generate_streaming(conn, generator, local_llm, keyword, categories, style, genre, quantity, tier, finetune, &mut |_| {}, &|| false)
 }
 
 /// Streaming variant: fires `on_title` once per ACCEPTED title, in the order
 /// they will be returned (acceptance order under the FILL model). Used by the
 /// desktop command to emit a per-title Tauri event so Studio-scale batches
 /// show live progress instead of an opaque 30-minute spinner.
+///
+/// `should_cancel` is polled between attempts; when it returns true the loop
+/// stops early and returns whatever has been accepted so far (partial results),
+/// so a long run can be stopped without losing work already produced.
 #[allow(clippy::too_many_arguments)]
 pub fn generate_streaming(
     conn: &Connection,
@@ -78,6 +82,7 @@ pub fn generate_streaming(
     tier: &str,
     finetune: &crate::prompt_spec::FineTune,
     on_title: &mut dyn FnMut(&TitleResult),
+    should_cancel: &dyn Fn() -> bool,
 ) -> Result<Vec<TitleResult>, String> {
     let mut results = Vec::new();
 
@@ -154,6 +159,7 @@ pub fn generate_streaming(
 
             for _ in 0..iteration_budget {
                 if pool.len() >= target_per_cat { break; }
+                if should_cancel() { break; }
                 let title = match llm.generate_one_clean(
                     keyword, cat, style, genre, &examples,
                     Some(constraints[ci % constraints.len()]), finetune,
@@ -223,7 +229,7 @@ pub fn generate_streaming(
         .cloned()
         .collect();
     let remaining = (quantity as usize).saturating_sub(results.len());
-    if remaining > 0 && !fallback_cats.is_empty() {
+    if remaining > 0 && !fallback_cats.is_empty() && !should_cancel() {
         let curated_results = retrieve_curated_fallback(
             conn, keyword, &fallback_cats, style, genre, remaining, &results,
         );
