@@ -16,6 +16,19 @@ var streamListener = null;
 var streamedCount = 0;
 var streamTotal = 0;
 
+// U1 cancel support. `generationCancelled` marks a run that the user stopped so
+// we can (a) toast "N titles forged so far" instead of the normal message and
+// (b) refuse to persist partial history or consume quota. `cancelRequested` is a
+// near-flag that mirrors the backend flag just after we fire cancel_generation so
+// a mid-attempt resolve still reads as cancelled.
+var generationCancelled = false;
+var cancelRequested = false;
+
+function setCancelRequested(v) {
+  cancelRequested = v;
+  if (v) generationCancelled = true;
+}
+
 function invoke(cmd, args) {
   if (!_invoke) {
     // Dump all Tauri-related globals for diagnostics
@@ -835,6 +848,19 @@ function handleGenerate() {
   } else {
     // Database mode (or auto without API key)
     dumpDebug('handleGenerate: using DB engine, keyword=' + keyword + ', cats=' + checkedCategories.join(',') + ', qty=' + quantity);
+    // U1 cancel: reset the flag for this batch and surface the Cancel button.
+    generationCancelled = false;
+    cancelRequested = false;
+    var cancelBtn = document.getElementById('cancelGenerateBtn');
+    if (cancelBtn) {
+      cancelBtn.style.display = 'inline-block';
+      cancelBtn.onclick = function (e) {
+        e.preventDefault();
+        invoke('cancel_generation').catch(function(){});
+        // give the engine a beat then fall back to the normal completion path
+        setCancelRequested(true); // a module flag
+      };
+    }
     genPromise = invoke('generate_titles', {
       keyword: keyword,
       categories: checkedCategories,
@@ -849,14 +875,18 @@ function handleGenerate() {
     dumpDebug('generate: SUCCESS, titles count=' + (titles ? titles.length : 'null'));
     displayResults(titles, keyword);
     var count = (titles && titles.length) || 0;
-    if (count === 0) {
+    if (generationCancelled) {
+      showToast('Generation cancelled \u2014 ' + count + (count === 1 ? ' title forged' : ' titles forged') + ' so far.');
+    } else if (count === 0) {
       showToast('No titles generated. Try a different keyword, category, or AI mode.');
     } else if (count < quantity) {
-      showToast(count + (count === 1 ? ' title forged' : ' titles forged') + ' of ' + quantity + ' requested — duplicates and low-quality candidates were filtered out.');
+      showToast(count + (count === 1 ? ' title forged' : ' titles forged') + ' of ' + quantity + ' requested \u2014 duplicates and low-quality candidates were filtered out.');
     } else {
-      showToast(count + (count === 1 ? ' title forged —' : ' titles forged —') + ' ready to publish.');
+      showToast(count + (count === 1 ? ' title forged \u2014' : ' titles forged \u2014') + ' ready to publish.');
     }
-    if (count > 0) {
+    // Only persist + count against quota when a full (non-cancelled) run finished
+    // with titles — a partial cancel must not write history or consume quota.
+    if (count > 0 && !generationCancelled) {
       dailyUsage++;
       invoke('record_generation', {
         keyword: keyword,
@@ -884,6 +914,8 @@ function handleGenerate() {
     }
     document.getElementById('loading').style.display = 'none';
     document.getElementById('generateBtn').disabled = false;
+    var cBtn = document.getElementById('cancelGenerateBtn');
+    if (cBtn) cBtn.style.display = 'none';
     stopLoadingCopy();
   });
 }
