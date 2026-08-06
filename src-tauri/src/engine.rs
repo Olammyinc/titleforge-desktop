@@ -55,6 +55,30 @@ pub fn generate(
     tier: &str,
     finetune: &crate::prompt_spec::FineTune,
 ) -> Result<Vec<TitleResult>, String> {
+    // Public wrapper — existing callers (harnesses, tests) unchanged. The
+    // streaming variant is `generate_streaming`, used by the Tauri command so
+    // the UI can render each ACCEPTED title as it lands (U1).
+    generate_streaming(conn, generator, local_llm, keyword, categories, style, genre, quantity, tier, finetune, &mut |_| {})
+}
+
+/// Streaming variant: fires `on_title` once per ACCEPTED title, in the order
+/// they will be returned (acceptance order under the FILL model). Used by the
+/// desktop command to emit a per-title Tauri event so Studio-scale batches
+/// show live progress instead of an opaque 30-minute spinner.
+#[allow(clippy::too_many_arguments)]
+pub fn generate_streaming(
+    conn: &Connection,
+    generator: &Generator,
+    local_llm: Option<&mut LocalLlm>,
+    keyword: &str,
+    categories: &[String],
+    style: &str,
+    genre: &str,
+    quantity: u32,
+    tier: &str,
+    finetune: &crate::prompt_spec::FineTune,
+    on_title: &mut dyn FnMut(&TitleResult),
+) -> Result<Vec<TitleResult>, String> {
     let mut results = Vec::new();
 
     // ── Pass 1: Local LLM (if loaded) ──
@@ -179,7 +203,10 @@ pub fn generate(
             // quality (Task 1, 2026-08-03) - it ranks by noise. Acceptance
             // order is the correct selection under the FILL model. Restore
             // best-of-N here ONLY when a validated ranker exists (holdout r >= 0.35).
-            results.extend(pool.into_iter().take(target_per_cat));
+            for r in pool.into_iter().take(target_per_cat) {
+                on_title(&r);
+                results.push(r);
+            }
         }
     }
 
@@ -200,7 +227,10 @@ pub fn generate(
         let curated_results = retrieve_curated_fallback(
             conn, keyword, &fallback_cats, style, genre, remaining, &results,
         );
-        results.extend(curated_results);
+        for r in curated_results {
+            on_title(&r);
+            results.push(r);
+        }
     }
 
     // ── SEO scoring sweep for curated results ──

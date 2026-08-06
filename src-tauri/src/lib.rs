@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
+use tauri::Emitter;
 
 pub mod db;
 pub mod engine;
@@ -73,6 +74,7 @@ pub struct UsageStats {
 
 #[tauri::command]
 async fn generate_titles(
+    app: tauri::AppHandle,
     keyword: String,
     categories: Vec<String>,
     style: String,
@@ -117,7 +119,19 @@ async fn generate_titles(
     // These are millisecond operations — safe to lock.
     let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let ft = prompt_spec::FineTune::from_json(finetune.as_ref());
-    engine::generate(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier, &ft)
+    // Use the streaming variant so the UI can render ACROSS titles as they
+    // land (U1): emit a Tauri event per accepted title. The label keeps the
+    // tauri:// convention used elsewhere. Emit is non-blocking/best-effort —
+    // a failure to emit must never fail generation.
+    let mut accepted = 0usize;
+    let mut emit_fn = |r: &TitleResult| {
+        accepted += 1;
+        let _ = app.emit(
+            "titleforge://title-generated",
+            serde_json::json!({ "accepted": accepted, "title": r.title }),
+        );
+    };
+    engine::generate_streaming(&db, &generator, llm_guard.as_mut(), &keyword, &categories, &style, &genre, quantity, &tier, &ft, &mut emit_fn)
 }
 
 #[tauri::command]
