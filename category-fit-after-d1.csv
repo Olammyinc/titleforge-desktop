@@ -1,0 +1,55 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"An Exploration of Coffee: From Morning Ritual to Mindful Choice",10,0,1,1,1
+blog,"What Makes the Perfect Cup of Joe?: Exploring the Art of Coffee Brewing",13,0,1,0,1
+blog,"From Espresso to Decaf: My Journey with Coffee",8,0,1,1,1
+blog,"Mornings Without Coffee: Discover the Blissful Zen",7,0,1,1,1
+blog,"Mindful Brew: The Journey Into Coffee-Free Life",7,0,1,1,1
+blog,"Revitalizing Brew: Exploring the Benefits of Coffee",7,0,1,1,1
+blog,"Is Coffee the Key to a Happy Brain? Dive In.",10,0,0,1,1
+blog,"The Benefits of Brewing Your Coffee at Home.",8,0,0,1,1
+book,"What is Next for Remote Work?",6,0,0,1,1
+book,"Number 1: 'Remote Revolution",4,1,1,1,1
+book,"Is Remote Work Busting the Corporate Cage?",7,0,0,1,1
+book,"The Chronicles of Departure: A Remote Work Odyssey",8,0,1,0,1
+book,"Remote Revolution: Shaping the Future of Employment",7,0,1,1,1
+book,"Remote: My Journey into the Future",6,0,1,1,1
+book,"Remote Awakening: How the Future of Work Transformed the World",10,0,1,0,1
+book,"The Remote Revolution",3,0,0,1,1
+poem,"3 Sourdough Secrets for Perfect Loaves",6,1,0,1,0
+poem,"What Lies Beneath the Sourdough's Skin?",6,0,0,1,1
+poem,"Why Sourdough Delights Bakers",4,0,0,1,1
+poem,"The Ancient Magic of Sourdough Transformation",6,0,0,1,1
+poem,"The Art of Crafting Sourdough",5,0,0,1,1
+poem,"The Birth of Flaky Sourdough Pastry",6,0,0,1,1
+poem,"The Yeast Embrace of Sourdough",5,0,0,1,1
+poem,"Sourdough Tales",2,0,0,1,1
+product,"Zen Brew",2,0,0,1,1
+product,"Journey Beans",2,0,0,1,1
+product,"Jazzy Brew",2,0,0,1,1
+product,"Zestful Brew",2,0,0,1,1
+product,"Craft Brew Dive",3,0,0,1,1
+product,"MobyBlend",1,0,0,1,1
+product,"BlendX",1,0,0,1,1
+product,"CaffeineSpark",1,0,0,1,1
+product,"Crafted Sourdough",2,0,0,1,1
+product,"Fresh Rise Sourdough",3,0,0,1,1
+product,"Sourdough Forge",2,0,0,1,1
+product,"Craftsman Sourdough",2,0,0,1,1
+product,"CraftBread",1,0,0,1,1
+product,"SourdoughSphere",1,0,0,1,1
+product,"SourdoughElevate",1,0,0,1,1
+product,"CrackleFresh",1,0,0,1,1
+song,"Morning Ritual: A Cup of Coffee to Start the Day",10,0,1,0,0
+song,"Why Does Coffee Make Me So Happy?",7,0,0,1,1
+song,"3 Coffees A Day",4,1,0,1,0
+song,"Why Coffee Tastes Like Home",5,0,0,1,1
+song,"Why Hot Coffee Should be Heated Less",7,0,0,1,1
+song,"Morning Muse Coffee",3,0,0,1,1
+youtube,"How to Succeed in Remote Work: Tips and Tricks",9,0,1,1,1
+youtube,"Spending a Weekend Away: How Remote Work Made Me Disconnect",10,0,1,1,1
+youtube,"Adventures in Virtual Office: Exploring Remote Work's Potential",8,0,1,1,1
+youtube,"Remote Work: The Future's Silent Revolution",6,0,1,1,1
+youtube,"What's the Most Productive Way to Work Remotely This Month?",10,0,0,1,1
+youtube,"Remote Bliss: Navigating Life Outside the Office",7,0,1,1,1
+youtube,"Time-Saving Tips for Successful Remote Work",6,0,0,1,1
+youtube,"Maximizing Remote Work Efficiency",4,0,0,0,1
