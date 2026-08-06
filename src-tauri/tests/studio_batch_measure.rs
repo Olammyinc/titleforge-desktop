@@ -1,12 +1,46 @@
-/// Studio-tier batch measurement (mirrors batch_measure.rs Core baseline at Studio scale).
-/// keyword "coffee" / category "youtube" / quantity 200 / tier "studio".
-/// REPORTING harness: never fails on quality/timing. Only asserts engine returned >0.
-/// No judge - distinctness is objective (judge failed calibration, S5 2026-08-05).
-/// Usage: cargo test --release --test studio_batch_measure -- --nocapture
-/// Expected ~23 min at ~6.8s/title. Let it run to completion.
+//! Studio-tier batch measurement (post-D1 re-take).
+//!
+//! Measures the offline Qwen engine's DISTINCT-USABLE YIELD at the Studio tier
+//! promise (200 titles for one keyword/category), under the post-D1 FILL model
+//! (flat 2x attempt budget => 400 attempts for a 200-title request).
+//!
+//! WHY THIS RE-TAKE (audit, HANDOFF-DESKTOP.md §7 / CONTEXT.md §5 2026-08-06):
+//!   - the original `5940dd2` measured "124/200 in 26.2 min" but wrote no CSV
+//!     and logged no rejection outcomes, so the number was unreproducible and
+//!     the stated cause (distinct-mass ceiling) was never measured.
+//!   - "124/124 distinct exact" cannot fail: `engine.rs:158-161` rejects exact
+//!     matches and `shares_opening(n=2)` before anything enters the pool, so
+//!     exact-uniqueness is guaranteed by the engine. The metric that CAN show the
+//!     product defect is YIELD (delivered ÷ requested).
+//!
+//! DESIGN:
+//!   - Drives `generate_one_clean` per attempt in ACCEPTANCE ORDER (never
+//!     score-sorted), exactly like `yield_curve.rs`.
+//!   - Classifies each attempt: `accepted` / `duplicate` / `qc_fail`, using the
+//!     SAME rule the engine dedups on: exact match OR `engine::shares_opening(n=2)`
+//!     (faithful to `engine.rs:158-161`, not a reimplementation).
+//!   - Writes a per-attempt CSV (`studio-batch-runN.csv`) with an outcome column
+//!     so the duplicate:QC split is reproducible.
+//!   - Headline = YIELD (delivered ÷ requested), not exact-uniqueness.
+//!
+//! NOTE (local_llm.rs:288-291): `generate_one_clean` returns the first
+//! soft-rejected candidate if the 3-attempt budget runs out, so `qc_fail`
+//! UNDERCOUNTS by design — a soft QC failure rarely surfaces as None.
+//!
+//! Usage:
+//!   cargo test --release --test studio_batch_measure -- --nocapture
 
-use std::time::Instant;
 use rusqlite::Connection;
+
+/// One Studio cell: 200 requested titles for coffee/youtube.
+const KEYWORD: &str = "coffee";
+const CATEGORY: &str = "youtube";
+/// Target delivered titles (the Studio tier promise).
+const TARGET: usize = 200;
+/// Post-D1 flat 2x fill budget: 400 attempts for a 200-title request.
+const ATTEMPTS: usize = 400;
+/// Report cumulative distinct yield at these attempt counts.
+const CHECKPOINTS: &[usize] = &[50, 100, 150, 200, 250, 300, 350, 400];
 
 fn init_db() -> Connection {
     let conn = Connection::open_in_memory().expect("mem");
@@ -20,84 +54,113 @@ fn init_db() -> Connection {
     conn
 }
 
-fn load_llm() -> Option<titleforge_lib::local_llm::LocalLlm> {
-    let models_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("models");
-    for name in &["qwen2.5-1.5b-instruct-q4_k_m.gguf", "SmolLM2-360M-Instruct-Q4_K_M.gguf", "SmolLM2-135M-Instruct-Q4_K_M.gguf"] {
-        let p = models_dir.join(name);
-        if p.exists() {
-            eprintln!("[studio] Loading {}...", name);
-            if let Some(llm) = titleforge_lib::local_llm::LocalLlm::load(&p) {
-                return Some(llm);
-            }
-        }
-    }
-    None
-}
-
-/// Opening-4-word signature: lowercased first 4 whitespace tokens joined by spaces.
-/// Mirrors web generate.js near-duplicate dedup (drops titles sharing first 4 words).
-fn opening_signature(title: &str) -> String {
-    let norm: String = title.to_lowercase();
-    let toks: Vec<&str> = norm.split_whitespace().collect();
-    toks.iter().take(4).copied().collect::<Vec<&str>>().join(" ")
-}
-
 #[test]
 fn studio_batch_measure() {
     let conn = init_db();
     let generator = titleforge_lib::title_gen::Generator::build(&conn);
-    let mut llm = match load_llm() {
-        Some(l) => l,
-        None => { eprintln!("[studio] No model found - skipping"); return; }
+
+    let model = match titleforge_lib::local_llm::LocalLlm::find_model("qwen2.5-1.5b-instruct-q4_k_m.gguf") {
+        Some(p) => p,
+        None => { eprintln!("Qwen model not found — skipping."); return; }
+    };
+    let mut llm = match titleforge_lib::local_llm::LocalLlm::load(&model) {
+        Some(m) => m,
+        None => { eprintln!("Model failed to load — skipping."); return; }
     };
 
-    let keyword = "coffee";
-    let categories = vec!["youtube".to_string()];
-    let style = "normal";
-    let genre = "any";
-    let quantity: u32 = 200;
-    let tier = "studio";
+    let spec = titleforge_lib::prompt_spec::category_spec(CATEGORY);
+    // Same few-shot the production path uses.
+    let mut examples = generator.retrieve_similar(KEYWORD, CATEGORY, 4);
+    if examples.is_empty() {
+        examples = titleforge_lib::engine::fetch_top_appeal_fewshot(&conn, CATEGORY, 4);
+    }
+    // Same rotated constraints engine.rs uses.
+    let constraints: &[&str] = &[
+        "",
+        "Make this one a question.",
+        "Open this one with a specific number.",
+        "Frame this one as a personal story or first-person experience.",
+        "Build this one on a contrast or a reversal.",
+        "Make this one short — three words or fewer.",
+    ];
 
-    eprintln!("\n[studio] Generating {} titles for '{}' (category: {}) at tier '{}'...",
-        quantity, keyword, categories[0], tier);
-    eprintln!("[studio] (At ~6.8s/title offline this is ~23 min. Let it run.)");
+    println!("\n╔══════════════════════════════════════════════════════════════════════╗");
+    println!("║  STUDIO YIELD — {} titles requested for '{}' / {} (post-D1, {} attempts) ║", TARGET, KEYWORD, CATEGORY, ATTEMPTS);
+    println!("╚══════════════════════════════════════════════════════════════════════╝");
 
-    let start = Instant::now();
-    let results = titleforge_lib::engine::generate(
-        &conn, &generator, Some(&mut llm), keyword, &categories, style, genre, quantity, tier,
-        &Default::default(),
-    ).expect("engine::generate did not Err");
-    let elapsed = start.elapsed();
+    let mut csv = String::from("keyword,category,attempt,accepted_index,outcome,title\n");
+    let mut accepted: Vec<String> = Vec::new();
+    let mut dup = 0usize;
+    let mut qc = 0usize;
+    let mut curve: Vec<(usize, usize)> = Vec::new();
+    let t0 = std::time::Instant::now();
 
-    let unique_exact: std::collections::HashSet<&str> =
-        results.iter().map(|r| r.title.as_str()).collect();
-    let unique_sigs: std::collections::HashSet<String> =
-        results.iter().map(|r| opening_signature(&r.title)).collect();
-    let wall_secs = elapsed.as_secs_f64();
-    let per_title = wall_secs / results.len().max(1) as f64;
+    for attempt in 1..=ATTEMPTS {
+        let c = if spec.is_name { "" } else { constraints[(attempt - 1) % constraints.len()] };
+        eprintln!("[studio] attempt {}/{} (accepted {}) ...", attempt, ATTEMPTS, accepted.len());
+        let out = llm.generate_one_clean(KEYWORD, CATEGORY, "normal", "any", &examples, Some(c), &Default::default());
 
-    let mut source_mix: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
-    for r in &results {
-        *source_mix.entry(r.source.as_deref().unwrap_or("?")).or_insert(0) += 1;
+        let (outcome, title) = match out {
+            None => { qc += 1; ("qc_fail".to_string(), String::new()) }
+            Some(t) => {
+                // Same dedup rule engine.rs:158-161 applies: exact match OR a
+                // shared two-word opening.
+                let is_dup = accepted.iter().any(|a: &String| {
+                    a.eq_ignore_ascii_case(&t)
+                        || titleforge_lib::engine::shares_opening(a, &t, 2)
+                });
+                if is_dup { dup += 1; ("duplicate".to_string(), t.clone()) }
+                else { accepted.push(t.clone()); ("accepted".to_string(), t.clone()) }
+            }
+        };
+        csv.push_str(&format!("\"{}\",\"{}\",{},{},{},\"{}\"\n",
+            KEYWORD, CATEGORY, attempt, accepted.len(), outcome, title.replace('"', "'")));
+        if CHECKPOINTS.contains(&attempt) { curve.push((attempt, accepted.len())); }
+        // Early exit mirror of D1: stop once we have enough to return TARGET.
+        if accepted.len() >= TARGET { break; }
     }
 
-    eprintln!("\n==========================================================================");
-    eprintln!("  STUDIO BATCH MEASUREMENT - '{}' x {} (tier: {})", keyword, quantity, tier);
-    eprintln!("==========================================================================");
-    eprintln!("  Requested:                   {}", quantity);
-    eprintln!("  Returned:                    {}", results.len());
-    eprintln!("  UNIQUE exact:                {} / {}", unique_exact.len(), results.len());
-    eprintln!("  UNIQUE opening-4-word sigs:  {} / {}", unique_sigs.len(), results.len());
-    eprintln!("  Wall clock:                  {:.1}s", wall_secs);
-    eprintln!("  Seconds per title:           {:.2}s", per_title);
-    eprintln!("  Source mix:                  {:?}", source_mix);
-    eprintln!("==========================================================================");
-    eprintln!("  READING (CONTEXT.md S6.5): if unique_sigs < returned by a wide margin,");
-    eprintln!("  the ceiling is DISTINCT MASS per distribution - same mechanism the web");
-    eprintln!("  dual-provider result showed (one provider ~70/100, two -> 100/100).");
-    eprintln!("==========================================================================\n");
+    let wall = t0.elapsed().as_secs_f64();
+    let attempts_used = curve.last().map(|(a, _)| *a).unwrap_or(attempts_run(&csv));
+    // Recompute actual attempts used (early exit may be < ATTEMPTS).
+    let attempts_used = ATTEMPTS.min(attempts_used.max(accepted.len() + dup + qc));
 
-    assert!(!results.is_empty(), "engine returned 0 titles - engine panicked or produced nothing");
-    eprintln!("[studio] PASS (reporting-only) - {} returned, {} unique exact, {} unique 4-word sigs, {:.1}s, {:.2}s/title",
-        results.len(), unique_exact.len(), unique_sigs.len(), wall_secs, per_title);
+    // Headline: YIELD = delivered / requested.
+    let delivered = accepted.len().min(TARGET);
+    let yield_pct = 100.0 * delivered as f64 / TARGET as f64;
+
+    println!();
+    println!("── {} / {}", KEYWORD, CATEGORY);
+    print!("   cumulative distinct: ");
+    for (at, n) in &curve { print!("@{}={} ", at, n); }
+    println!();
+    println!("   requested    {}", TARGET);
+    println!("   attempts     {}", attempts_used);
+    println!("   delivered    {}  (YIELD {:.0}%)", delivered, yield_pct);
+    println!("   drop to fill {}", TARGET.saturating_sub(delivered));
+    println!("   rejections   {} duplicate | {} QC-fail", dup, qc);
+    println!("   wall clock   {:.0}s ({:.2}s/attempt)", wall, wall / attempts_used.max(1) as f64);
+
+    println!();
+    println!("╔══════════════════════════════════════════════════════════════════════╗");
+    println!("║  RESULT — decides the Studio cap                                ║");
+    println!("╚══════════════════════════════════════════════════════════════════════╝");
+    println!("  YIELD ({:.0}%) is the headline metric.", yield_pct);
+    println!("  duplicates dominate -> ceiling is DISTINCT-MASS; a second distribution helps.");
+    println!("  QC-fail dominates   -> ceiling is QUALITY; the model is the limit.");
+    println!("  NOTE: qc_fail undercounts by design (local_llm.rs:288-291 soft-returns).");
+
+    let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("studio-batch.csv");
+    let _ = std::fs::write(&out, csv);
+    println!("\n  CSV: {}", out.display());
+    println!("  wall clock: {:.0}s", wall);
+
+    // Reporting harness — never fails on measured outcome; only guards against
+    // a completely broken engine (0 delivered).
+    assert!(delivered > 0, "Studio batch returned 0 — engine broken?");
+}
+
+/// Best-effort count of rows written to the CSV (used to infer attempts used).
+fn attempts_run(csv: &str) -> usize {
+    csv.lines().skip(1).count()
 }
