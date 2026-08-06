@@ -6,6 +6,16 @@
 
 // ---- Tauri API (lazy-initialized) ----
 var _invoke = null;
+
+// ---- Streamed-results accumulator (U1) ----
+// The Rust backend emits `titleforge://title-generated` once per ACCEPTED title
+// during `generate_titles`. We accumulate those into a live preview area while
+// the batch runs, then let the canonical displayResults() replace it on completion.
+var liveTitles = [];
+var streamListener = null;
+var streamedCount = 0;
+var streamTotal = 0;
+
 function invoke(cmd, args) {
   if (!_invoke) {
     // Dump all Tauri-related globals for diagnostics
@@ -745,6 +755,32 @@ function handleGenerate() {
   document.getElementById('generateBtn').disabled = true;
   startLoadingCopy(keyword); // rotate engaging messages while the forge works
 
+  // Reset the U1 stream accumulator for this batch.
+  liveTitles = [];
+  streamedCount = 0;
+  streamTotal = quantity;
+
+  // One-shot listener for the Rust stream event `titleforge://title-generated`.
+  // Fires once per ACCEPTED title during `generate_titles`. We render titles as
+  // they land and show live "Forging N of M..." progress. A single listener is
+  // registered per generation and always removed on completion/error (finally).
+  if (window.__TAURI__ && window.__TAURI__.event) {
+    window.__TAURI__.event.listen('titleforge://title-generated', function (ev) {
+      var payload = ev.payload || {};
+      // Guard against malformed/duplicate payloads.
+      if (typeof payload.title !== 'string' || !payload.title) return;
+      streamedCount++;
+      liveTitles.push(payload.title);
+      updateLiveProgress();
+      appendLiveTitle(payload.title);
+    }).then(function (unlisten) {
+      // `unlisten` is the cleanup function returned by Tauri's listen().
+      streamListener = unlisten;
+    }).catch(function (e) {
+      dumpDebug('Stream listener setup failed: ' + e);
+    });
+  }
+
   var genPromise;
 
   if (activeEngine === 'ai' && aiProvider && aiApiKey) {
@@ -838,10 +874,67 @@ function handleGenerate() {
     dumpDebug('generate: FAILED — ' + errMsg + ' (err type: ' + (typeof err) + ', keys: ' + (err && typeof err === 'object' ? Object.keys(err).join(',') : 'N/A') + ')');
     showError(errMsg);
   }).finally(function () {
+    // U1 cleanup: always remove the stream listener so repeated generations
+    // never stack duplicate listeners. Persistence stays gated on completion
+    // (displayResults + record_generation + history run in .then), so a
+    // cancelled/failed run never writes partial history.
+    if (streamListener) {
+      try { streamListener(); } catch (e) { /* ignore */ }
+      streamListener = null;
+    }
     document.getElementById('loading').style.display = 'none';
     document.getElementById('generateBtn').disabled = false;
     stopLoadingCopy();
   });
+}
+
+// --- U1 live-streaming helpers ---
+// Update the "Forging N of M..." counter shown next to the loading area.
+function updateLiveProgress() {
+  if (streamTotal <= 0) return;
+  var counter = document.getElementById('liveProgress');
+  if (!counter) {
+    // Lazily create the counter inside the loading div so it sits next to the
+    // spinner. Created here (not in index.html) to keep the change app.js-only.
+    var loading = document.getElementById('loading');
+    if (!loading) return;
+    counter = document.createElement('p');
+    counter.id = 'liveProgress';
+    counter.style.textAlign = 'center';
+    counter.style.color = 'var(--forge, #E8782B)';
+    counter.style.marginTop = '6px';
+    counter.style.fontWeight = '600';
+    loading.appendChild(counter);
+  }
+  counter.textContent = 'Forging ' + streamedCount + ' of ' + streamTotal + '...';
+}
+
+// Append a live title row to the preview area. Uses a lightweight card with a
+// pending-appeal placeholder — the canonical grid from displayResults() replaces
+// this on completion.
+function appendLiveTitle(title) {
+  var results = document.getElementById('results');
+  if (!results) return;
+  var div = document.createElement('div');
+  div.className = 'result-item';
+
+  var leftCol = document.createElement('div');
+  leftCol.className = 'result-left';
+  var scoreNum = document.createElement('div');
+  scoreNum.className = 'result-score-num';
+  scoreNum.textContent = '\u2026'; // pending score placeholder
+  leftCol.appendChild(scoreNum);
+  div.appendChild(leftCol);
+
+  var body = document.createElement('div');
+  body.className = 'result-body';
+  var titleEl = document.createElement('div');
+  titleEl.className = 'result-title';
+  titleEl.textContent = title;
+  body.appendChild(titleEl);
+  div.appendChild(body);
+
+  results.appendChild(div);
 }
 
 // Rotate engaging, on-brand messages while titles are being generated.
