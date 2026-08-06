@@ -533,6 +533,33 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 ### CRITICAL PATH — everything below feeds §6.4b
 
+#### U1. Streamed results + progress count + cancel — ✅ **OWNER-DECIDED 2026-08-06. Both products. Do this first.**
+
+**This is now the highest-value item on the board**, because it converts §6.4b item 4 (Studio batch time) from a product defect into a non-issue.
+
+**What it looks like today.** `handleGenerate` fires a single blocking `invoke`, shows the `loading` div, disables the button, rotates flavour copy, and returns everything at once (`src/app.js:742-748`, `:840`). A Studio 200 request is **~30 minutes of an opaque spinner with no progress, no cancel, and total loss if the app is closed**. Every existing progress bar in that file (`:1831-1940`) drives the 940 MB *model download*, not generation.
+
+**What to build.** Generation is already a per-title loop with a natural checkpoint at each accepted title, so:
+1. Emit a Tauri event per accepted title from the `engine.rs` loop.
+2. Render titles as they land, rather than in one batch at the end.
+3. Show `N of M` from the accepted count.
+4. Cancel — nearly free once 1-3 exist, and it is the piece that makes a long run acceptable.
+5. Mirror the same on web where the architecture allows (chunked jobs already return progressively; the UI does not surface it).
+
+**Why the ordering matters: do NOT cut the Studio cap first.** A 30-minute run that yields usable titles from ~5 seconds in and can be stopped at any point is a background fill, not a wait. Cutting the cap first throws away exactly what this buys.
+
+**Watch:** streaming changes when `record_generation` and usage/history writes fire. A cancelled run must not write a partial batch to history as if it were complete, and must not consume quota — the zero-result guard from `53e85dd` is the precedent.
+
+#### U2. Fix the false Studio sales bullets *(§6.4b item 5 — a paid claim the product cannot meet)*
+
+`titleforge/desktop.html:447-462` and `:521`. Full table in `CONTEXT.md` §6.2 #20. Four of eight bullets are false:
+
+- **"up to 500 titles"** appears **twice** (`:453`, `:521`) — the code caps at **200** (`lib.rs:104`). This is the one that matters: it is sold, and unmeetable at any setting.
+- "3 machine activations included" as a *Studio* benefit — `MAX_MACHINES = 3` is flat (`licenses.js:168`), every tier gets 3.
+- "Name generation" and "Advanced fine-tuning controls" — neither is tier-gated; Core has both.
+
+**Fix the page regardless of what happens to the tier structure.** Do not invent new numbers to fill the gaps — use what the code enforces today, or leave the bullet out.
+
 #### W1. Make `measure-provider-overlap.js` persist its result, then re-run *(small, do first)*
 
 The overlap measurement **was run**, but `scripts/measure-provider-overlap.js:130` only does `console.log` — no file is written. The number went to a terminal and is gone. **Every other measurement script in this project writes a CSV** (`category-fit-run*.csv`, `batch-uniqueness.csv`, `yield-curve*.csv`); this one is the exception and that is why the result was lost.
@@ -636,6 +663,12 @@ The 2026-08-04 No-Go was invalid: it measured a stop-token bug (`token_eos` vs `
 
 ---
 
+### ⛔ Owner decision pending — do NOT implement
+
+**The tier structure is reopened (2026-08-06).** Prices are not in question; what separates the tiers is. Verified: **Studio's only coded differentiator is the batch cap** (`lib.rs:102-104`) — every other gate is a binary `get_tier(&db) == "core"` check, so setting Studio to 50 would make Studio identical to Pro at $89 vs $59. Also verified: no desktop tier has a usage cap, and `4 × 50 ≠ 1 × 200` because dedup is per-call (the `HashSet` in `generate()` is local; nothing reads history).
+
+A proposal is recorded in `CONTEXT.md` §5 (2026-08-06 entry) — tier-aware machine activations, commercial licence, brand-voice profiles, bulk CSV as the Studio anchor. **It is a proposal, not a decision, and it is explicitly judgement rather than evidence.** Do not build any of it, and do not change tier caps, until the owner rules. U2 (fixing the false sales bullets) is independent and should proceed now.
+
 ### Standing rules that earned their place this week
 
 1. **A measurement that only prints to stdout has not been taken.** Write the CSV (W1 is the cautionary tale).
@@ -651,3 +684,4 @@ The 2026-08-04 No-Go was invalid: it measured a stop-token bug (`token_eos` vs `
 8. **Separate what the harness observed from what you concluded.** Say it explicitly in the commit message and the change-log entry. "Dedup consumed the budget" was imported from a different harness and presented as this run's result.
 9. **When a result surprises you, check the baseline before you write "worse".** The ~11 min Studio estimate was never real, and the correct figure was in the header comment of the very file being written. A 14% miss was reported as a 2.4× surprise, and the same phantom number then corrupted the Phi tier maths.
 10. **Shipping is half the task; the record is the other half.** `dbee1f1` closed a payment gate and left five documents saying it was open.
+11. **§7 is ONE document living in two files — edit it once and copy the block.** It has now drifted three times (`ebfad93`, then again after D1, then again after the fix-up), each time because the two copies were edited separately. Editing `HANDOFF-DESKTOP.md` and then writing the equivalent text into `HANDOFF-WEB.md` is how it breaks. Copy from the §7 heading to EOF, verbatim, in the same commit pass, and diff the two before committing. (Split on the *full* heading line, not the `## 7.` prefix — this rule text would otherwise match too.)
