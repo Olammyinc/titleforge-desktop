@@ -561,15 +561,16 @@ Desktop's evidenced number is **10 per category** (8/8), target 20 internally wi
 
 The small-request retry headroom already added is the right idea; this extends it to the general case. **Re-run `yield_curve` and `category_fit` after changing it** — more attempts per slot changes wall-clock, and Studio time is already a gate (§6.4b item 4).
 
-**⚠️ 2026-08-06: THIS WAS THE FIRST TASK, ahead of D2 — DONE.** ✅ Implemented as **three changes** (commit `7017702`): (1) flat **2× fill budget** for every request (removed the `mult` tier-ladder) — at `mult = 2` Studio 200 = 400 attempts ≈ 52 min; (2) **early exit** so 2× is a ceiling not a floor; (3) **no noise sort** (removed `sort_by(score)`; acceptance order via `take(target_per_cat)`). Order-preserving final dedup added (commit `839a705`). Core-25 through `engine::generate` PASSES post-D1: **25/25 unique in 181.9s**. after-D1 `category_fit` no regression (fire rate 96% (54/56), range 7.06, product 16/16; CSVs `category-fit-after-d1.csv`, `yield-curve-after-d1.csv`). Studio harness rebuilt in `yield_curve.rs` shape (`bc485f0`).
+**⚠️ 2026-08-06: THIS WAS THE FIRST TASK, ahead of D2 — DONE.** ✅ Implemented as **three changes** (commit `7017702`): (1) flat **2× fill budget** for every request (removed the `mult` tier-ladder); (2) **early exit** so 2× is a ceiling not a floor; (3) **no noise sort** (removed `sort_by(score)`; acceptance order via `take(target_per_cat)`). Order-preserving final dedup added (commit `839a705`). Core-25 through `engine::generate` PASSES post-D1: **25/25 unique in 181.9s**. after-D1 `category_fit` no regression (fire rate 96% (54/56), range 7.06, product 16/16; CSVs `category-fit-after-d1.csv`, `yield-curve-after-d1.csv`). Studio harness rebuilt in `yield_curve.rs` shape (`bc485f0`). **Measured Studio 200 post-D1 = 26-31 min** (NOT ~52 min — that was a 2× baseline error; see D2).
 
 #### D2. Studio batch-time honesty *(§6.4b item 4)*
 
 Recorded as 22.6 min best / 45.3 min worst against a softened "up to 200" claim. Those figures predate the 1× multiplier and are stale. Re-measure, and re-measure again after D1 since it directly increases attempts.
 
 **⚠️ 2026-08-06 — first attempt (`5940dd2`) did not count. **Re-take DONE** post-D1, two reproducible runs.** coffee × youtube × 200 (400 attempts, flat 2×):
-- **Run 1** (`studio-batch-run1.csv`): delivered **199/200 (100%)**, 200 dup : 1 QC, **30.7 min**.
+- **Run 1** (`studio-batch-run1.csv`): delivered **199/200 (99.5%)**, 200 dup : 1 QC, **30.7 min**.
 - **Run 2** (`studio-batch-run2.csv`): delivered **200/200 (100%)**, 187 dup : 1 QC, **26.2 min**.
+- **Timing note (rule #1):** the wall-clock figures above are printed to stdout only — the CSVs carry the per-attempt yield/outcome but not per-attempt latency. Timing is the part that matters for the cap decision; add a `wall_ms` (or `latency_ms`) column to a future run if precise reproducibility of the time value is required.
 
 **Result:** post-D1 Studio fills to ~100% yield; the duplicate:QC split (~200:1) is now MEASURED — distinct-mass is the ceiling, quality is not the constraint. The binding gate is **time (~30 min for Studio 200)**. Owner decision pending: is that acceptable, or should the cap drop? Requirements met: per-attempt CSV with `outcome` column ✓, `engine::shares_opening` used ✓, yield headline ✓, run twice ✓, `qc_fail` undercount-by-design noted ✓.
 
