@@ -550,15 +550,14 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 **Watch:** streaming changes when `record_generation` and usage/history writes fire. A cancelled run must not write a partial batch to history as if it were complete, and must not consume quota — the zero-result guard from `53e85dd` is the precedent.
 
-#### U2. Fix the false Studio sales bullets *(§6.4b item 5 — a paid claim the product cannot meet)*
+#### U2. Fix the false Studio sales bullets — ✅ **DONE 2026-08-06 (`88aeb48`)** *(§6.4b item 5 — a paid claim the product cannot meet)*
 
-`titleforge/desktop.html:447-462` and `:521`. Full table in `CONTEXT.md` §6.2 #20. Four of eight bullets are false:
+`titleforge/desktop.html:447-462` and `:521`. Full table in `CONTEXT.md` §6.2 #20. Four of eight bullets were false:
+- **"up to 500 titles"** (×2) → code caps at **200**; now reads "up to 200 titles".
+- "3 machine activations included" (Studio) → removed (`MAX_MACHINES=3` flat).
+- "Name generation" and "Advanced fine-tuning controls" → removed (not tier-gated).
 
-- **"up to 500 titles"** appears **twice** (`:453`, `:521`) — the code caps at **200** (`lib.rs:104`). This is the one that matters: it is sold, and unmeetable at any setting.
-- "3 machine activations included" as a *Studio* benefit — `MAX_MACHINES = 3` is flat (`licenses.js:168`), every tier gets 3.
-- "Name generation" and "Advanced fine-tuning controls" — neither is tier-gated; Core has both.
-
-**Fix the page regardless of what happens to the tier structure.** Do not invent new numbers to fill the gaps — use what the code enforces today, or leave the bullet out.
+Done: Studio card + FAQ now say "up to 200 titles"; the three non-gated bullets dropped.
 
 #### W1. Make `measure-provider-overlap.js` persist its result, then re-run *(small, do first)*
 
