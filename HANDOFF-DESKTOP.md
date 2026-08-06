@@ -201,10 +201,13 @@ confirmed beta.4 installation and beta.5 updater behavior. The updater now uses
 check → download → explicit install/restart, with green reserved for up-to-date
 and amber for an available/downloaded update.
 
-Remaining release hardening: migrate the updater endpoint from the manually
-maintained Netlify `updates.json` to GitHub Releases, and remove dead
-`candle-core` / `candle-transformers` / `tokenizers` dependencies during a
-separate cleanup pass.
+Remaining release hardening: the updater endpoint migration (Netlify → GitHub
+Releases) is DONE at the code level (`tauri.conf.json` endpoint + CSP
+`github.com`/`objects.githubusercontent.com`, release workflow Netlify step →
+documented no-op; commit `cfa5d11`) and dead `candle-*`/`tokenizers` deps are
+removed (same commit). ⛔ The beta tag + live in-app updater validation against
+the new GitHub endpoint still awaits the owner (needs a release tag and a
+Sandbox run).
 
 ---
 
@@ -513,8 +516,10 @@ The 2026-08-04 No-Go was invalid: it measured a stop-token bug (`token_eos` vs `
 
 #### D6. Housekeeping
 
-- Remove dead `candle-core` / `candle-transformers` / `tokenizers` deps (`AI-WORK-BRIEF.md` §6). Verify with `cargo build --release`.
-- Migrate the updater endpoint from manually-maintained Netlify metadata to GitHub Releases — the manual step already caused one stale-metadata incident.
+- ✅ **Removed dead `candle-core` / `candle-transformers` / `tokenizers` deps** (+ removed the `cuda` feature), verified `cargo check` + 33/33. Commit `cfa5d11`.
+- ✅ **Migrated the updater endpoint** Netlify → GitHub Releases at the code level (`tauri.conf.json` endpoint + CSP `github.com`/`objects.githubusercontent.com`; workflow Netlify step → documented no-op). Commit `cfa5d11`. ⛔ Beta tag + live update validation deferred to the owner.
+
+**NEW Studio-scale finding (commit `5940dd2`, harness `src-tauri/tests/studio_batch_measure.rs`):** coffee × youtube × 200 offline returned **124** unique titles in **26.2 min** (12.69 s/title). The 200→124 gap is DIVIDED distinct-mass ceiling (dedup collisions consumed the iteration budget; QC rejected ~nothing) — the same mechanism as web's one-provider ~70/100. This is a product problem: Studio's "up to 200" and the ~11 min estimate are both optimistic. Owner decision needed on Studio cap or a second distribution; caps NOT changed unattended.
 
 ---
 

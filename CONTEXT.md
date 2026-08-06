@@ -496,6 +496,12 @@ Full breakdown: decided-both-times same title **5**, flipped **3**, tie both tim
 
 **Do not re-open the ranker.** The reason is now stronger, not weaker.
 
+### 2026-08-05 — Desktop: updater → GitHub Releases + dead deps removed + Studio-scale measurement
+
+Updater endpoint migrated Netlify → GitHub Releases at the code level (`https://github.com/Olammyinc/titleforge-desktop/releases/latest/download/updates.json`), CSP gained `github.com`/`objects.githubusercontent.com`, workflow Netlify deploy step → documented no-op, `NETLIFY_AUTH_TOKEN` unused. Dead `candle-*`/`tokenizers` deps + `cuda` feature removed. `cargo check` + 33/33. Commit `cfa5d11`. ⛔ Beta tag + live in-app updater validation against the new endpoint deferred to owner.
+
+**Studio-scale measurement (first ever):** `src-tauri/tests/studio_batch_measure.rs` (`5940dd2`) — coffee × youtube × 200 offline returned **124** unique (120 opening-4-word) in **26.2 min**, 12.69 s/title, 121 LLM + 3 curated. The 200→124 gap is DISTINCT MASS (dedup collisions consumed the iteration budget; QC rejected ~nothing) — same mechanism as web one-provider ~70/100. Studio "up to 200" and the ~11min estimate are both optimistic; a cap change or second distribution is an owner decision (caps not changed unattended).
+
 ### 2026-08-04 — Desktop beta release and updater cycle completed through beta.5
 
 **Release path:** Desktop versions `v1.0.0-beta.2` through `v1.0.0-beta.5` were tagged and released. CI passed across Windows, macOS, and Linux; Qwen verification, smoke tests, signatures, SHA256SUMS, GitHub Releases, and `updates.json` generation all passed. A CI downloader defect was fixed in `2b5fabd`: Hugging Face HTTP error bodies are now rejected with `curl --fail`, `.part` files, cleanup, and atomic move.
@@ -504,7 +510,7 @@ Full breakdown: decided-both-times same title **5**, flipped **3**, tie both tim
 
 **Desktop generation beta finding/fix:** A request for 10 titles returned 8 because the 1x LLM budget was consumed by failed attempts and near-duplicate filtering. `53e85dd` adds 2x retry headroom for small per-category requests (without changing large-batch 1x timing), makes the partial-result toast say `N of Q requested`, and prevents zero-result generations from consuming usage/history quota. Similar structural templates remain an open quality issue.
 
-**Current desktop next action:** Track A judge calibration, beginning with A0 self-agreement/noise-ceiling measurement. Do not restart rejected ranker work, Qwen2.5-3B, multi-constraint prompt experiments, colon caps, grammar work, or desktop dual-provider pairing. Remaining hardening after calibration includes migrating the updater endpoint from manually maintained Netlify metadata to GitHub Releases and removing dead candle/tokenizer dependencies.
+**Current desktop next action:** Updater endpoint migrated (Netlify → GitHub Releases, code-level) and dead candle/tokenizer deps removed (commit `cfa5d11`). ⛔ Next step that needs the owner: **tag a beta + run the live in-app update against the new GitHub endpoint in Sandbox**, then decide on the Studio-scale finding (coffee×200 returned 124 unique in 26.2 min — distinct-mass ceiling, harness `5940dd2`). Do not restart rejected ranker work, Qwen2.5-3B, multi-constraint prompt experiments, colon caps, grammar work, or desktop dual-provider pairing.
 
 ### 2026-08-04 — Desktop Track A0 judge calibration closed as No-Go
 
