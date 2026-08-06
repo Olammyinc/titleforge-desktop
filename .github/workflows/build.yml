@@ -262,21 +262,12 @@ jobs:
           # Dry-runs (manual dispatch) create a DRAFT so nothing goes public.
           # Real v* tags publish normally.
           draft: ${{ github.event_name == 'workflow_dispatch' }}
-      - name: Deploy updates.json to Netlify
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: |
-          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
-            echo "No NETLIFY_AUTH_TOKEN secret set — skipping Netlify deploy."
-            echo "To enable auto-deploy, add your Netlify PAT to repo secrets."
-            exit 0
-          fi
-          SITE_ID="titleforge-tool"
-          # Read file, escape for JSON string
-          UPDATES_JSON=$(cat dist/updates.json | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
-          curl -s -X POST \
-            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"files\": {\"/updates.json\": $UPDATES_JSON}}" \
-            "https://api.netlify.com/api/v1/sites/$SITE_ID/deploys" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Deployed:', d.get('ssl_url','?'))"
+      - name: (skipped) Deploy updates.json to Netlify
+        # Updater endpoint migrated from Netlify to GitHub Releases.
+        # tauri.conf.json now points the updater at:
+        #   https://github.com/Olammyinc/titleforge-desktop/releases/latest/download/updates.json
+        # The softprops/action-gh-release step above already uploads dist/updates.json
+        # (and its .sig) as release assets; GitHub serves those at releases/latest/download/.
+        # so no external deploy is needed. This step is a documented no-op.
+        # NETLIFY_AUTH_TOKEN is no longer used in this workflow.
+        run: echo "updater reads from GitHub Releases; Netlify deploy removed"

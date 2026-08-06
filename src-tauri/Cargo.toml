@@ -27,13 +27,8 @@ hostname = "0.4"
 keyring = { version = "3", features = ["windows-native", "apple-native", "linux-native"] }
 sha2 = "0.10"
 
-# Local LLM inference via candle-rs
-candle-core = "0.11"
-candle-transformers = "0.11"
-candle-nn = "0.11"
-tokenizers = "0.21"
+# Local LLM inference via llama.cpp
 llama-cpp-2 = "0.1.153"
 
 [features]
 default = []
-cuda = ["candle-core/cuda", "candle-transformers/cuda"]
