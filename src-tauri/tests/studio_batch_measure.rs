@@ -150,7 +150,11 @@ fn studio_batch_measure() {
     println!("  QC-fail dominates   -> ceiling is QUALITY; the model is the limit.");
     println!("  NOTE: qc_fail undercounts by design (local_llm.rs:288-291 soft-returns).");
 
-    let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("studio-batch.csv");
+    // The audit requires run-tagged CSVs (studio-batch-run1.csv / run2.csv).
+    // This harness accepts an optional run suffix via env STUDIO_RUN (e.g. "1").
+    let run = std::env::var("STUDIO_RUN").unwrap_or_default();
+    let fname = if run.is_empty() { "studio-batch.csv" } else { &format!("studio-batch-run{}.csv", run) };
+    let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(fname);
     let _ = std::fs::write(&out, csv);
     println!("\n  CSV: {}", out.display());
     println!("  wall clock: {:.0}s", wall);
