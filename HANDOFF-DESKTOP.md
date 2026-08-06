@@ -535,7 +535,7 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 #### U1. Streamed results + progress count + cancel — ✅ **OWNER-DECIDED 2026-08-06. Both products. Do this first.**
 
-> **Progress 2026-08-06:** Desktop shipped (backend `generate_streaming` + per-title `titleforge://title-generated` emit `b81d492`; frontend render-on-land + live `N of M` counter `34cd45c`; persistence still gated on completion so cancelled runs don't write partial history). **Cancel NOT yet implemented** — needs an `Arc<AtomicBool>` the CPU-bound Rust loop polls. **Web mirror not yet surfaced** (chunked jobs already return progressively; the UI does not surface it yet).
+> **Progress 2026-08-06:** Desktop shipped end-to-end for offline generation: backend `generate_streaming` + per-title `titleforge://title-generated` emit (`b81d492`), render-on-land + live `N of M` counter (`34cd45c`), and **cancel** via an `Arc<AtomicBool>` flag + `cancel_generation` command + JS Cancel button (`9eca1d5`, `e8282d3`) — a cancelled run returns partial titles but never writes history or consumes quota (`!generationCancelled` guard). 33/33 tests. **Web mirror not yet surfaced** (chunked jobs already return progressively; the UI does not surface it yet).
 
 **This is now the highest-value item on the board**, because it converts §6.4b item 4 (Studio batch time) from a product defect into a non-issue.
 
