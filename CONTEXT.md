@@ -1745,17 +1745,17 @@ Full 4-engine comparison with all fixes applied:
 
 **4b. VC++ runtime on clean Windows — ✅ FIXED (app-local DLLs).** `installMode: currentUser` + vc_redist = impossible (needs admin to write System32). App-local `msvcp140.dll`/`vcruntime140.dll`/`vcruntime140_1.dll`/`vcomp140.dll` next to the exe resolve with zero elevation (Microsoft-sanctioned). See §5 entry.
 
-**5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped). **Task 1 (2026-08-03) dropped the best-of-N multiplier to 1×** — the old 4× loop was the worst-case driver. Core 25 is now ~1.4 min generation (measured 4.7 min total for 50 titles incl. judge calls). Updated estimate:
+**5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped). **Task 1 (2026-08-03) dropped the best-of-N multiplier to 1×** — the old 4× loop was the worst-case driver.
 
-> **⚠️ CORRECTED 2026-08-06 — this table was wrong by exactly 2× from the day it was written.** It assumed **~3.4 s/title**. The measured baseline is **6.79 s/title** (169.6s for 25) and the Studio run measured **7.87 s/attempt**.
+> **⚠️ CORRECTED 2026-08-06 (twice).** Original assumed ~3.4 s/title; measured baseline is **6.79 s/title** (169.6s for 25). `5940dd2` added "~23-26 min" but was n=1, unrecorded, pre-D1. **After D1 + the post-D1 Studio re-take (2 runs), the MEASURED values are:**
+>
+> | Tier | Titles | Generation (2×, post-D1) — MEASURED | status |
+> |---|---|---|---|
+> | Core | 25 | **~3.0 min** (Core-25 via `engine::generate`, 181.9s) | MEASURED |
+> | Pro | 50 | **~7 min** | **INTERPOLATED (extrapolated from Core; not yet measured)** |
+> | Studio | 200 | **~26-31 min** (`studio-batch-run1/2.csv`: 26.2 / 30.7 min) | MEASURED |
 
-| Tier | Titles | Generation (1×) — CORRECTED | was (wrong) |
-|---|---|---|---|
-| Core | 25 | **~2.8 min** | ~1.4 min |
-| Pro | 50 | **~5.6 min** | ~2.8 min |
-| Studio | 200 | **~23-26 min** (measured 26.2, n=1, unrecorded) | ~11 min |
-
-**At `mult = 2` (D1), Studio 200 becomes 400 attempts ≈ 52 min** (`iteration_budget = target_per_cat × mult`, `engine.rs:82-86`). Studio is **not** plausible at 200. Levers: a lower cap, context reuse, or a second distribution. Owner decision, blocked on D1.
+**Studio 200 is now reachable (100% yield) but is ~26-31 min.** The duplicate:QC split (~200:1) shows distinct-mass is the ceiling, not quality. Owner decision: is ~30 min for Studio 200 acceptable, or should the cap drop (context reuse — a fresh KV cache per title — is an obvious future lever).
 
 #### OPEN — decide, don't drift
 
