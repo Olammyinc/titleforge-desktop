@@ -525,7 +525,7 @@ Updater endpoint migrated Netlify → GitHub Releases at the code level (`https:
 
 **Desktop generation beta finding/fix:** A request for 10 titles returned 8 because the 1x LLM budget was consumed by failed attempts and near-duplicate filtering. `53e85dd` adds 2x retry headroom for small per-category requests (without changing large-batch 1x timing), makes the partial-result toast say `N of Q requested`, and prevents zero-result generations from consuming usage/history quota. Similar structural templates remain an open quality issue.
 
-**Current desktop next action:** Updater endpoint migrated (Netlify → GitHub Releases, code-level) and dead candle/tokenizer deps removed (commit `cfa5d11`). ⛔ Next step that needs the owner: **tag a beta + run the live in-app update against the new GitHub endpoint in Sandbox**, then decide on the Studio-scale finding (coffee×200 returned 124 unique in 26.2 min — distinct-mass ceiling, harness `5940dd2`). Do not restart rejected ranker work, Qwen2.5-3B, multi-constraint prompt experiments, colon caps, grammar work, or desktop dual-provider pairing.
+**Current desktop next action:** D1 (fill budget) landed — flat 2× + early exit + no noise sort in `engine.rs` (commit `7017702`); after-D1 `category_fit` shows no regression (56%, range 7.06, product 16/16; CSVs `category-fit-after-d1.csv`, `yield-curve-after-d1.csv`). Next per the §7 audit order: rebuild `studio_batch_measure.rs` in `yield_curve.rs`'s shape, run it twice at the post-D1 mult, then bring the Studio cap decision to the owner. ⛔ The beta tag + live in-app update against the GitHub endpoint is also still deferred to the owner. Do not restart rejected ranker work, Qwen2.5-3B, multi-constraint prompt experiments, colon caps, grammar work, or desktop dual-provider pairing.
 
 ### 2026-08-04 — Desktop Track A0 judge calibration closed as No-Go
 
@@ -1859,7 +1859,7 @@ TitleForge Desktop has **no paying customers**. Nothing in this document is "aff
 1. Release pipeline has run successfully at least once end to end
 2. Auto-updater has completed a real install → update cycle
 3. First-launch download verified on a clean machine, on a real connection
-4. Studio batch time is honest — **STILL OPEN, and now the hardest gate.** Measured 2026-08-06: **200 requested → 124 delivered in 26.2 min** (n=1, unrecorded, at `mult = 1`); ~52 min at `mult = 2`. "Up to 200" is not defensible. Blocked on D1, then a re-measure, then an owner decision on the cap.
+4. Studio batch time is honest — **STILL OPEN, hardest gate.** ⚠️ CORRECTED 2026-08-06 after the audit: the first attempt (`5940dd2`, 200→124 in "26.2 min") was unreproducible and is superseded. **D1 has now landed** (`7017702`): flat 2× fill budget + early exit + no noise sort; after-D1 `category_fit` shows no regression (56%, range 7.06, product 16/16). **The re-take is unblocked** — rebuild `studio_batch_measure.rs` in `yield_curve.rs`'s shape, run twice at post-D1 mult (~52 min), then bring the cap decision to the owner.
 5. Every sales-page claim matches measured reality (engine name, batch sizes, offline quality)
 6. Cloud batch behaviour measured — dual OpenAI + native Gemini `gemini-3.5-flash-lite` now returns 100/100 in two baseline runs; keep monitoring after deployment
 7. Licence flow tested end to end with a real Stripe test purchase
@@ -1904,7 +1904,7 @@ Spec in `PHI-3.5-MIGRATION.md`. It targets the real remaining quality defect (so
 #### Still queued behind the above
 
 - ~~**Studio-scale distinctness has never been measured**~~ — **MEASURED 2026-08-06 (`5940dd2`), and it must be re-taken.** 200 requested → 124 delivered. It did not use `category_fit` as specified; it used a new harness that writes no CSV and logs no rejection outcomes, so the number is unreproducible and the stated cause unmeasured. **The flip condition named here was met and the Phi/pairing verdict was never revisited** — see the 2026-08-06 review entry and `HANDOFF-DESKTOP.md` §7 D1/D2.
-- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; blocked on D1.**
+- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; unblocked after D1** (commit `7017702`). Re-take harness rebuild is next (see §5 2026-08-06 entry).
 - ~~CORS restriction + rate limiting on the licence endpoint (§6.4b item 8)~~ — **✅ DONE 2026-08-06 (`dbee1f1`).**
 - Licence flow end to end with a real Stripe test purchase (§6.4b item 7).
 - Web Pro → free Core desktop licence; upgrade pricing; waitlist drip.
