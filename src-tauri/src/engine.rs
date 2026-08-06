@@ -214,9 +214,15 @@ pub fn generate(
         r.seo_breakdown = Some(serde_json::to_value(&sb).unwrap_or(serde_json::Value::Null));
     }
 
-    // Finalize: deduplicate, sort by score, truncate
-    results.sort_by(|a, b| b.score.cmp(&a.score));
-    results.dedup_by(|a, b| a.title.eq_ignore_ascii_case(&b.title));
+    // Finalize: order-preserving dedup (first occurrence wins) + truncate.
+    // No score sort: `calculate_score` correlates r=-0.04 with judge quality
+    // (Task 1, 2026-08-03) so it ranks by noise. Acceptance order is the
+    // correct, reproducible order under the FILL model — and is what the
+    // measurement harnesses require. `dedup_by` only removes ADJACENT dups,
+    // so a case-insensitive seen-set keeps the FIRST of cross-category
+    // collisions instead.
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    results.retain(|r| seen.insert(r.title.to_ascii_lowercase()));
     results.truncate(quantity as usize);
 
     Ok(results)
