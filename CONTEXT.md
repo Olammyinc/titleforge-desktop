@@ -496,11 +496,26 @@ Full breakdown: decided-both-times same title **5**, flipped **3**, tie both tim
 
 **Do not re-open the ranker.** The reason is now stronger, not weaker.
 
+### 2026-08-06 (review) — Studio measurement AUDITED. Numbers unreproducible, two of three tautological, and the "~11 min" baseline was never real.
+
+**Mirror summary. Full working is in the root `paul/CONTEXT.md` §5, entry dated 2026-08-06 (review) — root wins, read it there.** The directive for the next agent is `HANDOFF-DESKTOP.md` §7, under "⛔ READ THIS BEFORE ANYTHING ELSE".
+
+**Verified true and reproduced:** updater migration, dead-dep removal, CORS/rate-limit (`dbee1f1`), 33 lib tests, position-logging schema, ~50% shuffle, `product` 8/8 and 16/16, cross-category range 7.62/7.50, caps not changed unattended. The Track A rewrite in `HANDOFF-DESKTOP.md` §5b is the standard to copy.
+
+**What does not survive on `5940dd2`:**
+- **No evidence file.** `studio_batch_measure.rs` is `eprintln!`-only; the commit added one file, no artifact. 124 / 26.2 min / 121+3 exist only in a lost terminal. Every other harness here writes a CSV.
+- **"124/124 distinct exact" cannot fail** — `engine.rs:158-161` rejects exact matches and `shares_opening(n=2)` before the pool. Same for "0 duplicates across N titles", the premise §5c rested on: 0 duplicates in 211 titles across all seven category-fit runs, because observing one is impossible. **Yield** is the metric that works.
+- **Distinctness was scored with a weaker, reimplemented rule** (raw 4-word signature) against `engine.rs:13-15`'s explicit instruction to call `engine::shares_opening`.
+- **The cause was never instrumented.** No rejection outcomes are recorded; "dedup consumed the budget" was imported from `yield_curve.rs`. And `local_llm.rs:288-291` soft-returns rejected candidates, so "QC rejected ~nothing" is partly true by design.
+- **The "~11 min estimate" was itself wrong by 2×.** Measured baseline is 6.79 s/title (169.6s for 25); correct prior was **~23 min**, and the harness's own header says so. 26.2 vs 23 is a 14% miss, not a 2.4× surprise. The same phantom figure corrupted the Phi tier maths (Studio 200 at ~2.5× is **~50-67 min**, not 28).
+
+**What survives:** 200 requested → 124 delivered is a real yield deficit and "up to 200" is not defensible. **Re-take per §7 D2, after D1** — at `mult = 2` Studio 200 is 400 attempts ≈ 52 min, so every Studio number is provisional until D1 lands.
+
 ### 2026-08-05 — Desktop: updater → GitHub Releases + dead deps removed + Studio-scale measurement
 
 Updater endpoint migrated Netlify → GitHub Releases at the code level (`https://github.com/Olammyinc/titleforge-desktop/releases/latest/download/updates.json`), CSP gained `github.com`/`objects.githubusercontent.com`, workflow Netlify deploy step → documented no-op, `NETLIFY_AUTH_TOKEN` unused. Dead `candle-*`/`tokenizers` deps + `cuda` feature removed. `cargo check` + 33/33. Commit `cfa5d11`. ⛔ Beta tag + live in-app updater validation against the new endpoint deferred to owner.
 
-**Studio-scale measurement (first ever):** `src-tauri/tests/studio_batch_measure.rs` (`5940dd2`) — coffee × youtube × 200 offline returned **124** unique (120 opening-4-word) in **26.2 min**, 12.69 s/title, 121 LLM + 3 curated. The 200→124 gap is DISTINCT MASS (dedup collisions consumed the iteration budget; QC rejected ~nothing) — same mechanism as web one-provider ~70/100. Studio "up to 200" and the ~11min estimate are both optimistic; a cap change or second distribution is an owner decision (caps not changed unattended).
+**Studio-scale measurement (first ever) — ⚠️ SUPERSEDED by the 2026-08-06 review entry above. Read that first.** `src-tauri/tests/studio_batch_measure.rs` (`5940dd2`) — coffee × youtube × 200 offline returned **124** unique (120 opening-4-word) in **26.2 min**, 12.69 s/title, 121 LLM + 3 curated. The 200→124 gap is DISTINCT MASS (dedup collisions consumed the iteration budget; QC rejected ~nothing) — same mechanism as web one-provider ~70/100. Studio "up to 200" and the ~11min estimate are both optimistic; a cap change or second distribution is an owner decision (caps not changed unattended).
 
 ### 2026-08-04 — Desktop beta release and updater cycle completed through beta.5
 
@@ -1732,13 +1747,15 @@ Full 4-engine comparison with all fixes applied:
 
 **5. Studio batch time is still poor.** Caps were lowered (Core 25 / Pro 50 / Studio 200 offline; BYOK uncapped). **Task 1 (2026-08-03) dropped the best-of-N multiplier to 1×** — the old 4× loop was the worst-case driver. Core 25 is now ~1.4 min generation (measured 4.7 min total for 50 titles incl. judge calls). Updated estimate:
 
-| Tier | Titles | Generation (1×) |
-|---|---|---|
-| Core | 25 | ~1.4 min |
-| Pro | 50 | ~2.8 min |
-| Studio | 200 | ~11 min |
+> **⚠️ CORRECTED 2026-08-06 — this table was wrong by exactly 2× from the day it was written.** It assumed **~3.4 s/title**. The measured baseline is **6.79 s/title** (169.6s for 25) and the Studio run measured **7.87 s/attempt**.
 
-Studio is now plausible; the remaining lever is context reuse (`generate_chat_raw` allocates a fresh KV cache per title).
+| Tier | Titles | Generation (1×) — CORRECTED | was (wrong) |
+|---|---|---|---|
+| Core | 25 | **~2.8 min** | ~1.4 min |
+| Pro | 50 | **~5.6 min** | ~2.8 min |
+| Studio | 200 | **~23-26 min** (measured 26.2, n=1, unrecorded) | ~11 min |
+
+**At `mult = 2` (D1), Studio 200 becomes 400 attempts ≈ 52 min** (`iteration_budget = target_per_cat × mult`, `engine.rs:82-86`). Studio is **not** plausible at 200. Levers: a lower cap, context reuse, or a second distribution. Owner decision, blocked on D1.
 
 #### OPEN — decide, don't drift
 
@@ -1802,8 +1819,8 @@ The original single-provider 100-title batch returned 100 titles but repeated st
 
 10. Mac & Linux SHA256s — ✅ PUBLISHED 2026-08-01 (real hashes, computed in CI). Download page updated.
 11. Updater signature pipeline wired but never fired on a real `v*` tag.
-12. CORS wildcard on `licenses.js` POST endpoints. Low risk, should be restricted.
-13. No rate limiting on the public license validation endpoint — enumeration risk.
+12. ~~CORS wildcard on `licenses.js` POST endpoints~~ — **✅ FIXED 2026-08-03** (H2 created `cors.js`); **falsely open for three days.** `dbee1f1` additionally gates localhost behind `NETLIFY_DEV`. No wildcard in any of the 12 functions.
+13. ~~No rate limiting on the public license validation endpoint~~ — **✅ FIXED 2026-08-06 (`dbee1f1`)**, `licenses.js:65-77`. **Best-effort PER-INSTANCE** (Lambda; concurrent requests get fresh counters) — stops a sequential loop, not a parallel one. Minor open: `validateHits` never evicted.
 14. Web Pro → free Core desktop license: decided, never implemented.
 15. Upgrade pricing (pay the difference) between desktop tiers: decided, never implemented.
 16. Annual update renewal / major version upgrade pricing: decided, never implemented.
@@ -1842,11 +1859,11 @@ TitleForge Desktop has **no paying customers**. Nothing in this document is "aff
 1. Release pipeline has run successfully at least once end to end
 2. Auto-updater has completed a real install → update cycle
 3. First-launch download verified on a clean machine, on a real connection
-4. Studio batch time is honest — currently 22.6 min best case, **45.3 min worst**, against a "up to 500 titles" heritage claim now softened to 200
+4. Studio batch time is honest — **STILL OPEN, and now the hardest gate.** Measured 2026-08-06: **200 requested → 124 delivered in 26.2 min** (n=1, unrecorded, at `mult = 1`); ~52 min at `mult = 2`. "Up to 200" is not defensible. Blocked on D1, then a re-measure, then an owner decision on the cap.
 5. Every sales-page claim matches measured reality (engine name, batch sizes, offline quality)
 6. Cloud batch behaviour measured — dual OpenAI + native Gemini `gemini-3.5-flash-lite` now returns 100/100 in two baseline runs; keep monitoring after deployment
 7. Licence flow tested end to end with a real Stripe test purchase
-8. CORS restricted and rate limiting added on the licence endpoint
+8. ~~CORS restricted and rate limiting added on the licence endpoint~~ — **✅ CLOSED 2026-08-06 (`dbee1f1`), code verified.** See §6.2 #12/#13 for scope (best-effort per-instance throttle).
 
 **Do not treat the beta release as the finish line. It is the start of finding out what is still wrong.**
 
@@ -1880,15 +1897,15 @@ Full spec in `titleforge-desktop/HANDOFF-DESKTOP.md` §5b. This blocks ranking f
 
 Spec in `PHI-3.5-MIGRATION.md`. It targets the real remaining quality defect (song/poem/book category fit is a 1.5B capacity ceiling, hit from four independent directions). Deliberately sequenced after B, because a bigger model raises the average candidate while a judge lets you *pick* — and the brief's standing guidance is to settle selection first, since the benefits compound in that order.
 
-**Do not pair Phi with Qwen.** Desktop has no measured distinctness problem (25/25 unique, 0 duplicates across 27 titles in six runs). Pairing doubles the binding constraint — time — to solve a problem that is not there. Reasoning in `HANDOFF-DESKTOP.md` §5c.
+**Do not pair Phi with Qwen** — but **the stated reason is wrong and must not be repeated.** *"No measured distinctness problem (25/25 unique, 0 duplicates across 27 titles)"* rests on a **null metric**: `engine.rs:158-161` rejects duplicates before they are recorded, so 0 is guaranteed. Verified across all seven runs — 0 duplicates in 211 titles, because observing one is impossible. On **yield**, desktop has a deficit at every scale measured (106-115/160; 124/200). The surviving reason is **time** — Phi alone is ~50-67 min for Studio 200 at the corrected figures. If a second distribution is wanted, it **replaces** Qwen. Reasoning in `HANDOFF-DESKTOP.md` §5c.
 
 ---
 
 #### Still queued behind the above
 
-- **Studio-scale distinctness has never been measured** on desktop — 25/25 is Core scale. Raise `PER_CASE` in `tests/category_fit.rs` and measure at 200. If it degrades the way web's 100 did, the Phi/pairing calculus changes.
-- Studio batch time honesty (§6.4b item 4).
-- CORS restriction + rate limiting on the licence endpoint (§6.4b item 8).
+- ~~**Studio-scale distinctness has never been measured**~~ — **MEASURED 2026-08-06 (`5940dd2`), and it must be re-taken.** 200 requested → 124 delivered. It did not use `category_fit` as specified; it used a new harness that writes no CSV and logs no rejection outcomes, so the number is unreproducible and the stated cause unmeasured. **The flip condition named here was met and the Phi/pairing verdict was never revisited** — see the 2026-08-06 review entry and `HANDOFF-DESKTOP.md` §7 D1/D2.
+- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; blocked on D1.**
+- ~~CORS restriction + rate limiting on the licence endpoint (§6.4b item 8)~~ — **✅ DONE 2026-08-06 (`dbee1f1`).**
 - Licence flow end to end with a real Stripe test purchase (§6.4b item 7).
 - Web Pro → free Core desktop licence; upgrade pricing; waitlist drip.
 
