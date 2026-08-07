@@ -494,21 +494,19 @@ Once the yield curve exists, the honest promise becomes a per-category number �
 
 ---
 
-## 🧊 DESKTOP REPO IS FROZEN — owner is validating gate 2 (2026-08-07)
+## ✅ GATE 2 CLOSED — updater validated against the GitHub Releases endpoint (2026-08-07). Freeze lifted.
 
-**The owner is tagging releases to validate the auto-updater against the GitHub Releases endpoint** — the gate that has been blocked longest and the only one that cannot be tested without shipping. It needs **two tags**: install from the first, confirm the second updates it.
+**Owner installed `v1.0.0-beta.6` in Windows Sandbox and confirmed the installed copy self-updated to `v1.0.0-beta.7`** from `https://github.com/Olammyinc/titleforge-desktop/releases/latest/download/updates.json` (app relaunched reporting `1.0.0-beta.7`). The cycle surfaced and fixed a **real release defect**: tagging without a version bump named installers `1.0.0-beta.5` under a `beta.6` tag, and `updates.json` URLs pointed at non-existent files (silent 404). Fix: bump `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and `package.json` in lockstep with the tag (`chore(release)` `70b8a49` → beta.6, `0b8a98c` → beta.7). Both beta.6 and beta.7 releases independently audited **PASS** by a reviewer agent (asset-version match, updates.json version, url→asset existence, signature match). §6.4b gate 2 is closed.
 
-**Until the owner confirms it passed:**
+**The desktop repo is now OPEN for normal work again.** Standing guidance:
 
-- ⛔ **Do not commit to `titleforge-desktop`.** A tag taken mid-change ships a half-finished state. This is the whole reason for the freeze.
-- ⛔ **Do not start T3 (brand voice) or T4 (bulk CSV)** — both are desktop code and would break the freeze. They are not beta blockers anyway.
-- ⛔ **Hold D3** (Stripe licence flow). Its last leg is activation inside the desktop app, and a bug found there needs a desktop commit to fix.
+- ⛔ **Do not tag a new `v*` release without bumping `src-tauri/Cargo.toml` + `src-tauri/tauri.conf.json` + `package.json` first** — that mismatch is what broke gate 2. Keep the three in lockstep with the tag, or the updater's download URLs 404 silently.
+- T3 (brand voice → Pro) and T4 (bulk CSV → Studio) are next desktop work; they are tier value and can land during the beta.
+- **D3** (gate 7 — real Stripe test purchase → webhook → key → Resend → activation) is the next beta blocker. Its last leg is activation inside the desktop app; run it now that the desktop is open.
 
-**✅ Safe to do right now — all of it is in the `titleforge` (web) repo and none of it touches the desktop binary:** the remaining gate-5 work in T2 below — the false Pro "Full appeal breakdowns" bullet (`desktop.html:440` and `:517`), selling Projects, adding Studio's 5 machine activations to the card — plus the stale "3-device limit" comment at `supabase-setup.sql:247`.
+**Follow-ups recorded:** UI nit — the update status pill is only visible in Settings; surface it more prominently (bottom of the left menu / top of the window) so an available update is noticeable without navigating (owner note, 2026-08-07). Low priority, post-beta.
 
-**Order once the owner confirms gate 2:** D3 → beta ships → T3 and T4 land during the beta as tier value.
-
-**Why this sequencing:** desktop is at a clean, complete state right now (T1 landed, nothing in flight), and the remaining copy work is entirely web-side — so validation and gate-5 work can run in parallel without colliding. If the updater turns out broken, the fix needs *another* two tags to re-validate; finding that now costs a day, finding it at the finish line compresses everything.
+**Why the earlier freeze mattered:** desktop was frozen to keep a tag from shipping a half-finished state. The version-bump commits above were the sole, deliberately-scoped exception (owner-approved Option A) — without them gate 2 could not have passed.
 
 ---
 
