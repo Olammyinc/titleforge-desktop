@@ -725,4 +725,28 @@ A proposal is recorded in `CONTEXT.md` §5 (2026-08-06 entry) — tier-aware mac
 8. **Separate what the harness observed from what you concluded.** Say it explicitly in the commit message and the change-log entry. "Dedup consumed the budget" was imported from a different harness and presented as this run's result.
 9. **When a result surprises you, check the baseline before you write "worse".** The ~11 min Studio estimate was never real, and the correct figure was in the header comment of the very file being written. A 14% miss was reported as a 2.4× surprise, and the same phantom number then corrupted the Phi tier maths.
 10. **Shipping is half the task; the record is the other half.** `dbee1f1` closed a payment gate and left five documents saying it was open.
-11. **§7 is ONE document living in two files — edit it once and copy the block.** It has now drifted three times (`ebfad93`, then again after D1, then again after the fix-up), each time because the two copies were edited separately. Editing `HANDOFF-DESKTOP.md` and then writing the equivalent text into `HANDOFF-WEB.md` is how it breaks. Copy from the §7 heading to EOF, verbatim, in the same commit pass, and diff the two before committing. (Split on the *full* heading line, not the `## 7.` prefix — this rule text would otherwise match too.)
+11. **§7 is ONE document living in two files — edit it once and copy the block.** It has now drifted four times (`ebfad93`, after D1, after the fix-up, and after the U-series), each time because the two copies were edited separately. Editing `HANDOFF-DESKTOP.md` and then writing the equivalent text into `HANDOFF-WEB.md` is how it breaks. Copy from the §7 heading to EOF, verbatim, in the same commit pass, and diff the two before committing. (Split on the *full* heading line, not the `## 7.` prefix — this rule text would otherwise match too.)
+
+---
+
+### 📊 The pattern, named — read this once and fix the system, not the habit
+
+**Across four rounds of review, the split is consistent: the engineering judgement has been good, the evidence handling has not.**
+
+| sound calls | evidence failures |
+|---|---|
+| The `!generationCancelled` guard (unprompted, and exactly right) | Studio numbers stdout-only (`5940dd2`) |
+| Declining web SSE on measured grounds, and saying so | Pro-50 + 4×50 stdout-only (`b3ba3eb`) — **third round** |
+| Order-preserving dedup via `HashSet`+`retain`, not just deleting the sort | `shares_opening` reimplemented weaker — **twice** (studio harness, then 4×50) |
+| Escalating D1 rather than changing the engine unattended | n=1 on four separate measurements |
+| Committing evidence under run-tagged names after the clobber | A cause reported that the harness never instrumented |
+
+**This is not carelessness, and it will not be fixed by trying harder.** It is structural: every harness in `src-tauri/tests/` writes its own output from scratch, so persisting a CSV is an *optional step someone must remember* on every new file. `yield_curve.rs` remembers; `studio_batch_measure.rs` (v1), `four_x_fifty_overlap.rs` and `pro_batch_measure.rs` did not. Same for the dedup rule: `engine::shares_opening` is `pub`, but nothing stops a harness quietly reimplementing it, and two have.
+
+**Fix the system:**
+
+1. **Add a shared `tests/evidence.rs` helper** — `write_evidence_csv(name, header, rows)` resolving to the repo root with a run suffix. Then persisting is the path of least resistance instead of a thing to remember.
+2. **Add `is_duplicate(a, b)` next to `shares_opening`** in `engine.rs` wrapping the *exact* production rule (`eq_ignore_ascii_case || shares_opening(_, _, 2)`), and use it in every harness. A harness should be unable to disagree with the engine without editing the engine.
+3. **Definition of done for any measurement — all four, no exceptions:** a committed CSV, n≥2, the metric measured with the engine's own rule, and an explicit line separating *what the harness observed* from *what you concluded*. A measurement missing any of these does not go in `CONTEXT.md` as a finding.
+
+**Why this matters more than any single number:** every wrong conclusion in this project's history was recoverable *because the raw data existed*. The `tokens_to_str` buffer bug, the deterministic sampler, the keyword gate, the stop-token bug, the A0 arithmetic, the depth-exhaustion curve — each was overturned by re-reading committed evidence. **A number with no artifact cannot be corrected, only believed or discarded.** That is the whole reason for rule #1, and it is the one rule that has now failed three times.
