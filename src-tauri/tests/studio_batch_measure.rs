@@ -32,6 +32,9 @@
 
 use rusqlite::Connection;
 
+#[path = "evidence.rs"]
+mod evidence;
+
 /// One Studio cell: 200 requested titles for coffee/youtube.
 const KEYWORD: &str = "coffee";
 const CATEGORY: &str = "youtube";
@@ -104,11 +107,9 @@ fn studio_batch_measure() {
             None => { qc += 1; ("qc_fail".to_string(), String::new()) }
             Some(t) => {
                 // Same dedup rule engine.rs:158-161 applies: exact match OR a
-                // shared two-word opening.
-                let is_dup = accepted.iter().any(|a: &String| {
-                    a.eq_ignore_ascii_case(&t)
-                        || titleforge_lib::engine::shares_opening(a, &t, 2)
-                });
+                // shared two-word opening. Use `engine::is_duplicate` — it IS
+                // the production rule; a reimplementation is a measurement bug.
+                let is_dup = accepted.iter().any(|a: &String| titleforge_lib::engine::is_duplicate(a, &t));
                 if is_dup { dup += 1; ("duplicate".to_string(), t.clone()) }
                 else { accepted.push(t.clone()); ("accepted".to_string(), t.clone()) }
             }
@@ -150,12 +151,11 @@ fn studio_batch_measure() {
     println!("  QC-fail dominates   -> ceiling is QUALITY; the model is the limit.");
     println!("  NOTE: qc_fail undercounts by design (local_llm.rs:288-291 soft-returns).");
 
-    // The audit requires run-tagged CSVs (studio-batch-run1.csv / run2.csv).
-    // This harness accepts an optional run suffix via env STUDIO_RUN (e.g. "1").
-    let run = std::env::var("STUDIO_RUN").unwrap_or_default();
-    let fname = if run.is_empty() { "studio-batch.csv" } else { &format!("studio-batch-run{}.csv", run) };
-    let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(fname);
-    let _ = std::fs::write(&out, csv);
+    // Evidence via evidence.rs — run-suffixed (STUDIO_RUN=1/2), so two re-takes
+    // never clobber each other (the audit's `studio-batch-run1/2.csv`). `csv`
+    // already carries the header + all rows; hand it over whole.
+    let _ = evidence::write_evidence_csv("studio-batch", "STUDIO_RUN", &csv, "");
+    let out = evidence::evidence_path("studio-batch", &evidence::run_tag("STUDIO_RUN"));
     println!("\n  CSV: {}", out.display());
     println!("  wall clock: {:.0}s", wall);
 

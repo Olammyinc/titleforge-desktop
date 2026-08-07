@@ -30,6 +30,9 @@
 use std::time::Instant;
 use rusqlite::Connection;
 
+#[path = "evidence.rs"]
+mod evidence;
+
 fn init_db() -> Connection {
     let conn = Connection::open_in_memory().expect("mem");
     conn.execute_batch("
@@ -44,7 +47,8 @@ fn init_db() -> Connection {
 
 #[test]
 fn four_x_fifty_v2() {
-    let run_tag = std::env::var("TF_4X50_RUN").unwrap_or_else(|_| "1".to_string());
+    // Single source of the run tag -- evidence.rs derives the CSV name from it.
+    let run_tag = evidence::run_tag("TF_4X50_RUN");
 
     let conn = init_db();
     let generator = titleforge_lib::title_gen::Generator::build(&conn);
@@ -81,15 +85,18 @@ fn four_x_fifty_v2() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(4);
 
-    // Evidence is flushed to disk after EVERY batch, so an interrupted run still
-    // leaves a per-batch artifact (rule #1 -- stdout-only is not a measurement).
-    let out_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join(format!("four-x-fifty-run{}.csv", run_tag));
-
-    let mut csv = String::from("run,batch,title,exact_new,engine_new,exact_union,engine_union\n");
-    let _ = std::fs::write(&out_path, csv.clone());
+    // Evidence is flushed to disk via evidence.rs after EVERY batch, so an
+    // interrupted run still leaves a per-batch artifact (rule #1 -- stdout-only
+    // is not a measurement). The run-suffixed name prevents a rerun from
+    // clobbering the previous run's artifact.
+    let _out_path = evidence::init_evidence_csv(
+        "four-x-fifty",
+        "TF_4X50_RUN",
+        "run,batch,title,exact_new,engine_new,exact_union,engine_union",
+    );
     let t0 = Instant::now();
+
+    let mut rows = String::new();
 
     for b in 1..=batches {
         eprintln!("[4x50v2] run {} batch {} ...", run_tag, b);
@@ -106,17 +113,13 @@ fn four_x_fifty_v2() {
             let exact_new = exact_union.insert(r.title.to_ascii_lowercase());
             if exact_new { exact_added += 1; }
 
-            // Rule B: the ENGINE's rule, called directly. A title is new iff it is
-            // not exact-equal AND does not share a 2-word opening with any title
-            // already admitted into the engine union.
-            let is_engine_dup = engine_seen.iter().any(|s: &String| {
-                s.eq_ignore_ascii_case(&r.title)
-                    || titleforge_lib::engine::shares_opening(s, &r.title, 2)
-            });
-            let engine_new = !is_engine_dup;
+            // Rule B: the ENGINE's rule, called directly. A title is new iff it
+            // is not a duplicate (by `engine::is_duplicate`: exact OR shared
+            // 2-word opening) of any title already admitted into the engine union.
+            let engine_new = !engine_seen.iter().any(|s: &String| titleforge_lib::engine::is_duplicate(s, &r.title));
             if engine_new { engine_seen.push(r.title.clone()); engine_added += 1; }
 
-            csv.push_str(&format!("{},{},\"{}\",{},{},{},{}\n",
+            rows.push_str(&format!("{},{},\"{}\",{},{},{},{}\n",
                 run_tag, b, r.title.replace('"', "'"),
                 if exact_new { 1 } else { 0 },
                 if engine_new { 1 } else { 0 },
@@ -129,7 +132,8 @@ fn four_x_fifty_v2() {
             results.len(), exact_added, engine_added, exact_union.len(), engine_seen.len());
 
         // Flush evidence after each batch so an interruption never loses the run.
-        let _ = std::fs::write(&out_path, csv.clone());
+        let _flush = evidence::append_evidence_csv("four-x-fifty", "TF_4X50_RUN", &rows);
+        rows.clear();
     }
 
     let wall = t0.elapsed().as_secs_f64();
@@ -149,7 +153,7 @@ fn four_x_fifty_v2() {
     println!("    four 50-batches do NOT reach Studio capacity; the tier cap is");
     println!("    what bounds distinct titles delivered across calls.");
 
-    let _ = std::fs::write(&out_path, csv);
-    println!("\n  CSV: {}", out_path.display());
+    let path = evidence::evidence_path("four-x-fifty", &run_tag);
+    println!("\n  CSV: {}", path.display());
     eprintln!("[4x50v2] done -- exact {} / engine {} of {} in {:.1}s", exact_union.len(), engine_seen.len(), total, wall);
 }

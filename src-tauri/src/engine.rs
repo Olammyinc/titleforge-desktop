@@ -37,6 +37,17 @@ pub fn shares_opening(a: &str, b: &str, n: usize) -> bool {
     ha.iter().any(|w| !FUNCTION.contains(&w.as_str()))
 }
 
+/// The engine's authoritative near-duplicate rule: two titles are the same
+/// intent when they are case-insensitively equal OR they share a two-word
+/// opening (the near-duplicate family exact-match misses).
+/// `pub` so measurement harnesses apply EXACTLY this rule and cannot drift
+/// from production. A harness that reimplements this measures its own
+/// reimplementation (standing rule 7) — call this instead. It IS the production
+/// rule: `generate()` dedups with `is_duplicate(r.title, title)` below.
+pub fn is_duplicate(a: &str, b: &str) -> bool {
+    a.eq_ignore_ascii_case(b) || shares_opening(a, b, 2)
+}
+
 /// Orchestrate title generation: local LLM first, then curated-title
 /// retrieval as the quality fallback. EGCG generation was retired from the
 /// pipeline (2026-07-31): 20-24% usable on the corrected metric, mean ~37 —
@@ -175,9 +186,7 @@ pub fn generate_streaming(
                 // Revolution". Also reject a shared opening — the web prompt
                 // already states "no two titles may share their opening three
                 // words"; this enforces it instead of asking.
-                let already_seen = pool.iter().any(|r: &TitleResult| {
-                    r.title.eq_ignore_ascii_case(&title) || shares_opening(&r.title, &title, 2)
-                });
+                let already_seen = pool.iter().any(|r: &TitleResult| is_duplicate(&r.title, &title));
                 if already_seen { continue; }
 
                 let (score, breakdown) = calculate_score(&title, keyword, cat);

@@ -35,6 +35,9 @@
 
 use rusqlite::Connection;
 
+#[path = "evidence.rs"]
+mod evidence;
+
 /// (keyword, category). >=3 keywords and >=2 categories — the previous attempt
 /// used 2 keywords and they disagreed with each other.
 const CELLS: &[(&str, &str)] = &[
@@ -119,11 +122,9 @@ fn yield_curve() {
                 None => { qc += 1; ("qc_reject".to_string(), String::new()) }
                 Some(t) => {
                     // Same dedup rule engine.rs applies: exact match OR a shared
-                    // two-word opening (shares_opening).
-                    let is_dup = accepted.iter().any(|a: &String| {
-                        a.eq_ignore_ascii_case(&t)
-                            || titleforge_lib::engine::shares_opening(a, &t, 2)
-                    });
+                    // two-word opening. `engine::is_duplicate` IS the production
+                    // rule — call it, never reimplement it.
+                    let is_dup = accepted.iter().any(|a: &String| titleforge_lib::engine::is_duplicate(a, &t));
                     if is_dup { dup += 1; ("duplicate".to_string(), t.clone()) }
                     else { accepted.push(t.clone()); ("accepted".to_string(), t.clone()) }
                 }
@@ -169,8 +170,11 @@ fn yield_curve() {
     println!("    QC rejects dominate -> ceiling is QUALITY.");
     println!("      More providers will NOT help; the model is the limit.");
 
-    let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("yield-curve.csv");
-    let _ = std::fs::write(&out, csv);
+    // Evidence via evidence.rs — run-suffixed (YIELD_RUN=1/2) so a rerun never
+    // clobbers the previous artifact (the old fixed `yield-curve.csv` path).
+    // `csv` already carries the header + all rows; hand it over whole.
+    let _out = evidence::write_evidence_csv("yield-curve", "YIELD_RUN", &csv, "");
+    let out = evidence::evidence_path("yield-curve", &evidence::run_tag("YIELD_RUN"));
     println!("\n  CSV: {}", out.display());
     println!("  wall clock: {:.1}s", t0.elapsed().as_secs_f64());
 }

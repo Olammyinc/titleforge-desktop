@@ -24,6 +24,9 @@
 use rusqlite::Connection;
 use std::collections::BTreeMap;
 
+#[path = "evidence.rs"]
+mod evidence;
+
 /// (keyword, category). Spread across title categories AND name categories so
 /// the two rubrics are both exercised. Kept small — each title is ~7-12s.
 const CASES: &[(&str, &str)] = &[
@@ -173,8 +176,11 @@ fn category_fit() {
     println!("  and stdev 0.96 in the pre-fix cloud data. A range that stays near");
     println!("  zero means category is still not binding.");
 
-    let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("category-fit.csv");
-    let _ = std::fs::write(&out, csv);
+    // Evidence via evidence.rs — run-suffixed (CATFIT_RUN=1/2...). The old
+    // fixed `category-fit.csv` path was the clobber mechanism; never write to a
+    // bare name. `csv` already carries the header + all rows.
+    let _ = evidence::write_evidence_csv("category-fit", "CATFIT_RUN", &csv, "");
+    let out = evidence::evidence_path("category-fit", &evidence::run_tag("CATFIT_RUN"));
     println!("\n  CSV: {}", out.display());
     println!("  wall clock: {:.1}s", t0.elapsed().as_secs_f64());
 }
