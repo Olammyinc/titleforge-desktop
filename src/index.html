@@ -317,6 +317,7 @@
         <button class="dash-tab" data-dashtab="favorites">Favorites</button>
         <button class="dash-tab" data-dashtab="projects">Projects</button>
         <button class="dash-tab" data-dashtab="export">Export</button>
+        <button class="dash-tab" data-dashtab="bulk">Bulk</button>
       </div>
       <div class="dash-panel active" id="dashOverview"><div id="dashOverviewList" class="dash-list"></div></div>
       <div class="dash-panel" id="dashHistory">
@@ -348,6 +349,22 @@
           <button id="exportSelectedCopy" class="btn btn-ghost-dark btn-small">Copy Selected</button>
         </div>
         <div id="exportPreview" class="dash-export-preview"></div>
+      </div>
+      <div class="dash-panel" id="dashBulk">
+        <p class="dash-export-text">Bulk generate titles for many topics at once (Studio). One keyword per line.</p>
+        <textarea id="bulkKeywords" rows="6" class="dash-input" placeholder="coffee&#10;sourdough bread&#10;remote work&#10;minimalism"></textarea>
+        <div class="dash-toolbar" style="margin-top:10px;">
+          <select id="bulkCategory" class="dash-filter"></select>
+          <select id="bulkStyle" class="dash-filter"></select>
+          <input type="number" id="bulkPerKw" class="dash-search" value="10" min="1" max="50" style="width:90px;" title="Titles per keyword" />
+        </div>
+        <div style="margin-top:10px;">
+          <button id="bulkGenerateBtn" class="btn btn-primary btn-small">Generate CSV</button>
+          <button id="bulkDownloadCsv" class="btn btn-ghost-dark btn-small" style="margin-left:8px;">Download CSV</button>
+          <button id="bulkCopyCsv" class="btn btn-ghost-dark btn-small" style="margin-left:8px;">Copy</button>
+        </div>
+        <p id="bulkStatus" class="settings-status"></p>
+        <pre id="bulkCsvOutput" style="white-space:pre-wrap;background:var(--paper-card,#faf8f3);border:1px solid var(--border,rgba(139,120,100,.25));border-radius:8px;padding:12px;margin-top:12px;max-height:300px;overflow:auto;font-size:12px;"></pre>
       </div>
     </div>
 
@@ -410,6 +427,36 @@
           </div>
           <button id="saveApiKeyBtn" class="btn btn-primary btn-small">Save API Key</button>
           <p id="aiKeyStatus" class="settings-status"></p>
+        </div>
+        <div class="settings-card" id="brandVoiceCard">
+          <h3 class="settings-card-title">Brand Voice</h3>
+          <p class="settings-card-desc">Save 1-5 sample titles in your voice. TitleForge uses them as few-shot exemplars so new titles match your style. (Pro / Studio)</p>
+          <div class="settings-field">
+            <label for="bvName">Profile name</label>
+            <input type="text" id="bvName" placeholder="e.g. My Newsletter Voice" />
+          </div>
+          <div class="settings-field">
+            <label for="bvTone">Tone / voice description (optional)</label>
+            <input type="text" id="bvTone" placeholder="e.g. warm, plainspoken, useful" />
+          </div>
+          <div class="settings-field">
+            <label for="bvExamples">Example titles (one per line, up to 5)</label>
+            <textarea id="bvExamples" rows="4" placeholder="How I Fixed My Sleep&#10;The $10 Tool That Paid for Itself&#10;What Nobody Tells You About Running"></textarea>
+          </div>
+          <div class="settings-row" style="margin:10px 0;">
+            <button id="bvSaveBtn" class="btn btn-primary btn-small">Save Profile</button>
+            <button id="bvReloadBtn" class="btn btn-ghost-dark btn-small" style="margin-left:8px;">Refresh</button>
+          </div>
+          <p id="bvStatus" class="settings-status"></p>
+          <div class="settings-field" style="margin-top:14px;">
+            <label for="bvActiveSelect">Active voice</label>
+            <select id="bvActiveSelect"><option value="">None (use curated voice)</option></select>
+            <button id="bvActivateBtn" class="btn btn-primary btn-small" style="margin-top:8px;">Activate</button>
+          </div>
+          <div style="margin-top:14px;">
+            <label>Saved profiles</label>
+            <div id="bvList" class="dash-list" style="max-height:180px;overflow:auto;margin-top:6px;"></div>
+          </div>
         </div>
       </div>
     </div>

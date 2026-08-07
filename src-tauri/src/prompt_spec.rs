@@ -237,6 +237,9 @@ pub struct FineTune {
     pub must_include: Option<String>,
     pub avoid: Option<String>,
     pub beat_title: Option<String>,
+    /// Brand voice exemplar titles (T3), injected into the few-shot slot so
+    /// output matches the user's saved voice. Pro/Studio only.
+    pub brand_voice: Option<String>,
 }
 
 impl FineTune {
@@ -257,6 +260,7 @@ impl FineTune {
             must_include: get("mustInclude"),
             avoid: get("avoid"),
             beat_title: get("beatTitle"),
+            brand_voice: get("brandVoice"),
         }
     }
 
@@ -581,5 +585,16 @@ mod tests {
         assert!(!ft.satisfies_hard_constraints("Tea at First Light"), "missing mustInclude");
         // No constraints set -> everything passes.
         assert!(FineTune::default().satisfies_hard_constraints("anything at all"));
+    }
+
+    #[test]
+    fn finetune_parses_brand_voice_exemplars() {
+        let v = serde_json::json!({
+            "brandVoice": "How I Fixed My Sleep\nA Tiny Habit That Changed Everything\n"
+        });
+        let ft = FineTune::from_json(Some(&v));
+        assert_eq!(ft.brand_voice.as_deref(), Some("How I Fixed My Sleep\nA Tiny Habit That Changed Everything"));
+        // Unset brand voice -> None (no inherited default).
+        assert_eq!(FineTune::from_json(None).brand_voice, None);
     }
 }

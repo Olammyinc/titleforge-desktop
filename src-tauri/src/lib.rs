@@ -624,6 +624,164 @@ fn set_setting(key: String, value: String, state: tauri::State<AppState>) -> Res
     Ok(())
 }
 
+// ── Brand Voice (T3, Pro/Studio tier value) ──
+
+/// Shared upgrade prompt for Studio-gated commands.
+const STUDIO_REQUIRED_MSG: &str = "This feature requires a Studio license. Upgrade at titleforge-tool.netlify.app/desktop";
+
+/// Save (create or upsert by name) a brand-voice profile. Pro/Studio only.
+/// `name` is the profile name; `tone` an optional voice description;
+/// `examples` are 3-5 exemplar titles, newline-separated.
+#[tauri::command]
+fn save_brand_voice(
+    name: String,
+    tone: String,
+    examples: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "core" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
+    // Validate: at least 1 non-empty example, max 5 (the few-shot budget).
+    let parsed: Vec<&str> = examples.split('\n').map(str::trim).filter(|s| !s.is_empty()).collect();
+    if parsed.is_empty() {
+        return Err("Add at least one example title".to_string());
+    }
+    let table: Vec<String> = parsed.into_iter().take(5).map(str::to_string).collect();
+    db.execute(
+        "INSERT INTO brand_voice_profiles (name, tone, examples, is_default) VALUES (?1, ?2, ?3, 0)
+         ON CONFLICT(name) DO UPDATE SET tone = excluded.tone, examples = excluded.examples",
+        rusqlite::params![name, tone, serde_json::to_string(&table).unwrap_or_else(|_| "[]".to_string())],
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// List all saved brand-voice profiles (active one first). Pro/Studio only.
+#[tauri::command]
+fn get_brand_voices(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "core" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
+    let mut stmt = db.prepare(
+        "SELECT name, tone, examples, is_default FROM brand_voice_profiles ORDER BY is_default DESC, name ASC",
+    ).map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |r| {
+        Ok(serde_json::json!({
+            "name": r.get::<_, String>(0).unwrap_or_default(),
+            "tone": r.get::<_, String>(1).unwrap_or_default(),
+            "examples": r.get::<_, String>(2).unwrap_or_else(|_| "[]".to_string()),
+            "isDefault": r.get::<_, i64>(3).unwrap_or(0) == 1,
+        }))
+    }).map_err(|e| e.to_string())?;
+    let list: Vec<serde_json::Value> = rows.filter_map(|r| r.ok()).collect();
+    Ok(serde_json::json!(list))
+}
+
+/// Set or clear the active brand-voice profile (passed to generation as the
+/// `brandVoice` few-shot exemplars). Pro/Studio only.
+#[tauri::command]
+fn set_active_brand_voice(
+    name: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "core" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
+    // Clear all actives, then set the chosen one (or none if name is empty).
+    db.execute("UPDATE brand_voice_profiles SET is_default = 0", []).map_err(|e| e.to_string())?;
+    if !name.is_empty() {
+        db.execute("UPDATE brand_voice_profiles SET is_default = 1 WHERE name = ?1", rusqlite::params![name]).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Delete a brand-voice profile. Pro/Studio only.
+#[tauri::command]
+fn delete_brand_voice(
+    name: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    if get_tier(&db) == "core" {
+        return Err(PRO_REQUIRED_MSG.to_string());
+    }
+    db.execute("DELETE FROM brand_voice_profiles WHERE name = ?1", rusqlite::params![name]).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// ── Bulk CSV (T4, Studio tier value) ──
+
+/// Bulk-generate titles for many keywords (each on a CSV line), returning a
+/// CSV body (keyword,title,score). Studio only. Offline engine path.
+#[tauri::command]
+async fn bulk_generate_csv(
+    app: tauri::AppHandle,
+    keywords_csv: String,
+    category: String,
+    style: String,
+    genre: String,
+    per_keyword: u32,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    let (tier, per_keyword) = {
+        let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+        let t = get_tier(&db);
+        if t == "core" {
+            return Err(STUDIO_REQUIRED_MSG.to_string());
+        }
+        if t != "studio" {
+            return Err(STUDIO_REQUIRED_MSG.to_string());
+        }
+        // Cap per-keyword to the Studio batch cap (200).
+        (t, per_keyword.min(200))
+    };
+
+    // Parse keywords: one per non-empty line, strip a leading BOM/header guess.
+    let mut keywords: Vec<String> = keywords_csv
+        .split('\n')
+        .map(|s| s.trim_matches('\r').trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if keywords.first().map(|s| s.to_lowercase() == "keyword").unwrap_or(false) {
+        keywords.remove(0); // drop a header row if present
+    }
+    if keywords.is_empty() {
+        return Err("No keywords found in the CSV".to_string());
+    }
+    // Cap total keywords to keep a single bulk run bounded (Studio is generous
+    // but a runaway open file is not a good idea).
+    let keywords: Vec<String> = keywords.into_iter().take(500).collect();
+
+    let generator = state.generator.lock().unwrap_or_else(|e| e.into_inner());
+    let mut llm_guard = state.local_llm.lock().unwrap_or_else(|e| e.into_inner());
+    if llm_guard.is_none() {
+        *llm_guard = lazy_load_llm();
+    }
+    let db = state.db.lock().unwrap_or_else(|e| e.into_inner());
+    let finetune = prompt_spec::FineTune::default(); // bulk mode uses plain voice
+    state.cancel.store(false, std::sync::atomic::Ordering::Relaxed);
+    let cancel_flag = std::sync::Arc::clone(&state.cancel);
+    let should_cancel = move || cancel_flag.load(std::sync::atomic::Ordering::Relaxed);
+
+    let cats = vec![category.trim().to_string()];
+    let mut out = String::from("keyword,title,score\n");
+    let mut kw_iter = keywords.iter();
+    while let Some(kw) = kw_iter.next() {
+        if should_cancel() { break; }
+        let results = engine::generate(
+            &db, &generator, llm_guard.as_mut(), kw, &cats, &style, &genre, per_keyword, &tier, &finetune,
+        ).unwrap_or_default();
+        for r in &results {
+            out.push_str(&format!("{},\"{}\",{}\n", kw.replace('"', "'"), r.title.replace('"', "'"), r.score));
+            let _ = app.emit("titleforge://bulk-progress", serde_json::json!({ "remaining": 0 }));
+        }
+    }
+    Ok(out)
+}
+
 // ── License Validation ──
 
 /// Shared upgrade prompt returned by every tier-gated command.
@@ -1257,6 +1415,11 @@ pub fn run() {
             delete_project,
             add_to_project,
             update_title_notes,
+            save_brand_voice,
+            get_brand_voices,
+            set_active_brand_voice,
+            delete_brand_voice,
+            bulk_generate_csv,
             get_settings,
             set_setting,
             get_app_info,

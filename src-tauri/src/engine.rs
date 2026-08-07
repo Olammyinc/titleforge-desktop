@@ -123,6 +123,24 @@ pub fn generate_streaming(
             if examples.is_empty() {
                 examples = fetch_top_appeal_fewshot(conn, cat, 4);
             }
+            // T3 brand voice: if the user supplied a brand-voice profile, its
+            // exemplar titles take PRECEDENCE over curated RAG so output matches
+            // the saved voice. We push them first (the model imitates the head
+            // of the exemplar list hardest) and cap total examples to keep the
+            // prompt small (~few-shot budget is 3-4 already).
+            if let Some(bv) = &finetune.brand_voice {
+                let user: Vec<String> = bv
+                    .split('\n')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if !user.is_empty() {
+                    let mut merged = user;
+                    // Trim to the few-shot budget (4 exemplars is the RAG max).
+                    merged.truncate(4);
+                    examples = merged;
+                }
+            }
             // Candidate pool for THIS category — run the full budget, dedupe,
             // rank by score, keep the top target_per_cat.
             let mut pool: Vec<TitleResult> = Vec::new();

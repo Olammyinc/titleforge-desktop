@@ -453,6 +453,8 @@ function initApp() {
   setupExportButtons();
   setupProjects();
   populateDashFilters();
+  setupBrandVoice();
+  setupBulkCsv();
   updateUsageDisplay();
   loadDashboardData();
 
@@ -606,8 +608,16 @@ function collectFineTune() {
     var el = document.getElementById(map[key]);
     if (el && el.value && el.value.trim()) ft[key] = el.value.trim();
   });
+  // Active brand voice: include its exemplar titles so the offline engine
+  // uses them as few-shot voice exemplars (T3).
+  var bv = _activeBrandVoice();
+  if (bv && bv.length) ft.brandVoice = bv.join('\n');
   return Object.keys(ft).length ? ft : null;
 }
+
+// The currently active brand-voice profile's exemplar titles (loaded at init).
+var __activeBrandVoiceTitles = [];
+function _activeBrandVoice() { return __activeBrandVoiceTitles; }
 
 // ---- TRANSLATE / SUBTITLE / CROSS-MEDIUM TOGGLES ----
 function setupTranslateToggle() {
@@ -2627,3 +2637,179 @@ window.deleteProject = deleteProject;
     });
   }
 })();
+
+// ---- BRAND VOICE (T3, Pro/Studio tier value) ----
+function setupBrandVoice() {
+  var saveBtn = document.getElementById('bvSaveBtn');
+  if (saveBtn) saveBtn.addEventListener('click', bvSave);
+  var actBtn = document.getElementById('bvActivateBtn');
+  if (actBtn) actBtn.addEventListener('click', bvActivate);
+  var reloadBtn = document.getElementById('bvReloadBtn');
+  if (reloadBtn) reloadBtn.addEventListener('click', bvLoad);
+  bvLoad();
+}
+
+function bvStatus(msg, isError) {
+  var el = document.getElementById('bvStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = isError ? '#dc2626' : '';
+}
+
+function bvSave() {
+  // Pro/Studio gate (backend also enforces).
+  if (!currentTier || currentTier === 'core') { bvStatus('Brand Voice is a Pro feature.', true); return; }
+  var name = (document.getElementById('bvName').value || '').trim();
+  var tone = (document.getElementById('bvTone').value || '').trim();
+  var ex = (document.getElementById('bvExamples').value || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!name) { bvStatus('Enter a profile name.', true); return; }
+  if (!ex.length) { bvStatus('Add at least one example title.', true); return; }
+  invoke('save_brand_voice', { name: name, tone: tone, examples: ex.join('\n') })
+    .then(function () { bvStatus('Saved "' + name + '".'); bvLoad(); })
+    .catch(function (e) { bvStatus(String(e && e.message || e || 'Save failed.'), true); });
+}
+
+function bvLoad() {
+  invoke('get_brand_voices').then(function (list) {
+    var data = list || [];
+    // Remember the ACTIVE profile's exemplar titles (used as few-shot voice).
+    var active = data.filter(function (p) { return p.isDefault; })[0];
+    __activeBrandVoiceTitles = [];
+    if (active) {
+      try {
+        var parsed = JSON.parse(active.examples || '[]');
+        __activeBrandVoiceTitles = Array.isArray(parsed) ? parsed : [];
+      } catch (e) { __activeBrandVoiceTitles = []; }
+    }
+    // Populate the active-voice select.
+    var sel = document.getElementById('bvActiveSelect');
+    if (sel) {
+      sel.innerHTML = '<option value="">None (use curated voice)</option>';
+      data.forEach(function (p) {
+        var o = document.createElement('option');
+        o.value = p.name;
+        o.textContent = p.name + (p.isDefault ? ' (active)' : '');
+        sel.appendChild(o);
+        if (p.isDefault) sel.value = p.name;
+      });
+    }
+    // Populate the list with delete buttons.
+    var listEl = document.getElementById('bvList');
+    if (listEl) {
+      if (!data.length) { listEl.innerHTML = '<div class="dash-empty">No brand voice profiles yet.</div>'; return; }
+      listEl.innerHTML = '';
+      data.forEach(function (p) {
+        var row = document.createElement('div');
+        row.className = 'export-item';
+        row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.alignItems = 'center';
+        var txt = document.createElement('span');
+        txt.textContent = p.name + (p.tone ? ' — ' + p.tone : '') + (p.isDefault ? ' [active]' : '');
+        var del = document.createElement('button');
+        del.className = 'btn btn-ghost-dark btn-small';
+        del.textContent = 'Delete';
+        del.onclick = function () { bvDelete(p.name); };
+        row.appendChild(txt); row.appendChild(del);
+        listEl.appendChild(row);
+      });
+    }
+  }).catch(function (e) { bvStatus(String(e && e.message || e || 'Failed to load profiles.'), true); });
+}
+
+function bvActivate() {
+  if (!currentTier || currentTier === 'core') { bvStatus('Brand Voice is a Pro feature.', true); return; }
+  var name = document.getElementById('bvActiveSelect');
+  if (!name) return;
+  invoke('set_active_brand_voice', { name: name.value })
+    .then(function () { bvStatus('Activated voice' + (name.value ? ': ' + name.value : ' (clear)') + '.'); name.value = bvActiveValue(name.value); bvLoad(); })
+    .catch(function (e) { bvStatus(String(e && e.message || e || 'Activate failed.'), true); });
+  function bvActiveValue(v) { return v; }
+}
+
+function bvDelete(name) {
+  invoke('delete_brand_voice', { name: name })
+    .then(function () { bvStatus('Deleted "' + name + '".'); bvLoad(); })
+    .catch(function (e) { bvStatus(String(e && e.message || e || 'Delete failed.'), true); });
+}
+
+// ---- BULK CSV (T4, Studio tier value) ----
+function setupBulkCsv() {
+  // Populate category + style selects from the shared lists.
+  var catSel = document.getElementById('bulkCategory');
+  if (catSel) {
+    ALL_CATEGORIES.forEach(function (c) {
+      var o = document.createElement('option'); o.value = c.id; o.textContent = c.label; catSel.appendChild(o);
+    });
+    catSel.value = 'blog';
+  }
+  var styleSel = document.getElementById('bulkStyle');
+  if (styleSel) {
+    STYLES.forEach(function (s) {
+      var o = document.createElement('option'); o.value = s.id; o.textContent = s.label; styleSel.appendChild(o);
+    });
+    styleSel.value = 'normal';
+  }
+  var btn = document.getElementById('bulkGenerateBtn');
+  if (btn) btn.addEventListener('click', bulkGenerate);
+  var dl = document.getElementById('bulkDownloadCsv');
+  if (dl) dl.addEventListener('click', bulkDownload);
+  var cp = document.getElementById('bulkCopyCsv');
+  if (cp) cp.addEventListener('click', bulkCopy);
+
+  // Hide the Bulk tab for non-Studio users (backend also enforces).
+  if (!currentTier || currentTier !== 'studio') {
+    var tab = document.querySelector('.dash-tab[data-dashtab="bulk"]');
+    if (tab) tab.style.display = 'none';
+  }
+}
+
+var __bulkLastCsv = '';
+
+function bulkGenerate() {
+  var kw = (document.getElementById('bulkKeywords').value || '').trim();
+  var cat = (document.getElementById('bulkCategory').value || 'blog');
+  var style = (document.getElementById('bulkStyle').value || 'normal');
+  var genre = '';
+  var per = parseInt(document.getElementById('bulkPerKw').value, 10) || 10;
+  if (!kw) { bulkStatus('Enter at least one keyword.', true); return; }
+  bulkStatus('Generating… (this may take a moment)');
+  invoke('bulk_generate_csv', {
+    keywords_csv: kw, category: cat, style: style, genre: genre, per_keyword: per,
+  }).then(function (csv) {
+    __bulkLastCsv = csv || '';
+    var out = document.getElementById('bulkCsvOutput');
+    if (out) out.textContent = __bulkLastCsv;
+    bulkStatus('Done — ' + __bulkLastCsv.trim().split('\n').length + ' rows.');
+  }).catch(function (e) { bulkStatus(String(e && e.message || e || 'Bulk generation failed.'), true); });
+}
+
+function bulkStatus(msg, isError) {
+  var el = document.getElementById('bulkStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = isError ? '#dc2626' : '';
+}
+
+function bulkDownload() {
+  if (!__bulkLastCsv) { bulkStatus('Generate a CSV first.', true); return; }
+  var blob = new Blob([__bulkLastCsv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'titleforge-bulk.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function bulkCopy() {
+  if (!__bulkLastCsv) { bulkStatus('Generate a CSV first.', true); return; }
+  function done() { bulkStatus('Copied to clipboard.'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = __bulkLastCsv; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { bulkStatus('Copy failed.', true); }
+    ta.remove();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(__bulkLastCsv).then(done).catch(fallback);
+  } else { fallback(); }
+}
+

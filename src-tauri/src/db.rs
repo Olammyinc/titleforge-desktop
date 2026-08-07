@@ -89,6 +89,18 @@ pub fn init_db(path: &std::path::Path) -> Result<Connection> {
             score INTEGER,
             notes TEXT,
             FOREIGN KEY (project_id) REFERENCES user_projects(id) ON DELETE CASCADE
+        );
+
+        -- Brand voice profiles (T3, Pro/Studio tier value). A named profile
+        -- holds a tone/voice description plus 3-5 exemplar titles the engine
+        -- injects into the few-shot slot so output matches the user's voice.
+        CREATE TABLE IF NOT EXISTS brand_voice_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            tone TEXT NOT NULL DEFAULT '',
+            examples TEXT NOT NULL DEFAULT '[]',
+            is_default INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
         );"
     )?;
 
