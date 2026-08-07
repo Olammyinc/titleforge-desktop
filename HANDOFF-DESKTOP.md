@@ -649,6 +649,34 @@ Per-batch engine-new `[50, 39, 31, 30]` / `[50, 36, 30, 28]` — each later batc
 
 </details>
 
+#### T1-T4. TIER STRUCTURE — ✅ **OWNER-DECIDED 2026-08-07. Option A. Implement it.**
+
+Full structure, evidence and market comparables: `CONTEXT.md` §5, 2026-08-07 pricing entry. The short version:
+
+| tier | machines | batch cap | gains |
+|---|---|---|---|
+| Core $29 | **1** | **50** | (unchanged otherwise) |
+| Pro $59 | **3** | **100** | + brand voice profiles |
+| Studio $89 | **5** | **200** | + bulk CSV, commercial licence, **free major-version upgrade**, priority support, early access |
+
+**Prices do NOT change.** Stripe links, `pricing_config` and the `data-price` attributes are untouched — that is deliberate, and it keeps payments out of the blast radius. If you find yourself editing a price, stop.
+
+**T1. Tier caps + tier-aware machine activations *(small, do first)*.**
+- `lib.rs:102-104` — `core => 50`, `pro => 100`, `studio => 200` (Core was 25, Pro 50).
+- `licenses.js:168` — `MAX_MACHINES` is a flat `3`. Make it read `lic.tier` → 1 / 3 / 5. Server-side, few lines.
+- ⚠️ **Existing licences already have up to 3 machines registered.** A Core key with 3 activations must not break on the next validate — grandfather, or clamp only on *new* registrations. Decide, and write down which.
+- **Default batch size:** the cap is the ceiling, not the default. Recommend defaulting the slider to **25** (~3 min) rather than 50 (3.8-8.9 min), since with U1 streaming the first titles land in ~5s either way and a shorter default feels faster. Small call — flag it if you disagree, don't silently pick.
+
+**T2. Sales page — all three tiers *(closes §6.4b item 5)*.** U2 fixed only Studio, where 4 of 8 bullets were false. **Core and Pro have never had the same audit.** Same method: every bullet checked against the gate that enforces it. Add Studio's free major-version upgrade and the new machine counts. Nothing goes on the page that no code enforces.
+
+**T3. Brand voice profiles → Pro.** `AI-WORK-BRIEF.md:257`. Cheap: the engine already does few-shot via `retrieve_similar()` / `fetch_top_appeal_fewshot()` — this supplies user exemplars into that existing slot. Gate behind the existing `get_tier(&db) == "core"` pattern.
+
+**T4. Bulk CSV mode → Studio.** `AI-WORK-BRIEF.md:258`. Upload keywords, get titles back. The largest of the four; it can follow T1-T3.
+
+**Sequencing matters:** do **T1 before D3**. Tier-aware activations modify `licenses.js` — the exact path D3 validates end to end. Doing T1 first means D3 tests the shipping code instead of code you are about to change.
+
+**More differentiators may be added later** (owner: *"whatever we can add to make it more juicy, we do — we can do this later"*). Do not extend the list unattended.
+
 #### W1. Make `measure-provider-overlap.js` persist its result — ✅ **DONE 2026-08-05 (`400cbea`,`ce1ae6e`)** *(was "small, do first")*
 
 Overlap now persists to `provider-overlap.json`/`.csv` (was `console.log`-only). Measured: OpenAI 125 + Gemini 125, exact overlap **0**, opening-4-word overlap **1** — supports two independent provider distributions; 1.5× overgeneration is justified (not lucky).
