@@ -643,7 +643,7 @@ Per-batch engine-new `[50, 39, 31, 30]` / `[50, 36, 30, 28]` — each later batc
 
 **Product consequence (firm):** "run 50 four times" delivers roughly **three-quarters** of Studio's distinct capacity, invisibly (dedup is per-call; nothing reads history across calls). **`4 × 50` does NOT substitute for `1 × 200`.** Keep the 200 cap; cross-call dedup (read history into the pool) would be the lever if 4×50 were ever offered.
 
-**Pro-50 (3.8 min) stands** as an early-exit good draw — the re-take's own single batch took 534.5s (~9 min), so real 4×50 cost is ~2× the 3.8 min implication. It still lacks its own CSV + second run (follow-up). **Good catch — this corrected the reviewer, who had used 3.8 min as typical.**
+**Pro-50 — ✅ MEASURED, own CSVs + two runs (`pro_batch_measure.rs`, `pro-batch-run1/2.csv`).** run1 = 50/50 unique in 269.5s (5.39s/title), run2 = 50/50 unique in 244.6s (4.89s/title). **Quote the RANGE, not 3.8:** across all observed runs Pro-50 spans **~3.8-8.9 min** (226.2s early-exit / 244.6s / 269.5s / 534.5s full 2× budget) — 3.8 was n=1 and the optimistic end. The durable fix (shared `tests/evidence.rs` + `engine::is_duplicate`) is **DONE** and committed (`dc76cab`); `four_x_fifty_v2`, `yield_curve`, `studio_batch_measure`, `category_fit`, `pro_batch_measure` all ported onto it (rule #1/#7/#7).
 
 </details>
 
