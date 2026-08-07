@@ -573,7 +573,48 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 Done: Studio card + FAQ now say "up to 200 titles"; the three non-gated bullets dropped.
 
-#### U3. RE-TAKE the 4×50 overlap — ⛔ **the recorded result is WRONG and it is feeding a pricing decision**
+#### U3. Re-take the 4×50 overlap — ✅ **DONE 2026-08-07 (`66c348b`), INDEPENDENTLY REPRODUCED. This is the standard.**
+
+> **✅ Verified by the reviewer, recomputed from the committed CSVs — numbers match exactly.**
+>
+> | | exact union | engine union |
+> |---|---|---|
+> | run 1 | 199/200 | **150/200 (75%)** |
+> | run 2 | 200/200 | **144/200 (72%)** |
+> | **mean** | ~100% | **~147/200 (73%)** |
+>
+> **This is the first measurement in this project that could be reproduced line-for-line from committed artifacts.** All four definition-of-done criteria met: `four_x_fifty_v2.rs:114` calls `engine::shares_opening` directly rather than reimplementing it, two CSVs are committed (flushed per batch, so a crashed run still leaves evidence), n=2, and both unions are reported side by side with a per-batch breakdown. §7 parity held through the whole round for the first time. **Work to this standard from here.**
+>
+> The live figure came in **below** the 85% static proxy, for the predicted reason: four 50-batches each draw the head of the distribution, so they collide harder than two 400-attempt runs do. The per-batch engine-new curve shows it — `[50, 39, 31, 30]` and `[50, 36, 30, 28]`. Batch one is free; batch four buys ~30.
+>
+> **Product consequence — splitting is worse on yield and NOT reliably faster.**
+>
+> ⚠️ The reviewer first wrote this table as "4 × 50 ≈ 15 min", treating **Pro-50 = 3.8 min** as typical. **It is not — it was an early-exit good draw, and the re-take caught it.** One re-take batch took **534.5s (~8.9 min)**. The arithmetic confirms which is which at the measured ~4.3 s/attempt: 226.2s ≈ **52 attempts** (early exit at target), 534.5s ≈ the **full 100-attempt budget**. So a Pro-50 batch ranges **~3.8-8.9 min depending on the draw**.
+>
+> | | distinct titles | wall clock |
+> |---|---|---|
+> | 1 × 200 | **~200** | **26-31 min** (measured, n=2) |
+> | 4 × 50 | **~147 (-27%)** | **15-36 min** (4 × a 3.8-8.9 min batch) |
+>
+> The ranges overlap, so **4 × 50 buys no dependable time saving and costs about a quarter of the distinct output.** Splitting is simply worse. The Studio cap is therefore a real, measured differentiator: it is the only way past ~147 distinct titles on one keyword, which four Pro batches cannot reach at any speed.
+>
+> **Follow-up:** Pro-50 needs its own CSV and a second run — 3.8 min is n=1 and now known to be the optimistic end of a 2.3× spread. The batch-time figure quoted anywhere should be the range, not 3.8.
+
+#### U3-FOLLOWUP. ⛔ The durable fix did NOT land — do this before the next harness
+
+**U3 was done correctly by hand. The system change that stops it recurring was skipped**, and it was specified to come *first*:
+
+- `src-tauri/tests/evidence.rs` — **MISSING.** Persisting a CSV is still an optional step each new harness must remember. That is what failed in `5940dd2`, `four_x_fifty_overlap.rs` and `pro_batch_measure.rs`.
+- `engine::is_duplicate(a, b)` wrapping the exact production rule (`eq_ignore_ascii_case || shares_opening(_, _, 2)`) — **MISSING.** `shares_opening` has now been reimplemented weaker twice; nothing structural prevents a third.
+
+**The instance is fixed; the class is not.** The next new harness starts from zero and relies on memory again. Build both before the next measurement, then port `four_x_fifty_v2.rs`, `studio_batch_measure.rs` and `yield_curve.rs` onto them.
+
+**Also outstanding, small:**
+- `src/styles.css` — uncommitted for two rounds while U1 is described as complete. Commit it or explain why it is not part of U1.
+- `category-fit.csv` / `yield-curve.csv` — still written to a fixed path and left modified in the working tree. This is the mechanism behind the original `batch-uniqueness.csv` clobber. Have the harnesses write run-suffixed names directly; `evidence.rs` is where that belongs.
+
+<details>
+<summary>Original U3 instruction (superseded — kept for the record)</summary>
 
 `four_x_fifty_overlap.rs:70` unions with `union.insert(r.title.to_ascii_lowercase())` — **exact match only.** The engine dedups on exact **OR** `shares_opening(n=2)` (`engine.rs:158-161`). Re-tested against the two committed Studio runs:
 
@@ -602,7 +643,9 @@ Per-batch engine-new `[50, 39, 31, 30]` / `[50, 36, 30, 28]` — each later batc
 
 **Product consequence (firm):** "run 50 four times" delivers roughly **three-quarters** of Studio's distinct capacity, invisibly (dedup is per-call; nothing reads history across calls). **`4 × 50` does NOT substitute for `1 × 200`.** Keep the 200 cap; cross-call dedup (read history into the pool) would be the lever if 4×50 were ever offered.
 
-**Pro-50 (3.8 min) stands** as an early-exit good draw — the re-take's own single batch took 534.5s (~9 min), so real 4×50 cost is ~2× the 3.8 min implication. It still lacks its own CSV + second run (follow-up).
+**Pro-50 (3.8 min) stands** as an early-exit good draw — the re-take's own single batch took 534.5s (~9 min), so real 4×50 cost is ~2× the 3.8 min implication. It still lacks its own CSV + second run (follow-up). **Good catch — this corrected the reviewer, who had used 3.8 min as typical.**
+
+</details>
 
 #### W1. Make `measure-provider-overlap.js` persist its result — ✅ **DONE 2026-08-05 (`400cbea`,`ce1ae6e`)** *(was "small, do first")*
 
