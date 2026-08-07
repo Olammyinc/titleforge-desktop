@@ -1752,7 +1752,7 @@ Full 4-engine comparison with all fixes applied:
 > | Tier | Titles | Generation (2×, post-D1) — MEASURED | status |
 > |---|---|---|---|
 > | Core | 25 | **~3.0 min** (Core-25 via `engine::generate`, 181.9s) | MEASURED |
-> | Pro | 50 | **~7 min** | **INTERPOLATED (extrapolated from Core; not yet measured)** |
+> | Pro | 50 | **~3.8 min** (Pro-50 via `engine::generate`, 226.2s) | **MEASURED 2026-08-06** (was interpolated ~7 min — that was wrong) |
 > | Studio | 200 | **~26-31 min** (`studio-batch-run1/2.csv`: 26.2 / 30.7 min) | MEASURED |
 
 **Studio 200 is now reachable (100% yield) but is ~26-31 min.** The duplicate:QC split (~200:1) shows distinct-mass is the ceiling, not quality. Owner decision: is ~30 min for Studio 200 acceptable, or should the cap drop (context reuse — a fresh KV cache per title — is an obvious future lever).
@@ -1903,8 +1903,8 @@ Spec in `PHI-3.5-MIGRATION.md`. It targets the real remaining quality defect (so
 
 #### Still queued behind the above
 
-- ~~**Studio-scale distinctness has never been measured**~~ — **MEASURED 2026-08-06 (`5940dd2`), and it must be re-taken.** 200 requested → 124 delivered. It did not use `category_fit` as specified; it used a new harness that writes no CSV and logs no rejection outcomes, so the number is unreproducible and the stated cause unmeasured. **The flip condition named here was met and the Phi/pairing verdict was never revisited** — see the 2026-08-06 review entry and `HANDOFF-DESKTOP.md` §7 D1/D2.
-- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; unblocked after D1** (commit `7017702`). Re-take harness rebuild is next (see §5 2026-08-06 entry).
+- ~~**Studio-scale distinctness has never been measured**~~ — **RE-TAKEN post-D1, two runs** (`studio-batch-run1/2.csv`): 199/200 and 200/200 yield (~200:1 dup:QC). **4×50 overlap measured** (`four_x_fifty_overlap.rs`): four Pro-50 batches for `coffee`/youtube → union distinct **198/200 (99%)**, so repeated 50-batches approximate the 200 cap.
+- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; MEASURED post-D1**: Core 25 = 3.0 min, Pro 50 = 3.8 min, Studio 200 = 26-31 min. Cap decision (is ~30 min for Studio 200 acceptable) is the owner's call.
 - ~~CORS restriction + rate limiting on the licence endpoint (§6.4b item 8)~~ — **✅ DONE 2026-08-06 (`dbee1f1`).**
 - Licence flow end to end with a real Stripe test purchase (§6.4b item 7).
 - Web Pro → free Core desktop licence; upgrade pricing; waitlist drip.
