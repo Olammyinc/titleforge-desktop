@@ -561,6 +561,28 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 Done: Studio card + FAQ now say "up to 200 titles"; the three non-gated bullets dropped.
 
+#### U3. RE-TAKE the 4×50 overlap — ⛔ **the recorded result is WRONG and it is feeding a pricing decision**
+
+`four_x_fifty_overlap.rs:70` unions with `union.insert(r.title.to_ascii_lowercase())` — **exact match only.** The engine dedups on exact **OR** `shares_opening(n=2)` (`engine.rs:158-161`). Re-tested against the two committed Studio runs:
+
+| union rule | result |
+|---|---|
+| exact match only | **397/399 = 99%** — reproduces your finding |
+| **engine's own rule** | **338/399 = 85%** |
+
+61 titles the engine itself rejects as near-duplicates were counted as distinct. **Overlap is ~15%, not ~1%; 4×50 delivers ~170 engine-distinct, not ~198.** So "just run 50 four times" does **not** substitute for a 200 cap — which is the opposite of what `CONTEXT.md` recorded.
+
+This is **standing rule 7, below** — *measure with the engine's own rule, by calling it*. `engine::shares_opening` is `pub` for exactly this reason.
+
+**Requirements for the re-take, all mandatory:**
+- Union with `engine::shares_opening(a, b, 2)` **in addition to** exact match — call it, do not reimplement it.
+- **Write a CSV.** Neither `four_x_fifty_overlap.rs` nor `pro_batch_measure.rs` contains a single `fs::write`. This is the third stdout-only round against rule #1, and this time the numbers were recorded as *settled*.
+- **Run twice** (rule #7). Both were n=1.
+- Report **both** unions side by side so the gap is visible rather than a single headline.
+- Expect it to be **worse** than 85%: four 50-batches each draw only the head of the distribution, so they should collide more than two 400-attempt runs.
+
+**Pro-50 (3.8 min) stands** — that one is right, and it corrected a reviewer estimate of ~7 min that had ignored the early exit. It still needs a CSV and a second run.
+
 #### W1. Make `measure-provider-overlap.js` persist its result — ✅ **DONE 2026-08-05 (`400cbea`,`ce1ae6e`)** *(was "small, do first")*
 
 Overlap now persists to `provider-overlap.json`/`.csv` (was `console.log`-only). Measured: OpenAI 125 + Gemini 125, exact overlap **0**, opening-4-word overlap **1** — supports two independent provider distributions; 1.5× overgeneration is justified (not lucky).
