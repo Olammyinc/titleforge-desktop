@@ -1,0 +1,57 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"Uncovering the Benefits of Sustainable Coffee Sourcing",7,0,0,1,1
+blog,"Is Coffee Making You an Idiot?",6,0,0,1,1
+blog,"5 Reasons Why Coffee Became My Daily Morning Boost",9,1,0,1,1
+blog,"The Awakening: My Journey with Coffee and Beyond",8,0,1,1,1
+blog,"Transform Your Coffee Experience: From Dark Roast to Vanilla Mocha",10,0,1,1,1
+blog,"The Coffee Experience",3,0,0,0,1
+blog,"The Power of a Simple Cup: Revel in the Bliss of Coffee",12,0,1,1,1
+blog,"Why You Should Brew Your Coffee with a Pour Over",10,0,0,1,1
+book,"Remote Revolution: How Remote Work Shatters the Office Paradigm",9,0,1,0,1
+book,"Scaling Remote Success",3,0,0,1,1
+book,"Silent Threads: Remote Work's Mending of Worlds",7,0,1,1,1
+book,"Where Will Remote Work Take Us?",6,0,0,1,1
+book,"10 Steps to Remote Success",5,1,0,1,1
+book,"Remote: My Journey from Solitude to Community",7,0,1,1,1
+book,"Remote Awakening",2,0,0,1,1
+book,"9 Ways to Thrive in Remote Work",7,1,0,1,1
+poem,"Sourdough's Yeasty Rise",3,0,0,1,1
+poem,"Rediscovering the Magic in Sourdough",5,0,0,1,1
+poem,"The Rise of Sourdough's Sweet Aroma",6,0,0,1,1
+poem,"From Yeast to Loaf: Rediscovering the Art of Sourdough Bread",10,0,1,0,0
+poem,"Yeast Dreams of Bread",4,0,0,1,1
+poem,"Crafting Flaky Sourdough Delights",4,0,0,1,1
+poem,"Why Bread Dough Needs Sourdough?",5,0,0,1,1
+poem,"1A Poem on Sourdough's Rise",5,1,0,1,0
+product,"Caffeine Nexus",2,0,0,1,1
+product,"Vivid Espresso",2,0,0,1,1
+product,"FreshRoast",1,0,0,1,1
+product,"Jolt Brew",2,0,0,1,1
+product,"Caffeinate Bliss",2,0,0,1,1
+product,"JoltMocha",1,0,0,1,1
+product,"Espresso Soul",2,0,0,1,1
+product,"Roast and Mix",3,0,0,1,1
+product,"Fresh Rise",2,0,0,1,1
+product,"RisePerfect",1,0,0,1,1
+product,"Sourdough Soul",2,0,0,1,1
+product,"Brave Sourdough Dough",3,0,0,1,1
+product,"Crafted Sourdough Flavors",3,0,0,1,1
+product,"Fresh Sourdough",2,0,0,1,1
+product,"Sourdough Forge",2,0,0,1,1
+product,"Yeastly Bites",2,0,0,1,1
+song,"Is Coffee Brewing Your Dreams?",5,0,0,1,1
+song,"5 Coffees and a Walnut Croissant",6,1,0,1,0
+song,"From Slides to Espresso: A Journey in Coffee",8,0,1,0,0
+song,"Why Does Coffee Still Give Me Energy?",7,0,0,1,1
+song,"28 Coffee Bliss",3,1,0,1,0
+song,"Should I Brew Another Cup of Coffee?",7,0,0,1,1
+song,"The Awakening: A Cup of Coffee Rediscovered",7,0,1,1,0
+youtube,"Remote Freelancing Secrets: How to Succeed from Home",8,0,1,1,1
+youtube,"Is Remote Work the Future of Work?",7,0,0,1,1
+youtube,"Optimize Your Remote Work Productivity",5,0,0,1,1
+youtube,"Remote Work Challenges: My 7-Day Test",6,1,1,1,1
+youtube,"Benefits of Remote Work",4,0,0,0,1
+youtube,"Challenges and Solutions for Remote Workers",6,0,0,1,1
+youtube,"4 Steps to Enhance Remote Work Productivity",7,1,0,1,1
+youtube,"From Desk to Desk: My Journey to Remote Work",9,0,1,1,1
+

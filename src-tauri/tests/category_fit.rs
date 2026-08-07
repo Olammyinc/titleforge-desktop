@@ -27,6 +27,11 @@ use std::collections::BTreeMap;
 #[path = "evidence.rs"]
 mod evidence;
 
+/// Default (empty) FineTune — the no-brand-voice path.
+fn default_finetune() -> titleforge_lib::prompt_spec::FineTune {
+    titleforge_lib::prompt_spec::FineTune::default()
+}
+
 /// (keyword, category). Spread across title categories AND name categories so
 /// the two rubrics are both exercised. Kept small — each title is ~7-12s.
 const CASES: &[(&str, &str)] = &[
@@ -62,6 +67,19 @@ struct CatStats {
 
 #[test]
 fn category_fit() {
+    // Brand-voice mode for the T3 benchmark (reviewer requirement). When
+    // TF_BRAND_VOICE is set (newline-separated exemplar titles), build a
+    // FineTune carrying them and run the with-brand-voice path; otherwise run
+    // the default (no brand voice) path to confirm it's unchanged. The harness
+    // is otherwise identical so the two runs are directly comparable.
+    let brand_voice: String = std::env::var("TF_BRAND_VOICE").unwrap_or_default();
+    let bv_mode = !brand_voice.trim().is_empty();
+    let finetune = if bv_mode {
+        titleforge_lib::prompt_spec::FineTune { brand_voice: Some(brand_voice.trim().to_string()), ..Default::default() }
+    } else {
+        default_finetune()
+    };
+
     let conn = init_db();
     let generator = titleforge_lib::title_gen::Generator::build(&conn);
 
@@ -83,7 +101,7 @@ fn category_fit() {
         let cats = vec![cat.to_string()];
         let results = titleforge_lib::engine::generate(
             &conn, &generator, Some(&mut llm), kw, &cats, "normal", "any", PER_CASE, "core",
-            &Default::default(),
+            &finetune,
         ).unwrap_or_default();
 
         let e = by_cat.entry(cat.to_string()).or_default();
@@ -178,9 +196,12 @@ fn category_fit() {
 
     // Evidence via evidence.rs — run-suffixed (CATFIT_RUN=1/2...). The old
     // fixed `category-fit.csv` path was the clobber mechanism; never write to a
-    // bare name. `csv` already carries the header + all rows.
-    let _ = evidence::write_evidence_csv("category-fit", "CATFIT_RUN", &csv, "");
-    let out = evidence::evidence_path("category-fit", &evidence::run_tag("CATFIT_RUN"));
-    println!("\n  CSV: {}", out.display());
+    // bare name. The base name encodes the brand-voice mode so the two
+    // benchmark runs (no-BV vs BV) are distinct evidence files.
+    let base = if bv_mode { "category-fit-bv" } else { "category-fit-nobv" };
+    let _ = evidence::write_evidence_csv(base, "CATFIT_RUN", &csv, "");
+    let out = evidence::evidence_path(base, &evidence::run_tag("CATFIT_RUN"));
+    println!("\n  mode: {}", if bv_mode { "BRAND VOICE (TF_BRAND_VOICE set)" } else { "no brand voice (default)" });
+    println!("  CSV: {}", out.display());
     println!("  wall clock: {:.1}s", t0.elapsed().as_secs_f64());
 }
