@@ -1903,8 +1903,9 @@ Spec in `PHI-3.5-MIGRATION.md`. It targets the real remaining quality defect (so
 
 #### Still queued behind the above
 
-- ~~**Studio-scale distinctness has never been measured**~~ — **RE-TAKEN post-D1, two runs** (`studio-batch-run1/2.csv`): 199/200 and 200/200 yield (~200:1 dup:QC). **4×50 overlap measured** (`four_x_fifty_overlap.rs`): four Pro-50 batches for `coffee`/youtube → union distinct **198/200 (99%)**, so repeated 50-batches approximate the 200 cap.
-- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; MEASURED post-D1**: Core 25 = 3.0 min, Pro 50 = 3.8 min, Studio 200 = 26-31 min. Cap decision (is ~30 min for Studio 200 acceptable) is the owner's call.
+- ~~**Studio-scale distinctness has never been measured**~~ — **MEASURED 2026-08-06 (`5940dd2`), and the result must be re-taken.** 200 requested → 124 delivered. It did *not* use `category_fit`; it used a new harness that writes no CSV and logs no rejection outcomes, so the number is unreproducible and the stated cause is unmeasured. **The flip condition named here was met and the Phi/pairing verdict was never revisited** — see the 2026-08-06 review entry in §5 and D1/D2 in `HANDOFF-*.md` §7.
+- ⚠️ **CORRECTED 2026-08-07 — the "198/200 (99%), 4×50 ≈ 200 cap" belief is WRONG.** The original `four_x_fifty_overlap.rs` unioned on exact match only. A live re-take (`tests/four_x_fifty_v2.rs`, calls `engine::shares_opening`, CSVs `four-x-fifty-run1/2.csv`, n=2) gives **engine union ~147/200 (73%)** — cross-batch overlap is ~27%, not ~1%. **`4 × 50` does NOT substitute for `1 × 200`.** See §5 2026-08-07 (measurement) entry.
+- Studio batch time honesty (§6.4b item 4) — **now the hardest gate; unblocked after D1.** D1 landed (commit `7017702`); the re-take harness rebuild is the next step (see §5 2026-08-06 entry).
 - ~~CORS restriction + rate limiting on the licence endpoint (§6.4b item 8)~~ — **✅ DONE 2026-08-06 (`dbee1f1`).**
 - Licence flow end to end with a real Stripe test purchase (§6.4b item 7).
 - Web Pro → free Core desktop licence; upgrade pricing; waitlist drip.

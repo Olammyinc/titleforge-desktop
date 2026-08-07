@@ -586,14 +586,23 @@ Done: Studio card + FAQ now say "up to 200 titles"; the three non-gated bullets 
 
 This is **standing rule 7, below** — *measure with the engine's own rule, by calling it*. `engine::shares_opening` is `pub` for exactly this reason.
 
-**Requirements for the re-take, all mandatory:**
-- Union with `engine::shares_opening(a, b, 2)` **in addition to** exact match — call it, do not reimplement it.
-- **Write a CSV.** Neither `four_x_fifty_overlap.rs` nor `pro_batch_measure.rs` contains a single `fs::write`. This is the third stdout-only round against rule #1, and this time the numbers were recorded as *settled*.
-- **Run twice** (rule #7). Both were n=1.
-- Report **both** unions side by side so the gap is visible rather than a single headline.
-- Expect it to be **worse** than 85%: four 50-batches each draw only the head of the distribution, so they should collide more than two 400-attempt runs.
+**✅ DONE 2026-08-07 — live re-take confirms it and lands lower.** New harness `src-tauri/tests/four_x_fifty_v2.rs` was run *twice* (rule #7), calling `engine::shares_opening(a, b, 2)` directly, with per-attempt CSVs flushed after every batch (rule #1). It *replaced* the old union rule — this is the corrected measurement, and it supersedes the static 85% re-test above (which only *approximated* `shares_opening` against already-committed Studio runs).
 
-**Pro-50 (3.8 min) stands** — that one is right, and it corrected a reviewer estimate of ~7 min that had ignored the early exit. It still needs a CSV and a second run.
+| run | exact union | **engine union** | wall clock |
+|---|---|---|---|
+| 1 | 199/200 (100%) | **150/200 (75%)** | 1921.7s |
+| 2 | 200/200 (100%) | **144/200 (72%)** | 1113.3s |
+| **mean** | **~199.5** | **~147 (73%)** | — |
+
+Per-batch engine-new `[50, 39, 31, 30]` / `[50, 36, 30, 28]` — each later batch adds fewer. Evidence: `four-x-fifty-run1.csv`, `four-x-fifty-run2.csv`.
+
+- The exact-unions reproduce the old ~99-100%, confirming the *union rule* (not the engine) was the bug.
+- **The engine's own rule gives ~147 engine-distinct (~73%), not ~198.** Cross-batch overlap is **~27%, not ~1%**.
+- **Both live runs are *below* the 85% static prior** — as the requirement below predicted ("expect worse than 85%"). Magnitude corrected: **~147, not ~170**.
+
+**Product consequence (firm):** "run 50 four times" delivers roughly **three-quarters** of Studio's distinct capacity, invisibly (dedup is per-call; nothing reads history across calls). **`4 × 50` does NOT substitute for `1 × 200`.** Keep the 200 cap; cross-call dedup (read history into the pool) would be the lever if 4×50 were ever offered.
+
+**Pro-50 (3.8 min) stands** as an early-exit good draw — the re-take's own single batch took 534.5s (~9 min), so real 4×50 cost is ~2× the 3.8 min implication. It still lacks its own CSV + second run (follow-up).
 
 #### W1. Make `measure-provider-overlap.js` persist its result — ✅ **DONE 2026-08-05 (`400cbea`,`ce1ae6e`)** *(was "small, do first")*
 
@@ -691,7 +700,7 @@ The 2026-08-04 No-Go was invalid: it measured a stop-token bug (`token_eos` vs `
 - ✅ **Removed dead `candle-core` / `candle-transformers` / `tokenizers` deps** (+ removed the `cuda` feature), verified `cargo check` + 33/33. Commit `cfa5d11`.
 - ✅ **Migrated the updater endpoint** Netlify → GitHub Releases at the code level (`tauri.conf.json` endpoint + CSP `github.com`/`objects.githubusercontent.com`; workflow Netlify step → documented no-op). Commit `cfa5d11`. ⛔ Beta tag + live update validation deferred to the owner.
 
-**Studio re-take — ✅ DONE post-D1** (see D2): `studio-batch-run1/2.csv` = 199/200 and 200/200 yield, ~200:1 dup:QC, 26-31 min. **4×50 overlap (new, `four_x_fifty_overlap.rs`): union distinct 198/200 (99%)** — repeated 50-batches approximate the 200 cap within 1%. Owner decision pending: is ~30 min for Studio 200 acceptable, or should the cap drop? Caps NOT changed unattended.
+**Studio re-take — ✅ DONE post-D1** (see D2): `studio-batch-run1/2.csv` = 199/200 and 200/200 yield, ~200:1 dup:QC, 26-31 min. **`4×50` overlap — ✅ RE-TAKEN 2026-08-07: ~147/200 (73%) engine-distinct, NOT 198.** The original `four_x_fifty_overlap.rs` unioned on exact match only; a live re-test calling `engine::shares_opening` (U3, `four-x-fifty-run1/2.csv`) shows cross-batch overlap is ~27%, not ~1% — **`4×50` does NOT substitute for `1×200`**. Owner decision pending: is ~30 min for Studio 200 acceptable, or should the cap drop? Caps NOT changed unattended.
 
 ---
 
