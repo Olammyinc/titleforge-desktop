@@ -561,7 +561,9 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 Done: Studio card + FAQ now say "up to 200 titles"; the three non-gated bullets dropped.
 
-#### W1. Make `measure-provider-overlap.js` persist its result, then re-run *(small, do first)*
+#### W1. Make `measure-provider-overlap.js` persist its result — ✅ **DONE 2026-08-05 (`400cbea`,`ce1ae6e`)** *(was "small, do first")*
+
+Overlap now persists to `provider-overlap.json`/`.csv` (was `console.log`-only). Measured: OpenAI 125 + Gemini 125, exact overlap **0**, opening-4-word overlap **1** — supports two independent provider distributions; 1.5× overgeneration is justified (not lucky).
 
 The overlap measurement **was run**, but `scripts/measure-provider-overlap.js:130` only does `console.log` — no file is written. The number went to a terminal and is gone. **Every other measurement script in this project writes a CSV** (`category-fit-run*.csv`, `batch-uniqueness.csv`, `yield-curve*.csv`); this one is the exception and that is why the result was lost.
 
@@ -569,7 +571,9 @@ Add CSV output matching those conventions, re-run once, and record the number in
 
 **Rule going forward: a measurement that only prints to stdout has not been taken.**
 
-#### W2. Cloud yield measurement *(the big one — sets the web promise)*
+#### W2. Cloud yield measurement — ✅ **DONE 2026-08-05 (`b0494c9`)** *(was "the big one — sets the web promise")*
+
+5 keywords × article/blog × 2 runs at 60 attempts, dual-provider: **0 duplicates everywhere**, worst-case distinct **29 (sourdough bread blog)**. Evidence in `evidence/cloud-*.csv`. Sets the honest per-category cap (~29-30).
 
 Full spec in §6 above. Desktop is now measured; **cloud is not**, and the numbers do not transfer — different model, different pipeline.
 
@@ -577,7 +581,9 @@ Desktop found: **53:1 and 44:1 duplicate-to-QC**, i.e. the ceiling is repetition
 
 **This blocks §6.4b item 5** — you cannot make the sales page match reality until you know what the web engine actually delivers per category.
 
-#### W3. Sales copy ← blocked on W2 *(§6.4b item 5)*
+#### W3. Sales copy — ✅ **DONE 2026-08-05 (`7fa6cf9`, `bff21b9`)** *(was "blocked on W2")*
+
+Web now shows "up to 30 titles per category/topic" (replacing "up to 100 titles"), CTA "Forge Your First Titles Free", free card "Free Forever". Slider clamps to `min(100, 30×categories)` Pro / `min(10, 3×categories)` Free. Guest 10-title shortfall fixed by 1.5× padding (`5866354`). Marketing-strategist reviewed + humanized copy.
 
 Current claim is *"up to 100 titles"*. Once W2 lands, replace with a per-category number and cap requests at `min(requested, N × categories_selected)`.
 
@@ -651,7 +657,7 @@ The 2026-08-04 No-Go was invalid: it measured a stop-token bug (`token_eos` vs `
 - ✅ **Removed dead `candle-core` / `candle-transformers` / `tokenizers` deps** (+ removed the `cuda` feature), verified `cargo check` + 33/33. Commit `cfa5d11`.
 - ✅ **Migrated the updater endpoint** Netlify → GitHub Releases at the code level (`tauri.conf.json` endpoint + CSP `github.com`/`objects.githubusercontent.com`; workflow Netlify step → documented no-op). Commit `cfa5d11`. ⛔ Beta tag + live update validation deferred to the owner.
 
-**Studio-scale finding (`5940dd2`) — ⚠️ SUPERSEDED 2026-08-06, see D2.** Recorded as *"coffee × youtube × 200 returned 124 unique in 26.2 min; the gap is a distinct-mass ceiling; worse than the ~11 min estimate."* On audit: the numbers are unreproducible (no CSV), "124/124 unique" is guaranteed by `engine.rs:158-161` and cannot fail, the stated cause was never instrumented, and the ~11 min baseline was itself wrong by 2× — the correct prior was **~23 min**, and the harness's own header says so. **What survives: 200 requested → 124 delivered is a real yield deficit, and "up to 200" is not defensible.** What does not survive: the framing, the cause, and the comparison. Re-take per D2, after D1. Caps NOT changed unattended — that part was right.
+**Studio re-take — ✅ DONE post-D1** (see D2): `studio-batch-run1/2.csv` = 199/200 and 200/200 yield, ~200:1 dup:QC, 26-31 min. **4×50 overlap (new, `four_x_fifty_overlap.rs`): union distinct 198/200 (99%)** — repeated 50-batches approximate the 200 cap within 1%. Owner decision pending: is ~30 min for Studio 200 acceptable, or should the cap drop? Caps NOT changed unattended.
 
 ---
 
