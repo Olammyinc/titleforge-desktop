@@ -760,9 +760,13 @@ Recorded as 22.6 min best / 45.3 min worst against a softened "up to 200" claim.
 - **After D1**, at the shipping multiplier. **Twice** (rule #7).
 - Note in the write-up that `local_llm.rs:288-291` soft-returns rejected candidates, so `qc_fail` undercounts by design.
 
-#### D3. Stripe licence flow end to end *(§6.4b item 7)*
+#### D3. Stripe licence flow end to end *(§6.4b item 7)* — ✅ **CLOSED 2026-08-07**
 
-Never tested with a real Stripe test purchase. Mocks lie — this needs the real checkout → webhook → key generation → email → activation path.
+A real Stripe **test-mode** Studio checkout (4242 card) completed → `checkout.session.completed` → webhook → `generate_from_purchase` produced a `TF-STUDIO-XXXX` key → **Resend emailed it** → owner **activated it in the desktop app**, unlocking Studio. Full chain verified end-to-end with real services (test mode). This was the last open beta gate — all §6.4b gates 1–7 are now closed.
+
+**Resend bug found & fixed along the way:** Resend was **"not started"** (sender domain unverified), so the hardcoded `licenses@titleforge-tool.netlify.app` sender was rejected and emails were silently dropped (webhook swallows the send error non-fatally). Fix (`9893afd`): sender reads `RESEND_FROM_EMAIL` (Netlify env) with an `onboarding@resend.dev` sandbox fallback for the D3 test. ⚠️ **Sandbox is test-only** (delivers only to the Resend-account's own email) — before the real launch, verify a real sending domain in Resend and set `RESEND_FROM_EMAIL` (same item as the Netlify→real domain migration).
+
+**Download page bug found & fixed (`62bbb6d`):** the post-purchase download page was unstyled (relative asset paths under virtual `/desktop/*` → SPA shell → MIME-refused) and all download buttons pointed at dead `v1.0.0-beta.1` GitHub URLs (real release: beta.7). Fixed to absolute asset paths, beta.7 links + real SHA256s, and **masked** `/download/{windows,mac,linux}` 302-redirects. Browser-verified: styled, downloads 200, no 404.
 
 #### D4. CORS + rate limiting on the licence endpoint — ✅ **DONE 2026-08-06 (`dbee1f1`), code verified** *(§6.4b item 8 CLOSED)*
 
