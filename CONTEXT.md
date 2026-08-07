@@ -1857,7 +1857,7 @@ TitleForge Desktop has **no paying customers**. Nothing in this document is "aff
 **Before payments are switched on, ALL of these must be true. This list is the real gate, not the release tag:**
 
 1. Release pipeline has run successfully at least once end to end
-2. Auto-updater has completed a real install → update cycle
+2. Auto-updater has completed a real install → update cycle — ⚠️ **REOPENED 2026-08-07: closed against the Netlify endpoint, but `cfa5d11` repointed `tauri.conf.json` to GitHub Releases. The updater has never completed a cycle against its configured endpoint.** Owner-only: two tags + a Sandbox run. Root CONTEXT §6.4b has the full note.
 3. First-launch download verified on a clean machine, on a real connection
 4. Studio batch time is honest — **STILL OPEN, hardest gate.** ⚠️ CORRECTED 2026-08-06 after the audit: the first attempt (`5940dd2`, 200→124 in "26.2 min") was unreproducible and is superseded. **D1 has now landed** (`7017702`): flat 2× fill budget + early exit + no noise sort; after-D1 `category_fit` shows no regression (fire rate 96% (54/56), range 7.06, product 16/16). **Studio re-take DONE (2 runs, `studio-batch-run1/2.csv`): 199/200 and 200/200 yield (100%), duplicate:QC ~200:1, 26-31 min.** Open decision: is ~30 min for Studio 200 acceptable, or should the cap drop — owner call.
 5. Every sales-page claim matches measured reality (engine name, batch sizes, offline quality)

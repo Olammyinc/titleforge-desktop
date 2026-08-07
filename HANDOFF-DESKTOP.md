@@ -600,14 +600,16 @@ Done: Studio card + FAQ now say "up to 200 titles"; the three non-gated bullets 
 >
 > **Follow-up:** Pro-50 needs its own CSV and a second run — 3.8 min is n=1 and now known to be the optimistic end of a 2.3× spread. The batch-time figure quoted anywhere should be the range, not 3.8.
 
-#### U3-FOLLOWUP. ⛔ The durable fix did NOT land — do this before the next harness
+#### U3-FOLLOWUP. ✅ **DONE 2026-08-07 (`dc76cab`) — verified. The measurement discipline is now structural.**
 
-**U3 was done correctly by hand. The system change that stops it recurring was skipped**, and it was specified to come *first*:
+- ✅ `src-tauri/tests/evidence.rs` — present, with `write_evidence_csv` plus `init_`/`append_` for incremental flushing, so a crashed long run still leaves evidence. All five harnesses ported (`category_fit`, `four_x_fifty_v2`, `pro_batch_measure`, `studio_batch_measure`, `yield_curve`).
+- ✅ `engine::is_duplicate(a, b)` — `a.eq_ignore_ascii_case(b) || shares_opening(a, b, 2)`, the exact production rule. **The engine itself now calls it** (`engine.rs:189`), so the engine and every harness share one definition. **A harness can no longer disagree with the engine without editing the shared function** — that is the structural guarantee, not a convention to remember.
+- ✅ Pro-50 re-measured with its own CSVs and two runs: 269.5s / 244.6s, 50/50 unique both times. The CSVs carry a **`wall_secs` column** — timing is finally inside an artifact rather than stdout, which had been the standing complaint for three rounds.
+- ✅ `src/styles.css` committed (`b4e1979`).
 
-- `src-tauri/tests/evidence.rs` — **MISSING.** Persisting a CSV is still an optional step each new harness must remember. That is what failed in `5940dd2`, `four_x_fifty_overlap.rs` and `pro_batch_measure.rs`.
-- `engine::is_duplicate(a, b)` wrapping the exact production rule (`eq_ignore_ascii_case || shares_opening(_, _, 2)`) — **MISSING.** `shares_opening` has now been reimplemented weaker twice; nothing structural prevents a third.
-
-**The instance is fixed; the class is not.** The next new harness starts from zero and relies on memory again. Build both before the next measurement, then port `four_x_fifty_v2.rs`, `studio_batch_measure.rs` and `yield_curve.rs` onto them.
+**Two small residuals, neither blocking:**
+- The **upper bound of the Pro-50 range is still stdout-only.** 3.8-8.9 min rests on two CSV-backed points (244.6s, 269.5s) and two unevidenced ones (226.2s, 534.5s). The docs attribute each correctly and note both fresh runs cluster at ~4-4.5 min — but if the range reaches sales copy, the top end has no artifact. Add `wall_secs` to the 4×50 evidence row.
+- The **Pro-50 CSVs are summary rows, not per-attempt**, so `unique=50` is asserted rather than derivable — the titles are not in the file. Fine for a wall-clock claim; a gap if the uniqueness figure ever carries weight.
 
 **Also outstanding, small:**
 - `src/styles.css` — uncommitted for two rounds while U1 is described as complete. Commit it or explain why it is not part of U1.
