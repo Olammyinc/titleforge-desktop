@@ -533,9 +533,21 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 
 ### CRITICAL PATH — everything below feeds §6.4b
 
-#### U1. Streamed results + progress count + cancel — ✅ **OWNER-DECIDED 2026-08-06. Both products. Do this first.**
+#### U1. Streamed results + progress count + cancel — ✅ **DONE. Desktop shipped; web CLOSED BY DECISION (see below).**
 
-> **Progress 2026-08-06:** Desktop shipped end-to-end for offline generation: backend `generate_streaming` + per-title `titleforge://title-generated` emit (`b81d492`), render-on-land + live `N of M` counter (`34cd45c`), and **cancel** via an `Arc<AtomicBool>` flag + `cancel_generation` command + JS Cancel button (`9eca1d5`, `e8282d3`) — a cancelled run returns partial titles but never writes history or consumes quota (`!generationCancelled` guard). 33/33 tests. **Web mirror not yet surfaced** (chunked jobs already return progressively; the UI does not surface it yet).
+> **Desktop — SHIPPED 2026-08-06, verified.** Backend `generate_streaming` + per-title `titleforge://title-generated` emit (`b81d492`), render-on-land + live `N of M` counter (`34cd45c`), and **cancel** via an `Arc<AtomicBool>` flag + `cancel_generation` command + JS Cancel button (`9eca1d5`, `e8282d3`) — a cancelled run returns partial titles but never writes history or consumes quota (`!generationCancelled` guard). 33/33 tests.
+>
+> **Web — CLOSED 2026-08-07. Do NOT build SSE here. Decision, not a gap.**
+>
+> The owner's "across the board" decision is now **knowingly desktop-only**, on evidence. Four reasons, all checked:
+> 1. **The web batch is not slow.** 100/100 distinct in **11.5-15.8s**, two baseline runs. A 15-second wait does not need a progress bar. Desktop needed streaming because 26-31 minutes with no feedback is unusable — same fix, different disease.
+> 2. **There is no progressive delivery to surface.** ⚠️ An earlier note in this file said *"chunked jobs already return progressively"* — **that was wrong, and the reviewer repeated it without checking.** `generate.js:1015` does `await Promise.all(jobPromises)` and `:1248` returns a single response. The chunks are parallel **server-side**; the client gets one payload at the end. There is zero streaming machinery in the file (no `text/event-stream`, no `ReadableStream`, no `res.write`).
+> 3. **So this is architecture, not UI.** Progress on web needs SSE via Edge Functions or a polling/job model — a second runtime and new failure modes (dropped connections, EventSource/CORS quirks, the function deadline) to fix a 15-second wait. The function is already fighting that deadline: `PROVIDER_TIMEOUT_MS=11000`, per-job `deadlineAt`, explicit 504 at `:1021`.
+> 4. **Graceful degradation already exists** — chunk timeouts return partial results rather than a hard 504.
+>
+> **What shipped instead:** an honest elapsed-time counter (`023efe9`). That is well matched to the real risk, because 11-15s is the *healthy* path — the cascade tail is worse (DeepSeek egress from Netlify measured 10-30s and was the documented 502/504 root cause, which is why it sits last). A counter helps exactly there; SSE would not have.
+>
+> **Reopen only if** the web batch time regresses materially or a long-running web feature (bulk CSV) lands. Not before.
 
 **This is now the highest-value item on the board**, because it converts §6.4b item 4 (Studio batch time) from a product defect into a non-issue.
 
@@ -546,7 +558,7 @@ The entry called 26.2 min *"worse than the ~11 min estimate"*. That estimate was
 2. Render titles as they land, rather than in one batch at the end.
 3. Show `N of M` from the accepted count.
 4. Cancel — nearly free once 1-3 exist, and it is the piece that makes a long run acceptable.
-5. Mirror the same on web where the architecture allows (chunked jobs already return progressively; the UI does not surface it).
+5. ~~Mirror the same on web~~ — **closed by decision, see the box above. Do not build SSE on web.**
 
 **Why the ordering matters: do NOT cut the Studio cap first.** A 30-minute run that yields usable titles from ~5 seconds in and can be stopped at any point is a background fill, not a wait. Cutting the cap first throws away exactly what this buys.
 
