@@ -645,8 +645,8 @@ function maybeWarnAIFeature() {
 function setupSlider() {
   var slider = document.getElementById('quantity');
   if (!slider) return;
-  // Offline (database) engine caps were lowered 2026-07-31 (user decision):
-  // measured ~7-12s/title made 100 ≈ 22 min and 500 ≈ 110 min unshippable.
+  // Offline (database) engine caps (owner decision 2026-08-07, §7 T1):
+  // Core 50 / Pro 100 / Studio 200 — raised from 25/50/200 with the tier split.
   // BYOK AI mode has NO backend cap — users pay their own API bill, so give
   // them a generous slider ceiling there (Studio 1000, Pro 500).
   var aiUncapped = activeEngine === 'ai' && aiApiKey;
@@ -656,8 +656,8 @@ function setupSlider() {
     else slider.max = 25; // Core has no AI access (backend rejects)
   } else {
     if (currentTier === 'studio') slider.max = 200;
-    else if (currentTier === 'pro') slider.max = 50;
-    else slider.max = 25;
+    else if (currentTier === 'pro') slider.max = 100;
+    else slider.max = 50;
   }
   updateQuantityLabel();
   slider.addEventListener('input', function () {
