@@ -1441,6 +1441,19 @@ select:focus { outline: none; border-color: var(--forge); }
 .loading-sub {
   font-size: 13px; color: var(--text-secondary); margin: 0;
 }
+.cancel-gen-btn {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 7px 18px;
+  border: 1px solid var(--border, rgba(139,120,100,.35));
+  border-radius: 6px;
+  background: transparent;
+  color: var(--forge, #E8782B);
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.cancel-gen-btn:hover { background: var(--forge, #E8782B); color: #fff; }
 /* Forging animation: anvil pounding with emissions of sparks */
 .forge-animation {
   position: relative; width: 64px; height: 64px; margin: 0 auto;
