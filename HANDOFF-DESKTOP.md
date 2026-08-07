@@ -760,7 +760,11 @@ Recorded as 22.6 min best / 45.3 min worst against a softened "up to 200" claim.
 - **After D1**, at the shipping multiplier. **Twice** (rule #7).
 - Note in the write-up that `local_llm.rs:288-291` soft-returns rejected candidates, so `qc_fail` undercounts by design.
 
-#### D3. Stripe licence flow end to end *(§6.4b item 7)* — ✅ **CLOSED 2026-08-07**
+#### D3. Stripe licence flow end to end *(§6.4b item 7)* — ✅ **CLOSED 2026-08-07** — two follow-ups, one is a one-liner
+
+> **1. `stripe-webhook.js:241` does not check the Resend response — fix this one.** It is a bare `await fetch('https://api.resend.com/emails', …)`. `fetch` only throws on *network* failure, so **a 4xx from Resend resolves normally**, the `catch` never fires, and nothing is logged. **That is precisely why the unverified-domain rejection was invisible for weeks** — D3 found the symptom; this is the reason nobody saw it. It stays invisible after the domain is verified: any future rejection (rate limit, bad recipient, suspended key) silently drops a paid customer's licence email. Check `res.ok`, log the response body on failure, and keep it non-fatal — the key is already generated, so the goal is a *signal*, not a rollback.
+>
+> **2. Sender is on Resend's sandbox — a known, accepted deferral, not a defect.** `RESEND_FROM_EMAIL` falls back to `onboarding@resend.dev`, which only delivers to the Resend account's own registered address. That is fine while there is no verified domain. **It becomes a launch condition at go-live:** set `RESEND_FROM_EMAIL` to the verified domain and drop the fallback, in the same pass as the Netlify→real-domain migration and the Supabase confirmation-email rebrand already deferred in §5. Until then a real buyer at any other address receives nothing — which is acceptable with no customers, and not acceptable the day payments switch on.
 
 A real Stripe **test-mode** Studio checkout (4242 card) completed → `checkout.session.completed` → webhook → `generate_from_purchase` produced a `TF-STUDIO-XXXX` key → **Resend emailed it** → owner **activated it in the desktop app**, unlocking Studio. Full chain verified end-to-end with real services (test mode). This was the last open beta gate — all §6.4b gates 1–7 are now closed.
 
