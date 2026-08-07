@@ -494,6 +494,24 @@ Once the yield curve exists, the honest promise becomes a per-category number �
 
 ---
 
+## 🧊 DESKTOP REPO IS FROZEN — owner is validating gate 2 (2026-08-07)
+
+**The owner is tagging releases to validate the auto-updater against the GitHub Releases endpoint** — the gate that has been blocked longest and the only one that cannot be tested without shipping. It needs **two tags**: install from the first, confirm the second updates it.
+
+**Until the owner confirms it passed:**
+
+- ⛔ **Do not commit to `titleforge-desktop`.** A tag taken mid-change ships a half-finished state. This is the whole reason for the freeze.
+- ⛔ **Do not start T3 (brand voice) or T4 (bulk CSV)** — both are desktop code and would break the freeze. They are not beta blockers anyway.
+- ⛔ **Hold D3** (Stripe licence flow). Its last leg is activation inside the desktop app, and a bug found there needs a desktop commit to fix.
+
+**✅ Safe to do right now — all of it is in the `titleforge` (web) repo and none of it touches the desktop binary:** the remaining gate-5 work in T2 below — the false Pro "Full appeal breakdowns" bullet (`desktop.html:440` and `:517`), selling Projects, adding Studio's 5 machine activations to the card — plus the stale "3-device limit" comment at `supabase-setup.sql:247`.
+
+**Order once the owner confirms gate 2:** D3 → beta ships → T3 and T4 land during the beta as tier value.
+
+**Why this sequencing:** desktop is at a clean, complete state right now (T1 landed, nothing in flight), and the remaining copy work is entirely web-side — so validation and gate-5 work can run in parallel without colliding. If the updater turns out broken, the fix needs *another* two tags to re-validate; finding that now costs a day, finding it at the finish line compresses everything.
+
+---
+
 ## ⛔ READ THIS BEFORE ANYTHING ELSE — corrections from the 2026-08-06 audit
 
 **Audited: `5940dd2`, `ebfad93`, `cfa5d11`, `dbee1f1`. Full working in `CONTEXT.md` §5, entry dated 2026-08-06 (review).**
