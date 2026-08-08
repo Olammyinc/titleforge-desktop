@@ -2570,7 +2570,7 @@ function setupDashboardTabs() {
       tabs.forEach(function (t) { t.classList.remove('active'); });
       tab.classList.add('active');
       dashCurrentTab = tab.getAttribute('data-dashtab');
-      var panels = ['overview', 'history', 'favorites', 'projects', 'export'];
+      var panels = ['overview', 'history', 'favorites', 'projects', 'export', 'bulk'];
       panels.forEach(function (p) {
         var panel = document.getElementById('dash' + p.charAt(0).toUpperCase() + p.slice(1));
         if (panel) panel.style.display = (p === dashCurrentTab) ? 'block' : 'none';
@@ -2585,7 +2585,7 @@ function switchDashTab(tabName) {
   tabs.forEach(function (t) { t.classList.remove('active'); });
   tabs.forEach(function (t) { if (t.getAttribute('data-dashtab') === tabName) t.classList.add('active'); });
   dashCurrentTab = tabName;
-  var panels = ['overview', 'history', 'favorites', 'projects', 'export'];
+  var panels = ['overview', 'history', 'favorites', 'projects', 'export', 'bulk'];
   panels.forEach(function (p) {
     var panel = document.getElementById('dash' + p.charAt(0).toUpperCase() + p.slice(1));
     if (panel) panel.style.display = (p === dashCurrentTab) ? 'block' : 'none';
@@ -2720,9 +2720,8 @@ function bvActivate() {
   var name = document.getElementById('bvActiveSelect');
   if (!name) return;
   invoke('set_active_brand_voice', { name: name.value })
-    .then(function () { bvStatus('Activated voice' + (name.value ? ': ' + name.value : ' (clear)') + '.'); name.value = bvActiveValue(name.value); bvLoad(); })
+    .then(function () { bvStatus('Activated voice' + (name.value ? ': ' + name.value : ' (clear)') + '.'); bvLoad(); })
     .catch(function (e) { bvStatus(String(e && e.message || e || 'Activate failed.'), true); });
-  function bvActiveValue(v) { return v; }
 }
 
 function bvDelete(name) {
@@ -2771,7 +2770,14 @@ function bulkGenerate() {
   var genre = '';
   var per = parseInt(document.getElementById('bulkPerKw').value, 10) || 10;
   if (!kw) { bulkStatus('Enter at least one keyword.', true); return; }
-  bulkStatus('Generating… (this may take a moment)');
+  bulkStatus('Generating…');
+  // Live progress from the backend per finished keyword (titleforge://bulk-progress).
+  if (window.__TAURI__ && window.__TAURI__.event) {
+    window.__TAURI__.event.listen('titleforge://bulk-progress', function (ev) {
+      var d = (ev && ev.payload) || {};
+      bulkStatus('Generating… ' + (d.processed || 0) + ' done, ' + (d.remaining || 0) + ' keyword' + ((d.remaining === 1) ? '' : 's') + ' left.');
+    });
+  }
   invoke('bulk_generate_csv', {
     keywords_csv: kw, category: cat, style: style, genre: genre, per_keyword: per,
   }).then(function (csv) {

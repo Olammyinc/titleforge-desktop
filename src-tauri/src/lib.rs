@@ -768,16 +768,24 @@ async fn bulk_generate_csv(
 
     let cats = vec![category.trim().to_string()];
     let mut out = String::from("keyword,title,score\n");
+    let total = keywords.len();
     let mut kw_iter = keywords.iter();
     while let Some(kw) = kw_iter.next() {
         if should_cancel() { break; }
+        // RFC 4180 CSV: wrap values in double quotes and DOUBLE any embedded
+        // quote (" -> ""), rather than replacing it, so a title containing a
+        // quote round-trips losslessly. Quoting every field also protects a
+        // comma inside a keyword or title.
+        let esc = |s: &String| s.replace('"', "\"\"");
         let results = engine::generate(
             &db, &generator, llm_guard.as_mut(), kw, &cats, &style, &genre, per_keyword, &tier, &finetune,
         ).unwrap_or_default();
         for r in &results {
-            out.push_str(&format!("{},\"{}\",{}\n", kw.replace('"', "'"), r.title.replace('"', "'"), r.score));
-            let _ = app.emit("titleforge://bulk-progress", serde_json::json!({ "remaining": 0 }));
+            out.push_str(&format!("\"{}\",\"{}\",{}\n", esc(kw), esc(&r.title), r.score));
         }
+        // Report how many keywords remain (how far the bulk run has progressed),
+        // so the UI can show a live count instead of a stuck spinner.
+        let _ = app.emit("titleforge://bulk-progress", serde_json::json!({ "processed": total - kw_iter.len(), "remaining": kw_iter.len() }));
     }
     Ok(out)
 }
