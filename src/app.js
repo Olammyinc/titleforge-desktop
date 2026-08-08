@@ -280,8 +280,18 @@ function setupSidebarNav() {
     generator: document.getElementById('viewGenerator'),
     dashboard: document.getElementById('viewDashboard'),
     settings: document.getElementById('viewSettings'),
+    'brand-voice': document.getElementById('viewBrandVoice'),
   };
   var title = document.getElementById('pageTitle');
+
+  // Hide the Brand Voice nav for Core users (Pro/Studio-only feature). Re-run
+  // whenever the tier is (re)loaded so a Pro/Studio upgrade reveals it.
+  function syncBrandVoiceNav() {
+    var bvNav = document.getElementById('navBrandVoice');
+    if (bvNav) bvNav.style.display = (currentTier && currentTier !== 'core') ? '' : 'none';
+  }
+  window.syncBrandVoiceNav = syncBrandVoiceNav;
+  syncBrandVoiceNav();
 
   items.forEach(function (item) {
     item.addEventListener('click', function (e) {
@@ -294,7 +304,7 @@ function setupSidebarNav() {
       });
       if (views[view]) views[view].classList.add('active');
       if (title) {
-        var titleMap = { dashboard: 'Overview', generator: 'Generator', settings: 'Settings' };
+        var titleMap = { dashboard: 'Overview', generator: 'Generator', settings: 'Settings', 'brand-voice': 'Brand Voice' };
         title.textContent = titleMap[view] || (view.charAt(0).toUpperCase() + view.slice(1));
       }
       if (view === 'dashboard') {
@@ -302,6 +312,9 @@ function setupSidebarNav() {
       }
       if (view === 'settings') {
         renderSettingsContent();
+      }
+      if (view === 'brand-voice') {
+        bvLoad();
       }
     });
   });
@@ -1330,6 +1343,7 @@ function loadDashboardData() {
     dailyUsage = stats.todayGenerations || 0;
     currentTier = stats.tier || 'core';
     isPro = stats.isPro !== false;
+    if (window.syncBrandVoiceNav) window.syncBrandVoiceNav();
     updateUsageDisplay();
     setupSlider(); // re-apply slider max based on real tier
     renderDashboard();

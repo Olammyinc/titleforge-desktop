@@ -61,6 +61,9 @@
       <a class="sidebar-item" data-view="settings">
         <span class="sidebar-dot"></span> Settings
       </a>
+      <a class="sidebar-item" data-view="brand-voice" id="navBrandVoice">
+        <span class="sidebar-dot"></span> Brand Voice
+      </a>
     </nav>
     <div class="sidebar-footer">
       <span class="sidebar-badge" id="sidebarTierBadge">PRO</span>
@@ -426,9 +429,16 @@
           <button id="saveApiKeyBtn" class="btn btn-primary btn-small">Save API Key</button>
           <p id="aiKeyStatus" class="settings-status"></p>
         </div>
-        <div class="settings-card" id="brandVoiceCard">
-          <h3 class="settings-card-title">Brand Voice</h3>
-          <p class="settings-card-desc">Save 1-5 sample titles in your voice. TitleForge uses them as few-shot exemplars so new titles match your style. (Pro / Studio)</p>
+      </div>
+    </div>
+
+    <!-- ===== BRAND VOICE VIEW (T3, Pro/Studio) ===== -->
+    <div id="viewBrandVoice" class="content-view">
+      <h2 class="settings-page-title">Brand Voice</h2>
+      <p class="settings-card-desc" style="max-width:640px;margin:0 0 18px;">Save 1-5 sample titles in your voice. TitleForge uses them as few-shot exemplars so new titles match your style. (Pro / Studio)</p>
+      <div class="settings-layout">
+        <div class="settings-card">
+          <h3 class="settings-card-title">Create a Profile</h3>
           <div class="settings-field">
             <label for="bvName">Profile name</label>
             <input type="text" id="bvName" placeholder="e.g. My Newsletter Voice" />
@@ -446,14 +456,18 @@
             <button id="bvReloadBtn" class="btn btn-ghost-dark btn-small" style="margin-left:8px;">Refresh</button>
           </div>
           <p id="bvStatus" class="settings-status"></p>
-          <div class="settings-field" style="margin-top:14px;">
+        </div>
+        <div class="settings-card">
+          <h3 class="settings-card-title">Active Voice</h3>
+          <p class="settings-card-desc">The active voice is used as few-shot exemplars for new generations.</p>
+          <div class="settings-field" style="margin-top:12px;">
             <label for="bvActiveSelect">Active voice</label>
             <select id="bvActiveSelect"><option value="">None (use curated voice)</option></select>
             <button id="bvActivateBtn" class="btn btn-primary btn-small" style="margin-top:8px;">Activate</button>
           </div>
           <div style="margin-top:14px;">
             <label>Saved profiles</label>
-            <div id="bvList" class="dash-list" style="max-height:180px;overflow:auto;margin-top:6px;"></div>
+            <div id="bvList" class="dash-list" style="max-height:200px;overflow:auto;margin-top:6px;"></div>
           </div>
         </div>
       </div>
