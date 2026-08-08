@@ -695,7 +695,7 @@ Both are desktop framing on a web surface — **the third instance of that patte
 
 **G5-G7 are not beta blockers.** G1 is (it is a payment gate). G2-G4 are cheap and worth doing before testers see the product.
 
-> **Status 2026-08-08 (implemented):** **G1 ✅ DONE** (web `efb7d84`) — the two false `index.html` claims fixed; §6.4b gate 5 CLOSED on full scope. **G2 ✅ DONE** (web `efb7d84`) — free-offer unified; Pro "30 titles" stat removed from hero. **G3 ✅ DONE** (web `efb7d84`) — undated competitor $ figures dropped to "SaaS subscription". **G4 ✅ DONE** (desktop) — AI-mode + Projects show locked/visible upsells for Core (badge pattern). **G5-G7 ⏳ PENDING** — admin-console items, not beta blockers.
+> **Status 2026-08-08 (implemented):** **G1 ✅ DONE** (web `efb7d84`) — the two false `index.html` claims fixed; §6.4b gate 5 CLOSED on full scope. **G2 ✅ DONE** (web `efb7d84`) — free-offer unified; Pro "30 titles" stat removed from hero. **G3 ✅ DONE** (web `efb7d84`) — undated competitor $ figures dropped to "SaaS subscription". **G4 ✅ DONE** (desktop) — AI-mode + Projects show locked/visible upsells for Core (badge pattern). **G5 ✅ DONE** (web) — license-email delivery log + one-click resend (email_log table; webhook persists outcomes; admin "Email Delivery" page). **G6 ✅ DONE** (web) — provider cascade health (provider_health table; generate.js logs per attempt; admin overview panel). **G7 ✅ DONE** (web) — beta feedback inbox (beta_feedback + waitlist kind=feedback) + desktop tier distribution on the admin overview. Also: **desktop on-screen debug log removed → opt-in "Send Logs" button** (copy-to-clipboard + mailto). All non-blockers now done.
 
 #### T1-T4. TIER STRUCTURE — ✅ **OWNER-DECIDED 2026-08-07. Option A. Implement it.**
 
