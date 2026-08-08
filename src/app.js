@@ -741,6 +741,19 @@ function setupEngineToggle() {
   });
 
   aiBtn.addEventListener('click', function () {
+    // G4: make the gated capability VISIBLE to a Core user rather than a
+    // silent error. BYO cloud AI is a Pro feature; the backend also rejects
+    // generate_with_ai for core (lib.rs), but the user should learn that
+    // here, before they try.
+    if (currentTier === 'core') {
+      if (status) status.textContent = 'AI mode is a Pro feature — upgrade to unlock cloud titles (OpenAI, Claude, DeepSeek, Gemini).';
+      aiBtn.classList.remove('active');
+      dbBtn.classList.add('active');
+      if (autoBtn) autoBtn.classList.remove('active');
+      activeEngine = 'database';
+      setupSlider();
+      return;
+    }
     if (!aiProvider || !aiApiKey) {
       if (status) status.textContent = 'No API key saved. Go to Settings → AI Integration.';
       return;
@@ -1561,6 +1574,13 @@ function renderFavoritesTab() {
 function renderProjectsTab() {
   var container = document.getElementById('dashProjectsList');
   if (!container) return;
+  // G4: a Core user can't use projects (backend rejects get_projects); show a
+  // locked, visible upsell rather than an empty state so they learn what Pro
+  // unlocks. The web landing already uses this badge pattern.
+  if (currentTier === 'core') {
+    container.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\uD83D\uDD12</div><p class="dash-empty-text">Projects are a Pro feature</p><p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Group your best titles into named projects. Upgrade to Pro or Studio to unlock projects, brand voice, and bulk CSV.</p><a href="https://titleforge-tool.netlify.app/desktop" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-block;">See the plans \u2192</a></div>';
+    return;
+  }
   if (dashProjects.length === 0) {
     container.innerHTML = '<div class="dash-empty"><div class="dash-empty-icon">\uD83D\uDCC1</div><p class="dash-empty-text">Organize your work.</p><p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Group your best titles into projects for easy access.</p><a href="#" onclick="switchToGenerator();return false;" class="btn btn-primary" style="display:inline-block;">Generate Titles to Organize \u2192</a></div>';
     return;
