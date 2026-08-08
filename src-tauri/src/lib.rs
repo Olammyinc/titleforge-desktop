@@ -772,11 +772,23 @@ async fn bulk_generate_csv(
     let mut kw_iter = keywords.iter();
     while let Some(kw) = kw_iter.next() {
         if should_cancel() { break; }
-        // RFC 4180 CSV: wrap values in double quotes and DOUBLE any embedded
-        // quote (" -> ""), rather than replacing it, so a title containing a
-        // quote round-trips losslessly. Quoting every field also protects a
-        // comma inside a keyword or title.
-        let esc = |s: &String| s.replace('"', "\"\"");
+        // CSV-safe escaping, applied to BOTH the keyword and title columns.
+        // Two rules:
+        //  1) RFC 4180: wrap values in double quotes and DOUBLE any embedded
+        //     quote (" -> ""), so a title with a quote round-trips losslessly
+        //     and a comma in a keyword/title stays in one cell.
+        //  2) CWE-1236 (CSV formula injection): Excel/LibreOffice/Sheets treat
+        //     a cell starting with =, +, -, @, tab or CR as a formula. Bulk CSV
+        //     is the Studio (agency) tier, so a client-supplied keyword list
+        //     can arrive with a hostile leading character and be re-opened by a
+        //     downstream recipient. Prefix such cells with a single quote to
+        //     neutralise them. LLM title output can also start with - or +, so
+        //     the guard applies to the title column too.
+        let esc = |s: &String| {
+            let doubled = s.replace('"', "\"\"");
+            let starts_formula = s.chars().next().map(|c| matches!(c, '=' | '+' | '-' | '@' | '\t' | '\r')).unwrap_or(false);
+            if starts_formula { format!("'{}", doubled) } else { doubled }
+        };
         let results = engine::generate(
             &db, &generator, llm_guard.as_mut(), kw, &cats, &style, &genre, per_keyword, &tier, &finetune,
         ).unwrap_or_default();
