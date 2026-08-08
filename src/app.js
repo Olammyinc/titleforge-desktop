@@ -319,7 +319,8 @@ function switchToDashboard() {
 
 // ---- LICENSE ACTIVATION ----
 document.addEventListener('DOMContentLoaded', function () {
-  _flushDebugLog(); // flush any diagnostic messages queued before DOM ready
+  // Diagnostics are buffered in memory (no on-screen log); they surface only
+  // via the sidebar "Send Logs" button.
   var activationScreen = document.getElementById('activationScreen');
   var mainApp = document.getElementById('mainApp');
 
@@ -1261,28 +1262,31 @@ function showError(msg) {
 }
 
 /**
- * Write a diagnostic message to the on-screen debug log.
- * The #debugLog element must exist in the HTML.
- * Messages sent before DOM ready are queued and flushed later.
+ * Write a diagnostic message to the in-memory debug buffer.
+ * The buffer is NOT shown on-screen (the visible debug log was removed);
+ * it is only surfaced when the user presses "Send Logs" in the sidebar footer.
+ * Messages are formatted + delivered there. Cap the buffer to avoid unbounded
+ * growth on a long-running app.
  */
 var _debugQueue = [];
+var _DEBUG_LOG_LIMIT = 400;
 function dumpDebug(msg) {
   _debugQueue.push({ time: new Date(), msg: msg });
-  _flushDebugLog();
+  if (_debugQueue.length > _DEBUG_LOG_LIMIT) _debugQueue.splice(0, _debugQueue.length - _DEBUG_LOG_LIMIT);
 }
-function _flushDebugLog() {
-  var logEl = document.getElementById('debugLog');
-  if (!logEl || _debugQueue.length === 0) return;
-  while (_debugQueue.length > 0) {
-    var item = _debugQueue.shift();
-    var time = item.time.toLocaleTimeString();
-    var entry = document.createElement('div');
-    entry.style.cssText = 'font-family:monospace;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.05);color:#333;';
-    entry.textContent = '[' + time + '] ' + item.msg;
-    logEl.appendChild(entry);
-  }
-  logEl.style.display = 'block';
-  logEl.scrollTop = logEl.scrollHeight;
+
+/**
+ * Build a plain-text representation of the buffered debug log for the user to
+ * share. Includes app version + tier so the recipient has context.
+ */
+function exportDebugLog() {
+  var version = document.getElementById('sidebarVersion') ? document.getElementById('sidebarVersion').textContent : '?';
+  var tier = currentTier || 'core';
+  var header = 'TitleForge Desktop log\nVersion: ' + version + '\nTier: ' + tier + '\nTime: ' + new Date().toISOString() + '\n------------------------\n';
+  var body = _debugQueue.map(function (item) {
+    return '[' + item.time.toLocaleTimeString() + '] ' + item.msg;
+  }).join('\n');
+  return header + (body || '(no log entries yet)');
 }
 
 /**
@@ -2643,19 +2647,42 @@ window.switchToDashboard = switchToDashboard;
 window.switchDashTab = switchDashTab;
 window.deleteProject = deleteProject;
 
-// ---- DEBUG LOG TOGGLE ----
-(function() {
-  var btn = document.getElementById('debugToggleBtn');
-  if (btn) {
-    btn.addEventListener('click', function() {
-      var log = document.getElementById('debugLog');
-      if (log) {
-        var isVisible = log.style.display !== 'none';
-        log.style.display = isVisible ? 'none' : 'block';
-        btn.textContent = isVisible ? 'Show Debug Log' : 'Hide Debug Log';
-      }
-    });
+// ---- SEND LOGS (replaces the old on-screen debug log) ----
+// The on-screen debug log is removed. Diagnostics are buffered in memory;
+// a small sidebar "Send Logs" button lets the user capture them and share,
+// so we still get telemetry if something goes wrong, but the UI stays clean
+// and the offline/privacy promise ("nothing phones home") holds — sending is
+// always a manual, opt-in action.
+(function () {
+  var btn = document.getElementById('sendLogsBtn');
+  if (!btn) return;
+
+  function copyLog() {
+    var text = exportDebugLog();
+    function done(ok) {
+      btn.textContent = ok ? 'Log copied — paste it in an email' : 'Copy failed';
+      setTimeout(function () { btn.textContent = 'Send Logs'; }, 3000);
+    }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(true); } catch (e) { done(false); }
+      ta.remove();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }).catch(fallback);
+    } else { fallback(); }
   }
+
+  btn.addEventListener('click', function () {
+    var text = exportDebugLog();
+    // Offer a mailto with the log pre-filled; also copy to clipboard as a
+    // fallback path for pasting into whatever channel the user uses.
+    copyLog();
+    var subject = encodeURIComponent('TitleForge Desktop support log');
+    var body = encodeURIComponent(text);
+    window.open('mailto:support@titleforge-tool.netlify.app?subject=' + subject + '&body=' + body, '_self');
+  });
 })();
 
 // ---- BRAND VOICE (T3, Pro/Studio tier value) ----
