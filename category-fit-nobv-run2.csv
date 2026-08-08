@@ -1,0 +1,58 @@
+category,title,words,has_digit,has_colon,in_word_band,shape_ok
+blog,"Exploring the Journey of My Coffee Addiction",7,0,0,1,1
+blog,"Should You Be Drinking Coffee Before Bed? A Coffee Q&A",10,0,0,1,1
+blog,"Revitalize: How One Day's Coffee Habits Transformed My Day",9,0,1,1,1
+blog,"From Nap-Ticking to Nectar: My Coffee Journey",7,0,1,1,1
+blog,"The Power of Black: A Coffee Lover's Journey in Espresso",10,0,1,1,1
+blog,"Coffee: A Daily Ritual",4,0,1,0,1
+blog,"Drinking Coffee: A Journey into the Morning Ritual",8,0,1,1,1
+blog,"What's Your Favorite Coffee Ritual?",5,0,0,1,1
+book,"Remote Revolution: How Work Morphed",5,0,1,1,1
+book,"7 Words About Remote Work",5,1,0,1,1
+book,"Remote Awakening: The Transformation of My Life",7,0,1,1,1
+book,"Remote Renaissance: How the Future of Work is Upending Boundaries",10,0,1,0,1
+book,"Mastering Remote Success: The Future of Work",7,0,1,1,1
+book,"The Chronicles of Remote Awakening",5,0,0,1,1
+book,"End of the Remote Life Cycle",6,0,0,1,1
+book,"45 The Future of Remote Work: Shaping the New Normal",10,1,1,0,1
+poem,"Rising Traditions of Sourdough",4,0,0,1,1
+poem,"What Does Sourdough Bread Taste Like?",6,0,0,1,1
+poem,"Yeast's Whisper: Crafting Sourdough Bread",5,0,1,1,0
+poem,"The Yeast's Whisper: Crafting Sourdough's Warmth",6,0,1,1,0
+poem,"Dead Sourdough Resurrects Bread",4,0,0,1,1
+poem,"Sourdough's Rich Scent",3,0,0,1,1
+poem,"Birth of a Flaky Sourdough",5,0,0,1,1
+poem,"Forging Sourdough's Perfect Crust",4,0,0,1,1
+product,"Jolt'n'Sip",1,0,0,1,1
+product,"Jolt",1,0,0,1,1
+product,"CaffeinateSpark",1,0,0,1,1
+product,"Caffeinate Chic",2,0,0,1,1
+product,"Morning Ritual",2,0,0,1,1
+product,"Caffeine Awakening",2,0,0,1,1
+product,"Caffeine Chronicles",2,0,0,1,1
+product,"ToxCoffee",1,0,0,1,1
+product,"Origami Bread",2,0,0,1,1
+product,"RisePerfect Sourdough",2,0,0,1,1
+product,"Risen by Nature",3,0,0,1,1
+product,"Delightful Sourdough Bake",3,0,0,1,1
+product,"Sourdough Forge",2,0,0,1,1
+product,"Authentic Sourdough Master",3,0,0,1,1
+product,"Fresh Yeast Awakening",3,0,0,1,1
+product,"Durah Bread",2,0,0,1,1
+song,"Why Good Morning Coffee Still Beats the Day",8,0,0,0,1
+song,"Is it time for coffee yet?",6,0,0,1,1
+song,"Why Coffee Drives Me Awake",5,0,0,1,1
+song,"Morning Ritual: Coffee vs. Green Tea",6,0,1,1,0
+song,"Why Should You Brew Coffee Every Morning?",7,0,0,1,1
+song,"Why Morning Coffee Should Be Brewed as a Ritual",9,0,0,0,1
+song,"Why Does Love Start with a Cup of Coffee?",9,0,0,0,1
+song,"9 for Coffee Reflections",4,1,0,1,0
+youtube,"The Art of Remote Productivity",5,0,0,1,1
+youtube,"What Are the Future Trends of Remote Work?",8,0,0,1,1
+youtube,"I Work From Home Now",5,0,0,1,1
+youtube,"I've Been Remote Since Day One",6,0,0,1,1
+youtube,"Remote Work Revolution: From Chaos to Control",7,0,1,1,1
+youtube,"Time Management Tips for Remote Workers",6,0,0,1,1
+youtube,"21st Century Lifestyle: Embracing Remote Work in Modern Times",9,1,1,1,1
+youtube,"I Spent a Week Remote and Loved It",8,0,0,1,1
+
