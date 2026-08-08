@@ -665,6 +665,36 @@ Per-batch engine-new `[50, 39, 31, 30]` / `[50, 36, 30, 28]` — each later batc
 
 </details>
 
+#### G1-G7. DESIGN AUDIT (2026-08-08). G1 reopens a payment gate — do it first.
+
+Full findings: `CONTEXT.md` §5, 2026-08-08 design-audit entry.
+
+**⚠️ First, the good news, because it constrains everything else: the design system is shared and clean.** `titleforge/styles.css` and `titleforge-desktop/src/styles.css` carry identical tokens, and `admin.html` uses them 91 times. **Do not introduce new colours, spacing values or fonts for any item below — extend the tokens or reuse them.**
+
+**G1. Fix the two false claims on `index.html` *(§6.4b gate 5 — REOPENED, do first)*.**
+- `:92-93` — *"No Wi-Fi? Still works."* over body copy *"just open your browser."* The **web** app needs a connection; this headline belongs to the desktop offline engine. The card contradicts itself.
+- `:67` — *"1 payment, lifetime access"* in the hero stat bar. Web Pro is a **$19/mo subscription**.
+
+Both are desktop framing on a web surface — **the third instance of that pattern** (after the desktop card's "Full appeal breakdowns"). **Gate 5 was closed against `desktop.html` only; scope is now every public surface** — `index.html`, `desktop.html`, `desktop-download.html`, `dashboard.html`, plus in-app copy on both products. Apply the same closing test: *name the line of code, or the product fact, that makes the claim true.*
+
+**G2. Unify the free-offer messaging on `index.html`.** It is stated three ways in one scroll — *"up to 3 titles per topic"* (`:61`, plus a typo: lowercase after a full stop), *"3 free generations"* (guest banner), *"5 generations per day, up to 3 titles per topic"* (tool section). A visitor cannot tell what they get. Also the hero stat bar leads with **"30 titles per category"** — the *Pro* number — directly above "up to 3". Pick one framing, state the free offer once and the Pro number where it is clearly Pro.
+
+**G3. Date or soften the competitor pricing claims.** The comparison table asserts vidIQ *"$39/mo+"* and SEMrush *"$139/mo+"*. The 2026-08-07 research found vidIQ Boost at ~$16.58/mo annual, so $39 is the monthly rate shown as a floor. Undated competitor pricing goes stale and becomes a credibility problem — add "as of <date>" or drop to "subscription".
+
+**G4. Merchandise the tiers inside the desktop app.** The web landing marks gated categories with PRO badges (7 markers); desktop has 2 in `src/index.html` and 1 in `src/app.js`. **A Core user meets `PRO_REQUIRED_MSG` as an error string after trying** — they never see what Pro or Studio offer. Since the 2026-08-07 decision differentiates on *capability* (brand voice, bulk CSV, projects, machines), **invisible capabilities cannot drive upgrades.** Add locked-but-visible affordances — badge, disabled control, one-line "Studio unlocks bulk CSV". The web already has the pattern; copy it.
+
+---
+
+**Admin console (G5-G7). The theme: this project's recurring failure mode is SILENT DEGRADATION** — the stop-token bug, the deterministic sampler, the keyword gate, the updater 404, the Resend rejection. **The console's most valuable job is surfacing failures that currently succeed quietly**, not adding controls.
+
+**G5. Email delivery visibility + one-click resend *(highest value — this failure already happened)*.** Resend rejected every licence email for weeks and nobody knew. `8f98981` now logs non-2xx, but **console logs are not an admin surface**: when a buyer says "I never got my key", there is no screen to check. Persist send attempts (recipient, tier, status, error, timestamp) and surface them, with a resend action — seeing a failure is only half of it.
+
+**G6. Provider cascade health.** Generation falls OpenAI → Gemini → GLM → Anthropic → DeepSeek. If the primary degrades silently, everything lands on DeepSeek — measured 10-30s egress, the documented 502/504 root cause — and you find out from complaints. **No provider telemetry exists.** Record which provider served each request plus failures per provider; surface as a small overview panel.
+
+**G7. Beta feedback surface + tier distribution.** The beta starts imminently with nowhere for tester reports to land (revealed-preference logging is desktop-local and never uploaded). And sales-by-tier on the overview is the only read you get on the new tier split before revenue arrives.
+
+**G5-G7 are not beta blockers.** G1 is (it is a payment gate). G2-G4 are cheap and worth doing before testers see the product.
+
 #### T1-T4. TIER STRUCTURE — ✅ **OWNER-DECIDED 2026-08-07. Option A. Implement it.**
 
 Full structure, evidence and market comparables: `CONTEXT.md` §5, 2026-08-07 pricing entry. The short version:
