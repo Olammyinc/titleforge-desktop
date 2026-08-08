@@ -695,6 +695,8 @@ Both are desktop framing on a web surface — **the third instance of that patte
 
 **G5-G7 are not beta blockers.** G1 is (it is a payment gate). G2-G4 are cheap and worth doing before testers see the product.
 
+> **Status 2026-08-08 (implemented):** **G1 ✅ DONE** (web `efb7d84`) — the two false `index.html` claims fixed; §6.4b gate 5 CLOSED on full scope. **G2 ✅ DONE** (web `efb7d84`) — free-offer unified; Pro "30 titles" stat removed from hero. **G3 ✅ DONE** (web `efb7d84`) — undated competitor $ figures dropped to "SaaS subscription". **G4 ✅ DONE** (desktop) — AI-mode + Projects show locked/visible upsells for Core (badge pattern). **G5-G7 ⏳ PENDING** — admin-console items, not beta blockers.
+
 #### T1-T4. TIER STRUCTURE — ✅ **OWNER-DECIDED 2026-08-07. Option A. Implement it.**
 
 Full structure, evidence and market comparables: `CONTEXT.md` §5, 2026-08-07 pricing entry. The short version:
